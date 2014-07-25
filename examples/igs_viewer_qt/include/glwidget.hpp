@@ -20,11 +20,7 @@
 // system includes
 #include <GL/glew.h>
 
-#if WIN32
-  #include <QtOpenGL/QGLWidget>
-#else
-  #include <qt4/QtOpenGL/QGLWidget>
-#endif
+#include <QtOpenGL/QGLWidget>
 
 #include <vector>
 
@@ -37,14 +33,15 @@
 #include <gpucast/gl/util/trackball.hpp>
 #include <gpucast/gl/framebufferobject.hpp>
 #include <gpucast/gl/renderbuffer.hpp>
+
 #include <gpucast/gl/primitives/plane.hpp>
+#include <gpucast/gl/primitives/bezierobject.hpp>
     
 #include <gpucast/gl/math/matrix4x4.hpp>
 #include <gpucast/gl/math/vec3.hpp>
 
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
-#include <gpucast/core/surface_renderer_gl.hpp>
 
 
 
@@ -100,7 +97,7 @@ private : // helper methods
   void                    _parse_background             ( std::istringstream& sstr, gpucast::gl::vec3f&) const;
 
 private : // attributes                     
-                   
+
   int                                                                         _argc;
   char**                                                                      _argv;
 
@@ -108,16 +105,12 @@ private : // attributes
   std::size_t                                                                 _width;
   std::size_t                                                                 _height;
 
-  std::shared_ptr<gpucast::surface_renderer_gl>                               _renderer;
-  std::unordered_map<gpucast::surface_renderer::drawable_ptr, std::string>    _objects;
-
+  std::vector<std::shared_ptr<gpucast::gl::bezierobject>>                     _objects;
   std::shared_ptr<gpucast::gl::trackball>                                     _trackball;
-  gpucast::gl::matrix4f                                                       _projection;
-  gpucast::gl::matrix4f                                                       _modelview;
-  
+
   gpucast::math::axis_aligned_boundingbox<gpucast::math::point3d>             _boundingbox;
   gpucast::gl::vec3f                                                          _background;
-  bool                                                                        _cullface;
+  
   bool                                                                        _ambient_occlusion;
   bool                                                                        _fxaa;
   

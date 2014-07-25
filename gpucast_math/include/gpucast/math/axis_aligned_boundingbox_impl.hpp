@@ -335,7 +335,7 @@ namespace gpucast { namespace math {
   template<typename point_t>
   template <typename insert_iterator>
   void
-  axis_aligned_boundingbox<point_t>::uniform_split ( insert_iterator ins ) const
+  axis_aligned_boundingbox<point_t>::uniform_split(insert_iterator ins) const
   {
     std::size_t parts =  gpucast::math::meta_pow<2, point_t::coordinates>::result;
 

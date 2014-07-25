@@ -22,7 +22,7 @@
 
 namespace gpucast { namespace gl {
 
-  class GPUCAST_GL line : public boost::noncopyable
+  class GPUCAST_GL line 
 {
 public :
 
@@ -31,6 +31,9 @@ public :
                               GLint colorattrib_index = 1, 
                               GLint texcoordattrib_index = 2 );
   ~line                     ( );
+
+  line(line const& other) = delete;
+  line& operator=(line const& other) = delete;
 
 public :
 

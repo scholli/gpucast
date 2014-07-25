@@ -45,6 +45,9 @@ public :
 
   void                    reset     ( );
 
+  int                     posx      () const;
+  int                     posy      () const;
+
   /* virtual */ void      mouse    ( enum button, enum state, int x, int y );
   /* virtual */ void      motion   ( int x, int y );
   /* virtual */ void      passivemotion ( int x, int y );

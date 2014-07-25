@@ -119,6 +119,7 @@ struct surface_renderer_gl::drawable_ressource_impl
     _program->set_uniform1i         ("iterations", GLint   ( _newton_iterations ));
     _program->set_uniform1f         ("nearplane",  GLfloat ( _nearplane         ));
     _program->set_uniform1f         ("farplane",   GLfloat ( _farplane          ));
+    _program->set_uniform1f         ("epsilon_object_space", GLfloat(0.001f));
 
     _program->set_cubemap           ("cubemap",     *_cubemap,    3);
     _program->set_texture2d         ("spheremap",   *_spheremap,  4);
@@ -189,7 +190,7 @@ struct surface_renderer_gl::drawable_ressource_impl
     _program->end();
   }
 
-#if 0 
+#if 1
   /////////////////////////////////////////////////////////////////////////////
   void 
   surface_renderer_gl::draw ( drawable_ptr const& drawable )
@@ -212,6 +213,7 @@ struct surface_renderer_gl::drawable_ressource_impl
       _program->set_uniform1i         ("iterations", GLint   ( _newton_iterations ));
       _program->set_uniform1f         ("nearplane",  GLfloat ( _nearplane         ));
       _program->set_uniform1f         ("farplane",   GLfloat ( _farplane          ));
+      _program->set_uniform1f         ("epsilon_object_space", GLfloat(0.001f));
 
       _program->set_cubemap           ("cubemap",     *_cubemap,    texunit);
       _linear_interp->bind(texunit++);
@@ -237,6 +239,10 @@ struct surface_renderer_gl::drawable_ressource_impl
       if (!object->first->initialized()) 
       {
         object->first->init();
+      }
+
+      if (object->second->size == 0)
+      {
         _sync(*object);           // synchronize with GPU memory
       }
 
@@ -405,7 +411,7 @@ struct surface_renderer_gl::drawable_ressource_impl
   void 
   surface_renderer_gl::_init_shader ()
   {
-    init_program(_program, "/trimmed_surface/raycast_surface.glsl.vert", "/trimmed_surface/raycast_surface.glsl.frag");
+    init_program(_program, "./gpucast_core/glsl/trimmed_surface/raycast_surface.glsl.vert", "./gpucast_core/glsl/trimmed_surface/raycast_surface.glsl.frag");
   }
 
 } // namespace gpucast

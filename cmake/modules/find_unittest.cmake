@@ -2,7 +2,7 @@
 # search paths
 ##############################################################################
 SET(UNITTEST_INCLUDE_SEARCH_DIRS
-  ${GLOBAL_EXT_DIR}/inc/unittest
+  ${GLOBAL_EXT_DIR}/include/unittest
   ${UNITTEST_INCLUDE_SEARCH_DIR}
 )
 

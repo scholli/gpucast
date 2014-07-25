@@ -4,25 +4,24 @@
 #include <memory>
 
 #include <GL/glew.h>
-#include <glpp/glut/window.hpp>
-#include <glpp/util/init_glew.hpp>
+#include <gpucast/gl/glut/window.hpp>
+#include <gpucast/gl/util/init_glew.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
-#include <gpucast/uid.hpp>
-#include <gpucast/volume_converter.hpp>
-#include <gpucast/volume_renderer.hpp>
-#include <gpucast/beziervolumeobject.hpp>
-#include <gpucast/isosurface/fragment/isosurface_renderer_interval_sampling.hpp>
-#include <gpucast/isosurface/fragment/isosurface_renderer_unified_sampling.hpp>
-#include <gpucast/isosurface/octree/isosurface_renderer_octreebased.hpp>
-#include <gpucast/isosurface/splat/isosurface_renderer_splatbased.hpp>
-#include <gpucast/import/mesh3d.hpp>
-#include <gpucast/import/xml.hpp>
-#include <gpucast/import/xml2.hpp>
+#include <gpucast/volume/uid.hpp>
+#include <gpucast/volume/volume_converter.hpp>
+#include <gpucast/volume/volume_renderer.hpp>
+#include <gpucast/volume/beziervolumeobject.hpp>
+#include <gpucast/volume/isosurface/fragment/isosurface_renderer_interval_sampling.hpp>
+#include <gpucast/volume/isosurface/octree/isosurface_renderer_octreebased.hpp>
+#include <gpucast/volume/isosurface/splat/isosurface_renderer_splatbased.hpp>
+#include <gpucast/volume/import/mesh3d.hpp>
+#include <gpucast/volume/import/xml.hpp>
+#include <gpucast/volume/import/xml2.hpp>
 
 // namespace alias
 namespace bf = boost::filesystem;
@@ -93,12 +92,11 @@ void convert ( int argc, char* argv[],
       std::map<std::string, gpucast::volume_renderer*> renderer;
       renderer["octree"]          = new gpucast::isosurface_renderer_octreebased(argc, argv);
       renderer["face_interval"]   = new gpucast::isosurface_renderer_interval_sampling(argc, argv);
-      renderer["unified_sampler"] = new gpucast::isosurface_renderer_unified_sampling(argc, argv);
       renderer["splatting"]       = new gpucast::isosurface_renderer_splatbased(argc, argv);
       //renderer["convex_hull"]     = new gpucast::isosurface_renderer_convex_hull;
 
       if ( !renderer.count(renderer_name) ) {
-        throw std::runtime_error("Renderer invalid. Possiple renderers are: octree, face_interval, unified_sampler, splatting");
+        throw std::runtime_error("Renderer invalid. Possiple renderers are: octree, face_interval, splatting");
       }
 
       renderer[renderer_name]->set_attributebounds ( gpucast::volume_renderer::attribute_interval ( nurbsobject->bbox(crop_name).min[0], nurbsobject->bbox(crop_name).max[0] ));
@@ -106,7 +104,6 @@ void convert ( int argc, char* argv[],
       std::string binary_extension;
       if ( renderer_name == "octree" )          binary_extension = ".ocb";
       if ( renderer_name == "face_interval" )   binary_extension = ".fib";
-      if ( renderer_name == "unified_sampler" ) binary_extension = ".usb";
       if ( renderer_name == "splatting" )       binary_extension = ".spb";
 
       boost::filesystem::path binary_name = (outputfile.branch_path() / boost::filesystem::basename(outputfile)).string() + crop_name + binary_extension;
@@ -149,11 +146,11 @@ void init_file_extension_map ( std::map<std::string, filetype>& map )
 
 int main(int argc, char* argv[])
 {
-  glpp::glutwindow::init(argc, argv, 100, 100, 10, 10, 4, 1, true);
+  gpucast::gl::glutwindow::init(argc, argv, 100, 100, 10, 10, 4, 1, true);
 
-  glpp::glutwindow::instance().printinfo(std::cout);
+  gpucast::gl::glutwindow::instance().printinfo(std::cout);
 
-  glpp::init_glew(std::cout);
+  gpucast::gl::init_glew(std::cout);
 
   // initialize valid file type map
   std::map<std::string, filetype> valid_filetypes;

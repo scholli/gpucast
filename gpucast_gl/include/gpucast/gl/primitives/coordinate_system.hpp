@@ -21,12 +21,15 @@
 
 namespace gpucast { namespace gl {
 
-class GPUCAST_GL coordinate_system : public boost::noncopyable
+class GPUCAST_GL coordinate_system
 {
 public :
 
   coordinate_system           ( GLint vertexattrib_index, GLint colorattrib_index );
   ~coordinate_system          ( );
+
+  coordinate_system(coordinate_system const&  other) = delete;
+  coordinate_system operator=(coordinate_system const&  other) = delete;
 
 public :
 

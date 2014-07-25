@@ -23,7 +23,6 @@
 #include <gpucast/gl/program.hpp>
 
 // header, external
-#include <boost/noncopyable.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
@@ -31,13 +30,16 @@
 
 namespace gpucast {
 
-class GPUCAST_CORE renderer : public boost::noncopyable
+class GPUCAST_CORE renderer 
 {
 public : // enums
 
+  renderer(renderer const& other) = delete;
+  renderer& operator=(renderer const& other) = delete;
+
 public : // c'tor / d'tor
 
-  renderer           ( int argc, char** argv );
+  renderer           ();
   virtual ~renderer  ();
 
 public : // methods
@@ -70,16 +72,11 @@ public : // methods
                                                   std::string const&                fragmentshader_filename,
                                                   std::string const&                geometryshader_filename = "" );
 
-  int                   cuda_get_max_flops_device_id() const;
-
 protected : // attributes 
 
   std::pair<bool, std::string>          _path_to_file   ( std::string const& filename ) const;
 
 protected : // attributes                     
-
-  int                                   _argc;
-  char**                                _argv;
 
   int                                   _width;
   int                                   _height;

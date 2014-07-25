@@ -14,12 +14,11 @@
 #pragma warning(disable: 4127) // Qt conditional expression is constant
 
 // system includes
-#include <QtGui/QCloseEvent>
-#include <QtGui/QFileDialog>
-#include <QtGui/QMessageBox>
-#include <QtGui/QStatusBar>  
-#include <QtGui/QMenuBar>
-#include <QtGui/QAction>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QStatusBar>  
+#include <QtWidgets/QMenuBar>
+#include <QtWidgets/QAction>
 #include <QtCore/QString>
 
 #include <iostream>

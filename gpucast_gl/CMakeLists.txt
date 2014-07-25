@@ -65,6 +65,7 @@ ADD_LIBRARY( gpucast_gl SHARED
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${GLEW_INCLUDE_DIRS}
+                     ../gpucast_core/include
                      ${FREEIMAGE_INCLUDE_DIRS}
                      ${FREEGLUT_INCLUDE_DIRS}
                      include 

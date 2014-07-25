@@ -1,7 +1,7 @@
 ###############################################################################
 # set sources
 ###############################################################################
-FILE(GLOB EXAMPLE_IGS_VIEWER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp include/*.hpp)
+FILE(GLOB EXAMPLE_IGS_VIEWER_GLUT_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp *.cpp *.hpp include/*.hpp)
 
 GET_FILENAME_COMPONENT(_EXE_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 SET(_EXE_NAME example_${_EXE_NAME}.out)
@@ -27,7 +27,7 @@ SET(LIBRARY_DIRS ${LIB_PATHS}
 LINK_DIRECTORIES (${LIBRARY_DIRS})
 
 ADD_EXECUTABLE( ${_EXE_NAME}
-    ${EXAMPLE_IGS_VIEWER_SRC}
+    ${EXAMPLE_IGS_VIEWER_GLUT_SRC}
 )
 
 SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})

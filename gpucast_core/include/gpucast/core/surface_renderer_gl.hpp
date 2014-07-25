@@ -57,7 +57,7 @@ public : // methods
 
   /* virtual */ void            draw        ();
 
-  // /* virtual */ void            draw        ( drawable_ptr const& drawable );
+  /* virtual */ void            draw        ( drawable_ptr const& drawable );
 
   void                          memory_usage( std::size_t& trim_data_binarypartition_bytes,
                                               std::size_t& trim_data_contourmap_bytes,

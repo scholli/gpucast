@@ -21,12 +21,15 @@
 
 namespace gpucast { namespace gl {
 
-  class GPUCAST_GL plane : public boost::noncopyable
+  class GPUCAST_GL plane
 {
 public :
 
   plane                     ( GLint vertexattrib_index, GLint normalattrib_index, GLint texcoordattrib_index );
   ~plane                    ( );
+
+  plane(plane const&  other) = delete;
+  plane operator=(plane const&  other) = delete;
 
 public :
 

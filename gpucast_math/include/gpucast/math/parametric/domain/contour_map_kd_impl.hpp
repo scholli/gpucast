@@ -28,131 +28,6 @@ contour_map_kd<value_t>::contour_cell::print ( std::ostream& os ) const
   os << "contour cell: v: " << interval_v << ", u: " << interval_u << ", contours: " << overlapping_segments.size() << " inside: " << inside << std::endl;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-void 
-contour_map_kd<value_t>::status_queue::process ( domain_start_event const& e )
-{
-  interval_v = e.interval_v;
-
-  splits.insert ( e.interval_v.minimum() );
-  splits.insert ( e.interval_v.maximum() );
-
-  intervals.clear();
-  intervals.insert ( std::make_pair ( e.interval_v, e.value_u ) );
-}
-
-///////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-void contour_map_kd<value_t>::status_queue::process ( domain_end_event const& e )
-{
-  assert ( splits.size()    == 2 );
-  assert ( intervals.size() == 1 );
-
-  splits.erase(e.interval_v.minimum());
-  splits.erase(e.interval_v.maximum());
-
-  intervals.clear();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-void contour_map_kd<value_t>::status_queue::process ( contour_start_event const& e )
-{
-  segments.insert ( e.segment );
-
-  splits.insert(e.segment->bbox().min[point_type::v]);
-  splits.insert(e.segment->bbox().max[point_type::v]);
-
-  update ( e.value_u );
-}
-
-///////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-void contour_map_kd<value_t>::status_queue::process ( contour_end_event const& e )
-{
-  segments.erase ( e.segment );
-
-  splits.erase(e.segment->bbox().min[point_type::v]);
-  splits.erase(e.segment->bbox().max[point_type::v]); 
-
-  // make sure bounds are kept
-  splits.insert(interval_v.minimum());
-  splits.insert(interval_v.maximum());
-
-  update ( e.value_u );
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-void contour_map_kd<value_t>::status_queue::update ( value_type const& u )
-{
-  std::set<interval_type>    updated_intervals;
-  std::vector<interval_type> intervals_to_remove;
-  std::vector<interval_type> intervals_to_add;
-
-  _intervals_from_splits ( splits, updated_intervals );
-
-  // 1. identify new intervals
-  for ( interval_type const& i : updated_intervals )
-  {
-    bool found = false;
-    for ( auto const& j : intervals )
-    {
-      found |= (j.first == i);
-    }
-
-    if ( !found )
-    {
-      intervals_to_add.push_back(i);
-    }
-  }
-
-  // 2. close cells that do not match the new intervals
-  for ( auto const& i : intervals )
-  {
-    bool found = false;
-    for ( auto const& j : updated_intervals )
-    {
-      found |= (j == i.first);
-    }
-
-    if ( !found )
-    {
-      // skip empty intervals
-      if ( u > i.second ) 
-      {
-        contour_cell cell;
-        cell.interval_u = interval_type ( i.second, u,  gpucast::math::excluded,  gpucast::math::excluded );
-        cell.interval_v = i.first;
-        result.push_back ( cell );
-      }
-      intervals_to_remove.push_back ( i.first );
-    }
-  }
-  /*
-  if ( intervals_to_remove.empty() && intervals_to_add.empty() )
-  {
-    contour_cell cell;
-    cell.interval_u = interval_type ( i.second, u,  gpucast::math::excluded,  gpucast::math::excluded );
-    cell.interval_v = i.first;
-    result.push_back ( cell );
-  }*/
-
-  // 3. delete deprecated intervals
-  for ( interval_type const& i : intervals_to_remove )
-  {
-    intervals.erase ( i );
-  }
-
-  // 4. add new intervals
-  for ( interval_type const& i : intervals_to_add )
-  {
-    intervals.insert ( std::make_pair ( i, u ) );
-  }
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -183,33 +58,33 @@ contour_map_kd<value_t>::initialize ()
 
   update_bounds();
 
-  // add events to event queue
-  event_queue Q;
-
-  interval_type vbounds ( _bounds.min[point_type::v], _bounds.max[point_type::v],  gpucast::math::excluded,  gpucast::math::excluded );
-  Q.events.insert ( new domain_start_event ( _bounds.min[point_type::u], vbounds ) );
-  Q.events.insert ( new domain_end_event   ( _bounds.max[point_type::u], vbounds ) );
-  for ( contour_segment_ptr const& p : _contour_segments)
+  std::cout << "Segments for partition : " << std::endl;
+  unsigned tmp=0;
+  for (auto s : _contour_segments)
   {
-    // only use contours that cause computations ( have area where curves need to be evaluated )
-    if ( !p->is_constant(point_type::u) &&
-         !p->is_constant(point_type::v) )
-    {
-      Q.events.insert ( new contour_start_event ( p->bbox().min[point_type::u], p ) );
-      Q.events.insert ( new contour_end_event   ( p->bbox().max[point_type::u], p ) );
-    }
+    std::cout << tmp++ << " : " << s->bbox() << std::endl;
   }
 
-  status_queue S;
-  while ( !Q.events.empty() )
+  //_cells.push_back(contour_cell{ {}, 
+  //                               {_bounds.min[point_type::u],
+  //                                _bounds.max[point_type::u] }, 
+  //                               {_bounds.min[point_type::v],
+  //                                _bounds.max[point_type::v] }, 
+  //                               { false } });
+
+  for (auto const& s : _contour_segments)
   {
-    auto e = Q.events.begin();
-    (**e).visit(S);
-    delete *e;
-    Q.events.erase ( e );
+    _insert_contour_segment(s);
   }
 
-  _cells = S.result;
+  //_cells = S.result;
+
+  for (auto const& c : _cells)
+  {
+    std::cout << "cell : " << std::endl;
+    std::cout << " u : " << c.interval_u << std::endl;
+    std::cout << " v : " << c.interval_v << std::endl;
+  }
 
   // TODO: O(n^2)! improve performance by sorting
   for ( contour_cell& c : _cells )
@@ -270,8 +145,12 @@ contour_map_kd<value_t>::create ( bbox_type const& bounds,
 
   if ( usplit.empty() && vsplit.empty() ) 
   {
-    assert ( cells.size() == 1 );
-    return new kdnode ( 0, 0, new contour_cell ( cells.front() ) , nullptr, nullptr );
+    //assert ( cells.size() == 1 );
+    if (cells.empty()) {
+      return new kdnode(0, 0, nullptr, nullptr, nullptr);
+    } else {
+      return new kdnode(0, 0, new contour_cell(cells.front()), nullptr, nullptr);
+    }
   } else {
     if ( usplit.size() > vsplit.size() )
     {
@@ -303,38 +182,38 @@ contour_map_kd<value_t>::split ( bbox_type const& bounds,
   std::vector<contour_cell> less_cells;
   std::vector<contour_cell> more_cells;
 
-  for ( auto c = cells.begin(); c != cells.end(); ++c )
+  for ( auto const& c : cells)
   {
     switch ( dim )
     {
       case point_type::u :
-        if ( c->interval_u.in ( split ) )
+        if ( c.interval_u.in ( split ) )
         {
-          less_cells.push_back ( *c );
-          more_cells.push_back ( *c );
+          less_cells.push_back ( c );
+          more_cells.push_back ( c );
         }
-        if ( c->interval_u.minimum() >= split )
+        if ( c.interval_u.minimum() >= split )
         {
-          more_cells.push_back ( *c );
+          more_cells.push_back ( c );
         }
-        if ( c->interval_u.maximum() <= split )
+        if ( c.interval_u.maximum() <= split )
         {
-          less_cells.push_back ( *c );
+          less_cells.push_back ( c );
         }
         break;
       case point_type::v :
-        if ( c->interval_v.in ( split ) )
+        if ( c.interval_v.in ( split ) )
         {
-          less_cells.push_back ( *c );
-          more_cells.push_back ( *c );
+          less_cells.push_back ( c );
+          more_cells.push_back ( c );
         }
-        if ( c->interval_v.minimum() >= split )
+        if ( c.interval_v.minimum() >= split )
         {
-          more_cells.push_back ( *c );
+          more_cells.push_back ( c );
         }
-        if ( c->interval_v.maximum() <= split )
+        if ( c.interval_v.maximum() <= split )
         {
-          less_cells.push_back ( *c );
+          less_cells.push_back ( c );
         }
         break;
     }
@@ -352,6 +231,22 @@ contour_map_kd<value_t>::split ( bbox_type const& bounds,
                             : bbox_type ( point_type ( bounds.min[point_type::u], split ),
                                           point_type ( bounds.max[point_type::u], bounds.max[point_type::v] ) );
 
+  //std::cout << "split " << split << std::endl;
+  //std::cout << "less bbox : " << less_bounds << std::endl;
+  //std::cout << "more bbox : " << more_bounds << std::endl;
+  //
+  //std::cout << "less cells : " << std::endl;
+  //for (auto const& c : less_cells)
+  //{
+  //  c.print(std::cout);
+  //}
+  //
+  //std::cout << "more cells : " << std::endl;
+  //for (auto const& c : more_cells)
+  //{
+  //  c.print(std::cout);
+  //}
+
   return new kdnode ( split, 
                       dim, 
                       nullptr, 
@@ -368,17 +263,17 @@ contour_map_kd<value_t>::split_candidates ( bbox_type const& bounds,
                                             std::vector<contour_cell> const& cells )
 {
   std::set<value_type> splits;
-  for ( auto c = cells.begin(); c != cells.end(); c )
+  for ( auto const& c : cells )
   {
     switch ( dim ) 
     {
       case point_type::u : 
-        splits.insert ( c->interval_u.minimum());
-        splits.insert ( c->interval_u.maximum());
-        break;
-      case point_type::v : 
-        splits.insert ( c->interval_v.minimum());
-        splits.insert ( c->interval_v.maximum());
+        splits.insert ( c.interval_u.minimum());
+        splits.insert ( c.interval_u.maximum());
+        break;           
+      case point_type::v :
+        splits.insert ( c.interval_v.minimum());
+        splits.insert ( c.interval_v.maximum());
         break;
     };
   }
@@ -404,6 +299,12 @@ contour_map_kd<value_t>::print ( std::ostream& os ) const
     os << "number of segments in cell : " << cell.overlapping_segments.size() << std::endl;
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+void
+contour_map_kd<value_t>::_insert_contour_segment(contour_segment_ptr const& s)
+{}
 
 
 ///////////////////////////////////////////////////////////////////////////////

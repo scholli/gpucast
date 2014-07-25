@@ -3,7 +3,7 @@ include(find_glfw)
 ###############################################################################
 # set sources
 ###############################################################################
-FILE(GLOB EXAMPLE_IGS_VIEWER_GLFW_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp include/*.hpp)
+FILE(GLOB EXAMPLE_IGS_VIEWER_GLFW_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp *.hpp)
 
 GET_FILENAME_COMPONENT(_EXE_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 SET(_EXE_NAME example_${_EXE_NAME}.out)

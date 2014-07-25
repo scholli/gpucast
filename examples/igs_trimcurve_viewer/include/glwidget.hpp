@@ -20,11 +20,7 @@
 // system includes
 #include <GL/glew.h>
 
-#if WIN32
-  #include <QtOpenGL/QGLWidget>
-#else
-  #include <qt4/QtOpenGL/QGLWidget>
-#endif
+#include <QtOpenGL/QGLWidget>
 
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/texturebuffer.hpp>

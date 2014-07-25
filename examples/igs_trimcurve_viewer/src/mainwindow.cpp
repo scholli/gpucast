@@ -13,9 +13,8 @@
 
 #pragma warning(disable: 4127) // Qt conditional expression is constant
 
-#include <QtGui/QAction>
-#include <QtGui/QMenuBar>
-#include <QtGui/QGridLayout>
+#include <QtWidgets/QMenuBar>
+#include <QtWidgets/QGridLayout>
 
 // system includes
 #include <iostream>

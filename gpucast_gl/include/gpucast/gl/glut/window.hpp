@@ -27,7 +27,7 @@
 
 namespace gpucast { namespace gl {
 
-class GPUCAST_GL glutwindow : public boost::noncopyable
+class GPUCAST_GL glutwindow 
 {
   public : // typedef
 
@@ -47,6 +47,9 @@ class GPUCAST_GL glutwindow : public boost::noncopyable
                                     std::size_t context_minor = 3,
                                     bool        core_context = false);
 
+    glutwindow(glutwindow const& other) = delete;
+    glutwindow& operator=(glutwindow const& other) = delete;
+
   public :
 
     virtual ~glutwindow    ( );
@@ -63,7 +66,7 @@ class GPUCAST_GL glutwindow : public boost::noncopyable
                                   std::size_t context_minor = 3,
                                   bool        core_context = false);
 
-    void         run            ( );
+    void         run            ();
     void         leave          ( std::function<void()> f ) const;
 
     std::size_t  width          ( ) const;
@@ -73,6 +76,8 @@ class GPUCAST_GL glutwindow : public boost::noncopyable
     std::size_t  posy           ( ) const;
 
     void         setcamera      ( std::shared_ptr<camera> const& c);
+
+    void         set_drawfunction(std::shared_ptr <std::function<void()>> const& f);
 
     void         add_keyevent   ( unsigned char  key,
                                   keyfunction_t  event );
@@ -103,19 +108,20 @@ class GPUCAST_GL glutwindow : public boost::noncopyable
 
   protected : // members
 
-    std::size_t                     _width;
-    std::size_t                     _height;
-    std::size_t                     _posx;
-    std::size_t                     _posy;
+    std::size_t                         _width;
+    std::size_t                         _height;
+    std::size_t                         _posx;
+    std::size_t                         _posy;
 
-    std::map<char, keyfunction_t>   _keymap;
-    std::set<eventhandler_ptr>      _eventhandler;
-    std::shared_ptr<camera>         _camera;
+    std::map<char, keyfunction_t>       _keymap;
+    std::set<eventhandler_ptr>          _eventhandler;
+    std::shared_ptr<camera>             _camera;
+    std::shared_ptr<std::function<void()>>  _drawfun;
 
-    int                             _handle;
-    std::size_t                     _contextmajor;
-    std::size_t                     _contextminor;
-    bool                            _core;
+    int                                 _handle;
+    std::size_t                         _contextmajor;
+    std::size_t                         _contextminor;
+    bool                                _core;
 };
 
 } } // namespace gpucast / namespace gl

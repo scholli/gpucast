@@ -37,6 +37,12 @@ public : // friends
 
 public : // enums, typedefs
 
+  enum trimapproach {
+    double_binary   = 0,
+    contours_binary = 1,
+    contours_kd     = 2
+  };
+
   typedef beziersurface::value_type         value_type;
   typedef beziersurface                     surface_type;
   typedef std::shared_ptr<surface_type>     surface_ptr;
@@ -95,7 +101,7 @@ private : // auxilliary methods
 
   std::size_t             _add            ( convex_hull const& chull );
 
-private : // data members
+public : // data members
 
   /////////////////////////////////////////////////////////////////////////////
   // attributes

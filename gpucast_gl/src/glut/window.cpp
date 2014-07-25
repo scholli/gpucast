@@ -146,6 +146,14 @@ glutwindow::setcamera ( std::shared_ptr<camera> const& c )
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+void glutwindow::set_drawfunction(std::shared_ptr <std::function<void()>> const& f)
+{
+  _drawfun = f;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void
 glutwindow::add_keyevent( unsigned char key, keyfunction_t event )
 {
@@ -159,6 +167,7 @@ glutwindow::add_eventhandler ( eventhandler_ptr eh)
 {
   _eventhandler.insert(eh);
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 void
@@ -286,7 +295,10 @@ glutwindow::display()
   }
   else
   {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    if (glutwindow::instance()._drawfun)
+    {
+      (*glutwindow::instance()._drawfun)();
+    }
     glutSwapBuffers();
   }
 }

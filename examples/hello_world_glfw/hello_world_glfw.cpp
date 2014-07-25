@@ -12,12 +12,14 @@
 // system includes
 #include <iostream>
 #include <memory>
+#include <chrono>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 // local includes
 #include <gpucast/gl/program.hpp>
+#include <gpucast/gl/util/vsync.hpp>
 #include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/primitives/cube.hpp>
@@ -48,13 +50,13 @@ public:
       #extension GL_ARB_separate_shader_objects : enable 
                  
       layout (location = 0) in vec4 vertex;   
-      layout (location = 1) in vec4 texcoord;   
+      layout (location = 1) in vec4 texcoord;
       layout (location = 2) in vec4 normal;   
                                          
       uniform mat4 modelviewprojectionmatrix; 
       uniform mat4 modelviewmatrix; 
       uniform mat4 normalmatrix; 
-                                                                 
+                 
       out vec4 fragnormal;  
       out vec4 fragtexcoord;
       out vec4 fragposition;
@@ -62,7 +64,7 @@ public:
       void main(void) 
       { 
         fragtexcoord = texcoord; 
-        fragnormal   = normalmatrix * normal; 
+        fragnormal   = normalmatrix * normal;
         fragposition = modelviewmatrix * vertex; 
         gl_Position  = modelviewprojectionmatrix * vertex; 
       })";
@@ -76,7 +78,7 @@ public:
       in vec4 fragposition; 
                                           
       layout (location = 0) out vec4 color; 
-                                                      
+                                                     
       void main(void) 
       { 
         vec3 V = normalize(-fragposition.xyz);  
@@ -271,11 +273,12 @@ int main(int argc, char** argv)
   // somehow initial resize necessary?!?
   glfw_resize(window, winx, winy);
 
+  gpucast::gl::set_vsync(false);
+
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window))
   {
     glut_display();
-
     glfwSwapBuffers(window);
     glfwPollEvents();
   }

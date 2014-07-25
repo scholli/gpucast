@@ -365,9 +365,55 @@ namespace gpucast { namespace math {
     interval<value_t>
     operator+(interval<value_t> const& lhs, interval<value_t> const& rhs)
     {
-      interval<value_t> tmp(lhs);
-      tmp.merge(rhs);
-      return tmp;
+      return interval<value_t>(lhs.minimum() + rhs.minimum(), 
+                               lhs.maximum() + rhs.maximum());
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    interval<value_t>
+    operator-(interval<value_t> const& lhs, interval<value_t> const& rhs)
+    {
+      return interval<value_t>(lhs.minimum() - rhs.maximum(),
+                               lhs.maximum() + rhs.minimum());
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    interval<value_t>
+    operator*(interval<value_t> const& lhs, interval<value_t> const& rhs)
+    {
+      return interval<value_t>(
+        std::min(lhs.minimum() * rhs.minimum(),
+                 lhs.minimum() * rhs.maximum(),
+                 lhs.maximum() * rhs.minimum(),
+                 lhs.maximum() * rhs.maximum()),
+        std::max(lhs.minimum() * rhs.minimum(),
+                 lhs.minimum() * rhs.maximum(),
+                 lhs.maximum() * rhs.minimum(),
+                 lhs.maximum() * rhs.maximum()));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    std::vector<interval<value_t>>
+    operator/(interval<value_t> const& lhs, interval<value_t> const& rhs)
+    {
+      static_assert(std::numeric_limits<float>::is_iec559, "IEEE 754 required");
+
+      std::vector<interval<value_t>> solutions;
+
+      // if 0 is contained in interval -> two possible solutions
+      if (rhs.minimum() < 0 && 0 < rhs.maximum())
+      {
+        interval<value_t> one_divided_by_lhs0 = interval<value_t>(value_t(1) / rhs.maximum(), std::numeric_limits<value_t>::infinity());
+        interval<value_t> one_divided_by_lhs1 = interval<value_t>(-std::numeric_limits<value_t>::infinity(), value_t(1) / rhs.minimum());
+
+        solutions.push_back(lhs * one_divided_by_lhs0);
+        solutions.push_back(lhs * one_divided_by_lhs1);
+      }
+
+      return solutions;
     }
 
 

@@ -16,25 +16,25 @@
 
 // system includes
 #include <GL/glew.h>
-#include <QtGui/QMainWindow>
-#include <QtGui/QFileDialog>
-#include <QtGui/QDockWidget>
-#include <QtGui/QSlider>
-#include <QtGui/QLabel>
-#include <QtGui/QTextedit>
-#include <QtGui/QCheckBox>
-#include <QtGui/QPushButton>
-#include <QtGui/QComboBox>
-#include <QtGui/QListWidget>
-#include <QtGui/QLineEdit>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QTextedit>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QListWidget>
+#include <QtWidgets/QLineEdit>
 
 #include <glwidget.hpp>
 
-#include <tml/interval.hpp>
+#include <gpucast/math/interval.hpp>
 
-#include <glpp/util/timer.hpp>
+#include <gpucast/gl/util/timer.hpp>
 
-#include <gpucast/volume_converter.hpp>
+#include <gpucast/volume/volume_converter.hpp>
 
 
 
@@ -45,8 +45,8 @@ class mainwindow : public QMainWindow
 
 public: // enums / typdefs
 
-  typedef boost::shared_ptr<gpucast::nurbsvolumeobject>  nurbsvolumeobject_ptr;
-  typedef boost::shared_ptr<gpucast::beziervolumeobject> beziervolumeobject_ptr;
+  typedef std::shared_ptr<gpucast::nurbsvolumeobject>  nurbsvolumeobject_ptr;
+  typedef std::shared_ptr<gpucast::beziervolumeobject> beziervolumeobject_ptr;
 
 public: // c'tor / d'tor
 
@@ -208,7 +208,7 @@ private: // attributes
   QLineEdit*            _lineedit_test_file;
 
   // gl widget
-  glpp::timer                                       _timer;
+  gpucast::gl::timer                                       _timer;
   unsigned                                          _frames;
   glwidget*                                         _glwindow;
 
@@ -219,14 +219,14 @@ private: // attributes
   std::map<glwidget::rendermode_t, QString>         _modemap;
 
   unsigned                                          _slider_width;
-  tml::interval<float>                              _interval_min_sample_distance;
-  tml::interval<float>                              _interval_max_sample_distance;
-  tml::interval<float>                              _interval_adaptive_sample_scale;
-  tml::interval<unsigned>                           _interval_max_binary_searches;
-  tml::interval<float>                              _interval_epsilon_newton_iteration;
-  tml::interval<unsigned>                           _interval_max_newton_iteration;
-  tml::interval<float>                              _interval_relative_isovalue;
-  tml::interval<float>                              _interval_transparency;
+  gpucast::math::interval<float>                              _interval_min_sample_distance;
+  gpucast::math::interval<float>                              _interval_max_sample_distance;
+  gpucast::math::interval<float>                              _interval_adaptive_sample_scale;
+  gpucast::math::interval<unsigned>                           _interval_max_binary_searches;
+  gpucast::math::interval<float>                              _interval_epsilon_newton_iteration;
+  gpucast::math::interval<unsigned>                           _interval_max_newton_iteration;
+  gpucast::math::interval<float>                              _interval_relative_isovalue;
+  gpucast::math::interval<float>                              _interval_transparency;
 };
 
 #endif // VOLUME_VIEW_MAINWINDOW_HPP

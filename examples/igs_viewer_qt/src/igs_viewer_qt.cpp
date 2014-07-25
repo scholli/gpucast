@@ -14,10 +14,10 @@
 // system includes
 #include <exception>
 #include <GL/glew.h>
-#include <QtGui/QApplication>
+#include <QtWidgets/QApplication>
 
 #include <mainwindow.hpp>
-#include <glpp/error.hpp>
+#include <gpucast/gl/util/init_glew.hpp>
 
 int main(int argc, char **argv)
 {

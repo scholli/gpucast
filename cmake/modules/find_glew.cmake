@@ -2,7 +2,7 @@
 # search paths
 ##############################################################################
 SET(GLEW_INCLUDE_SEARCH_DIRS
-  ${GLOBAL_EXT_DIR}/inc/glew
+  ${GLOBAL_EXT_DIR}/include/glew
   ${GLEW_INCLUDE_SEARCH_DIR}
 )
 

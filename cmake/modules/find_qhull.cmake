@@ -2,7 +2,7 @@
 # search paths
 ##############################################################################
 SET(QHULL_INCLUDE_SEARCH_DIRS
-  ${GLOBAL_EXT_DIR}/inc/qhull
+  ${GLOBAL_EXT_DIR}/include/qhull
   ${QHULL_INCLUDE_SEARCH_DIR}
 )
 

@@ -40,6 +40,10 @@ include(find_freeglut)
 include(find_freeimage)
 include(find_qhull)
 
+set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5)
+set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5/bin)
+include(findCUDA)
+
 set(LIBRARIES
     ${BOOST_LIBRARIES}
 )
@@ -87,7 +91,7 @@ SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 ADD_SUBDIRECTORY(gpucast_math)
 ADD_SUBDIRECTORY(gpucast_gl)
 ADD_SUBDIRECTORY(gpucast_core)
-#ADD_SUBDIRECTORY(gpucast_volume)
+ADD_SUBDIRECTORY(gpucast_volume)
 ADD_SUBDIRECTORY(examples)
 
 ################################################################

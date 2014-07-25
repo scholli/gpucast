@@ -14,33 +14,31 @@
 #pragma warning(disable: 4127) // Qt conditional expression is constant
 
 // system includes
-#include <QtGui/QCloseEvent>
-#include <QtGui/QFileDialog>
-#include <QtGui/QMessageBox>
-#include <QtGui/QStatusBar>  
-#include <QtGui/QMenuBar>
-#include <QtGui/QAction>
+#include <QCloseEvent>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QStatusBar>  
+#include <QtWidgets/QMenuBar>
+#include <QtWidgets/QAction>
 #include <QtCore/QString>
 
 #include <iostream>
 
 #include <boost/filesystem.hpp>
-#include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
 
-#include <glpp/error.hpp>
-#include <glpp/util/vsync.hpp>
+#include <gpucast/gl/error.hpp>
+#include <gpucast/gl/util/vsync.hpp>
 
-#include <gpucast/import/xml.hpp>
-#include <gpucast/import/xml2.hpp>
-#include <gpucast/import/mesh3d.hpp>
-#include <gpucast/import/bin.hpp>
-#include <gpucast/uid.hpp>
+#include <gpucast/volume/import/xml.hpp>
+#include <gpucast/volume/import/xml2.hpp>
+#include <gpucast/volume/import/mesh3d.hpp>
+#include <gpucast/volume/import/bin.hpp>
+#include <gpucast/volume/uid.hpp>
 
-#include <gpucast/volume_converter.hpp>
-#include <gpucast/nurbssurfaceobject.hpp>
-#include <gpucast/beziersurfaceobject.hpp>
-#include <gpucast/surface_converter.hpp>
+#include <gpucast/volume/volume_converter.hpp>
+#include <gpucast/core/nurbssurfaceobject.hpp>
+#include <gpucast/core/beziersurfaceobject.hpp>
+#include <gpucast/core/surface_converter.hpp>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -72,7 +70,6 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _modemap.insert         ( std::make_pair ( glwidget::octree_isosurface        , QString("Octreebased Isosurface Raycasting" ) ) );
   _modemap.insert         ( std::make_pair ( glwidget::splatting                , QString("Splatting"                         ) ) );
   _modemap.insert         ( std::make_pair ( glwidget::face_interval_raycasting , QString("Face Interval Raycaster"           ) ) );  
-  _modemap.insert         ( std::make_pair ( glwidget::unified_sampling,          QString("Unified Sampling Raycaster"        ) ) );  
   _modemap.insert         ( std::make_pair ( glwidget::grid_isosurface,           QString("Gridbased Isosurface Raycasting"   ) ) );
   //_modemap.insert         ( std::make_pair ( glwidget::tesselator          , QString("Tesselator"                     ) ) );
   
@@ -116,7 +113,7 @@ mainwindow::update_interface ( )
   QMainWindow::update();
 
   bool vsync;
-  glpp::get_vsync(vsync);
+  gpucast::gl::get_vsync(vsync);
   _checkbox_vsync->setChecked(vsync);
 }
 
@@ -128,7 +125,7 @@ mainwindow::frame ( )
   ++_frames;
 
   _timer.stop();
-  glpp::time_duration time = _timer.result();
+  gpucast::gl::time_duration time = _timer.result();
   _timer.start();
 
   double fps = 1.0 / time.as_seconds();
@@ -238,21 +235,21 @@ mainwindow::open_surface_file()
 
       if ( fileextension == ".dat" ) 
       {
-        boost::shared_ptr<gpucast::nurbssurfaceobject> surfobj ( new gpucast::nurbssurfaceobject );
+        //std::shared_ptr<gpucast::nurbssurfaceobject> surfobj ( new gpucast::nurbssurfaceobject );
+        //
+        //gpucast::mesh3d_loader mesh_loader;
+        //read_success = mesh_loader.load ( filename.string(), surfobj );
+        //gpucast::surface_renderer_gl::drawable_ptr surface = _glwindow->surface_renderer()->create();
 
-        gpucast::mesh3d_loader mesh_loader;
-        read_success = mesh_loader.load ( filename.string(), surfobj );
-        gpucast::surface_renderer_gl::drawable_ptr surface = _glwindow->surface_renderer()->create();
+        //gpucast::surface_converter converter;
+        //converter.convert(surfobj, surface); 
 
-        gpucast::surface_converter converter;
-        converter.convert(surfobj, surface); 
-
-        glpp::material random_material ( glpp::vec4f(0.01f, 0.01f, 0.01f, 1.0f),
-                                         glpp::vec4f(0.5f, 0.5f, 0.5f, 1.0f),
-                                         glpp::vec4f(0.1f, 0.1f, 0.1f, 1.0f), 0.02f, 1.0f );
-        surface->material(random_material);
-
-        _glwindow->boundingbox ( glwidget::boundingbox_t ( tml::point3f(surface->bbox().min), tml::point3f(surface->bbox().max) ) );
+        //gpucast::gl::material random_material ( gpucast::gl::vec4f(0.01f, 0.01f, 0.01f, 1.0f),
+        //                                 gpucast::gl::vec4f(0.5f, 0.5f, 0.5f, 1.0f),
+        //                                 gpucast::gl::vec4f(0.1f, 0.1f, 0.1f, 1.0f), 0.02f, 1.0f );
+        //surface->material(random_material);
+        //
+        //_glwindow->boundingbox ( glwidget::boundingbox_t ( gpucast::math::point3f(surface->bbox().min), gpucast::math::point3f(surface->bbox().max) ) );
       }
     }
   }
@@ -320,7 +317,7 @@ void
 mainwindow::change_vsync ()
 {
   bool enable_vsync = _checkbox_vsync->checkState() == Qt::Checked;
-  glpp::set_vsync ( enable_vsync );
+  gpucast::gl::set_vsync ( enable_vsync );
 }
 
 
@@ -611,7 +608,7 @@ void mainwindow::apply_settings_to_interface ()
   _checkbox_fxaa->setChecked                      ( _settings.fxaa );
 
   bool vsync_enabled;
-  glpp::get_vsync(vsync_enabled);
+  gpucast::gl::get_vsync(vsync_enabled);
   _checkbox_vsync->setChecked                     ( vsync_enabled );
 }
 

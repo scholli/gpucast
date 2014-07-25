@@ -13,11 +13,6 @@
 #extension GL_NV_gpu_shader5 : enable
 
 /****************************************************
-* surface error in object space
-****************************************************/
-#define EPSILON 0.01
-
-/****************************************************
 * choose type of root finder for trimming
 ****************************************************/
 precision highp float;
@@ -82,7 +77,6 @@ uniform samplerBuffer bp_curvedata;
 /*******************************************************************************
  * cubemap for reflections
  ******************************************************************************/
-uniform samplerCube cubemap;
 uniform sampler2D   spheremap;
 uniform sampler2D   diffusemap;
 
@@ -108,13 +102,13 @@ flat in int  trimtype;
 
 /*uniform int trim_iterations;*/
 uniform int   iterations;
+uniform float epsilon_object_space;
 uniform float nearplane;
 uniform float farplane;
 uniform int   trimapproach;
 
-uniform bool  cubemapping;
-uniform bool  spheremapping;
-uniform bool  diffusemapping;
+uniform int   spheremapping;
+uniform int   diffusemapping;
 
 uniform int   trimming_enabled;
 uniform int   raycasting_enabled;
@@ -142,41 +136,19 @@ layout (depth_any)    out float gl_FragDepth;
 /*******************************************************************************
  * include functions
  ******************************************************************************/
-#include "./libgpucast/glsl/base/compute_depth.frag"
-
+#include "./gpucast_core/glsl/base/compute_depth.frag"
 #include "./gpucast_core/glsl/math/adjoint.glsl.frag"
 #include "./gpucast_core/glsl/math/euclidian_space.glsl.frag"
 #include "./gpucast_core/glsl/math/horner_surface.glsl.frag"
 #include "./gpucast_core/glsl/math/horner_surface_derivatives.glsl.frag"
 #include "./gpucast_core/glsl/math/horner_curve.glsl.frag"
 #include "./gpucast_core/glsl/math/newton_surface.glsl.frag"
-#include "./gpucast_core/glsl/math/raygeneration.glsl.frag"
-        
+#include "./gpucast_core/glsl/math/raygeneration.glsl.frag" 
 #include "./gpucast_core/glsl/trimmed_surface/binary_search.glsl.frag"
-#include "./gpucast_core/glsl/trimmed_surface/bisect_curve.glsl.frag"
-                
+#include "./gpucast_core/glsl/trimmed_surface/bisect_curve.glsl.frag"           
 #include "./gpucast_core/glsl/trimmed_surface/trimming_contourmap_binary.glsl.frag"
 #include "./gpucast_core/glsl/trimmed_surface/trimming.glsl.frag"
-
-#include "./libgpucast/glsl/trimmed_surface/shade_phong_fresnel.glsl.frag"
-
-#include "../../gpucast_core/glsl/base/compute_depth.frag"
-            
-#include "../../gpucast_core/glsl/math/adjoint.glsl.frag"
-#include "../../gpucast_core/glsl/math/euclidian_space.glsl.frag"
-#include "../../gpucast_core/glsl/math/horner_surface.glsl.frag"
-#include "../../gpucast_core/glsl/math/horner_surface_derivatives.glsl.frag"
-#include "../../gpucast_core/glsl/math/horner_curve.glsl.frag"
-#include "../../gpucast_core/glsl/math/newton_surface.glsl.frag"
-#include "../../gpucast_core/glsl/math/raygeneration.glsl.frag"
-              
-#include "../../gpucast_core/glsl/trimmed_surface/binary_search.glsl.frag"
-           
-#include "../../gpucast_core/glsl/trimmed_surface/trimming_contourmap_binary.glsl.frag"
-#include "../../gpucast_core/glsl/trimmed_surface/trimming.glsl.frag"
-
-#include "../../gpucast_core/glsl/trimmed_surface/shade_phong_fresnel.glsl.frag"
-
+#include "./gpucast_core/glsl/trimmed_surface/shade_phong_fresnel.glsl.frag"
 
 /*******************************************************************************
  * raycast shader for trimmed rational bezier surfaces
@@ -200,13 +172,13 @@ void main(void)
   vec4 dv = vec4(0.0);
 
   bool surface_hit = true;
-  if ( bool(raycasting_enabled) )
+  //if ( bool(raycasting_enabled) )
   {
     // raycast for ray surface intersection
-    surface_hit = newton(uv, EPSILON, iterations, vertexdata, data_index, order_u, order_v, n1, n2, d1, d2, p, du, dv);
+    surface_hit = newton(uv, 0.001f, iterations, vertexdata, data_index, order_u, order_v, n1, n2, d1, d2, p, du, dv);
   }
 
-  if ( !surface_hit && bool(raycasting_enabled) )
+  if ( !surface_hit )//&& bool(raycasting_enabled) )
   {
     discard;
   }
@@ -280,17 +252,14 @@ void main(void)
   {
     out_color = shade_phong_fresnel(p_world, 
                                     normalize((normalmatrix * vec4(normal, 0.0)).xyz), 
-                                    vec4(0.0, 0.0, 0.0, 1.0),
-                                    //vec3(0.02, 0.02, 0.02), vec3(0.2, 0.2, 0.2), vec3(0.5, 0.5, 0.5), 
+                                    vec4(1.0, 1.0, 1.0, 1.0),
                                     mat_ambient, mat_diffuse, mat_specular,
                                     shininess,
                                     opacity,
-                                    spheremapping,
+                                    bool(spheremapping),
                                     spheremap,
-                                    diffusemapping,
-                                    diffusemap,
-                                    cubemapping,
-                                    cubemap);
+                                    bool(diffusemapping),
+                                    diffusemap);
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }

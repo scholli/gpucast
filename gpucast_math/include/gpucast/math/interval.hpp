@@ -115,6 +115,18 @@ namespace gpucast { namespace math {
     operator+(interval<value_t> const& lhs, interval<value_t> const& rhs);
 
     template <typename value_t>
+    interval <value_t>
+    operator-(interval<value_t> const& lhs, interval<value_t> const& rhs);
+
+    template <typename value_t>
+    interval <value_t>
+    operator*(interval<value_t> const& lhs, interval<value_t> const& rhs);
+
+    template <typename value_t>
+    std::vector<interval<value_t>>
+    operator/(interval<value_t> const& lhs, interval<value_t> const& rhs);
+
+    template <typename value_t>
     std::ostream& operator<<(std::ostream& os, interval<value_t> const& rng);
   
 } } // namespace gpucast / namespace math

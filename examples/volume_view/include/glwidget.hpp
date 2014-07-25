@@ -30,26 +30,24 @@
 #include <boost/optional.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include <glpp/vertexarrayobject.hpp>
-#include <glpp/elementarraybuffer.hpp>
-#include <glpp/arraybuffer.hpp>
-#include <glpp/program.hpp>
-#include <glpp/util/trackball.hpp>
-#include <glpp/primitives/coordinate_system.hpp>
+#include <gpucast/gl/vertexarrayobject.hpp>
+#include <gpucast/gl/elementarraybuffer.hpp>
+#include <gpucast/gl/arraybuffer.hpp>
+#include <gpucast/gl/program.hpp>
+#include <gpucast/gl/util/trackball.hpp>
+#include <gpucast/gl/primitives/coordinate_system.hpp>
 
-#include <glpp/util/transformation_sequence.hpp>
+#include <gpucast/gl/util/transformation_sequence.hpp>
 
-#include <glpp/math/matrix4x4.hpp>
+#include <gpucast/gl/math/matrix4x4.hpp>
 
-#include <tml/axis_aligned_boundingbox.hpp>
-#include <gpucast/nurbsvolumeobject.hpp>
-#include <gpucast/beziervolumeobject.hpp>
-#include <gpucast/surface_renderer_gl.hpp>
-#include <gpucast/isosurface/splat/isosurface_renderer_splatbased.hpp>
-#include <gpucast/isosurface/octree/isosurface_renderer_octreebased.hpp>
-#include <gpucast/isosurface/fragment/isosurface_renderer_unified_sampling.hpp>
-#include <gpucast/isosurface/fragment/isosurface_renderer_interval_sampling.hpp>
-#include <gpucast/volume_renderer_tesselator.hpp>
+#include <gpucast/math/axis_aligned_boundingbox.hpp>
+#include <gpucast/volume/nurbsvolumeobject.hpp>
+#include <gpucast/volume/beziervolumeobject.hpp>
+#include <gpucast/volume/isosurface/splat/isosurface_renderer_splatbased.hpp>
+#include <gpucast/volume/isosurface/octree/isosurface_renderer_octreebased.hpp>
+#include <gpucast/volume/isosurface/fragment/isosurface_renderer_interval_sampling.hpp>
+#include <gpucast/volume/volume_renderer_tesselator.hpp>
 
 
 
@@ -64,8 +62,7 @@ public:
                     octree_isosurface,
                     grid_isosurface,
                     tesselator,
-                    face_interval_raycasting,
-                    unified_sampling
+                    face_interval_raycasting
                   };
 
   struct render_settings 
@@ -101,8 +98,7 @@ public:
     gpucast::visualization_properties visualization_props;
   };
 
-  typedef boost::shared_ptr<gpucast::volume_renderer>           isosurface_renderer_ptr;
-  typedef boost::shared_ptr<gpucast::surface_renderer_gl>       surface_renderer_ptr;
+  typedef std::shared_ptr<gpucast::volume_renderer>            isosurface_renderer_ptr;
 
   typedef std::map<rendermode_t, isosurface_renderer_ptr>       modemap;
   typedef modemap::value_type                                   modepair;
@@ -118,7 +114,6 @@ public Q_SLOTS :
   void                    recompile                     ();
 
   isosurface_renderer_ptr const& isosurface_renderer    () const;
-  surface_renderer_ptr    const& surface_renderer       () const;
 
   void                    reset_trackball               ();
   void                    boundingbox                   ( boundingbox_t const& b );
@@ -126,8 +121,8 @@ public Q_SLOTS :
   void                    apply                         ( render_settings const&);
 
   void                    apply                         ( render_settings const&,
-                                                          boost::shared_ptr<gpucast::nurbsvolumeobject> const& nurbsobject,
-                                                          boost::shared_ptr<gpucast::beziervolumeobject> const& bezierobject,
+                                                          std::shared_ptr<gpucast::nurbsvolumeobject> const& nurbsobject,
+                                                          std::shared_ptr<gpucast::beziervolumeobject> const& bezierobject,
                                                           std::string const& attribute,
                                                           std::string const& filename,
                                                           rendermode_t mode );
@@ -172,38 +167,37 @@ private : // attributes
   int                                                 _height;
 
   isosurface_renderer_ptr                             _isosurface_renderer;
-  surface_renderer_ptr                                _surface_renderer;
 
-  boost::shared_ptr<glpp::trackball>                  _trackball;
-  glpp::matrix4f                                      _projection;
-  glpp::matrix4f                                      _modelview;
+  boost::shared_ptr<gpucast::gl::trackball>                  _trackball;
+  gpucast::gl::matrix4f                                      _projection;
+  gpucast::gl::matrix4f                                      _modelview;
   
   boundingbox_t                                       _boundingbox;
 
   unsigned                                            _frames;
   double                                              _time;
   
-  boost::shared_ptr<glpp::coordinate_system>          _coordinate_system;
+  std::shared_ptr<gpucast::gl::coordinate_system>          _coordinate_system;
 
-  boost::shared_ptr<glpp::program>                    _base_program;
-  boost::shared_ptr<glpp::program>                    _fbo_program;
-  boost::shared_ptr<glpp::program>                    _depth_copy_program;
+  std::shared_ptr<gpucast::gl::program>                    _base_program;
+  std::shared_ptr<gpucast::gl::program>                    _fbo_program;
+  std::shared_ptr<gpucast::gl::program>                    _depth_copy_program;
 
-  boost::shared_ptr<glpp::framebufferobject>          _fxaa_input_fbo;
-  boost::shared_ptr<glpp::texture2d>                  _fxaa_input_color;  
-  boost::shared_ptr<glpp::texture2d>                  _fxaa_input_depth;
+  std::shared_ptr<gpucast::gl::framebufferobject>          _fxaa_input_fbo;
+  std::shared_ptr<gpucast::gl::texture2d>                  _fxaa_input_color;  
+  std::shared_ptr<gpucast::gl::texture2d>                  _fxaa_input_depth;
 
-  boost::shared_ptr<glpp::framebufferobject>          _color_depth_fbo;
-  boost::shared_ptr<glpp::texture2d>                  _color_depth_texture;
+  std::shared_ptr<gpucast::gl::framebufferobject>          _color_depth_fbo;
+  std::shared_ptr<gpucast::gl::texture2d>                  _color_depth_texture;
 
-  boost::shared_ptr<glpp::framebufferobject>          _surface_fbo;
-  boost::shared_ptr<glpp::texture2d>                  _surface_color;  
-  boost::shared_ptr<glpp::texture2d>                  _surface_depth;
+  std::shared_ptr<gpucast::gl::framebufferobject>          _surface_fbo;
+  std::shared_ptr<gpucast::gl::texture2d>                  _surface_color;  
+  std::shared_ptr<gpucast::gl::texture2d>                  _surface_depth;
 
-  boost::shared_ptr<glpp::plane>                      _quad;
+  std::shared_ptr<gpucast::gl::plane>                      _quad;
 
   // performance testing
-  glpp::transformation_sequence                       _test_sequence;
+  gpucast::gl::transformation_sequence                       _test_sequence;
   std::vector<double>                                 _test_sequence_drawtimes;
   bool                                                _run_sequence;
   bool                                                _record_sequence;

@@ -87,8 +87,8 @@ namespace gpucast { namespace math {
     void          uniform_split_ptr ( insert_iterator i ) const;
 
     template <typename insert_iterator>
-    void          uniform_split ( insert_iterator i ) const;
-
+    void          uniform_split ( insert_iterator i) const;
+     
     virtual void  uniform_split ( std::vector<typename abstract_boundingbox<point_t>::pointer_type>& l ) const;
 
     virtual void  print         ( std::ostream& os ) const;

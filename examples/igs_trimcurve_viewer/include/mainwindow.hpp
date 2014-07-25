@@ -18,12 +18,12 @@
 
 // system includes
 #include <GL/glew.h>
-#include <QtGui/QMainWindow>
-#include <QtGui/QFileDialog>
-#include <QtGui/QListWidget>
-#include <QtGui/QDockWidget>
-#include <QtGui/QComboBox>
-#include <QtGui/QLabel>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QListWidget>
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QLabel>
 
 #include <gpucast/core/nurbssurfaceobject.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>

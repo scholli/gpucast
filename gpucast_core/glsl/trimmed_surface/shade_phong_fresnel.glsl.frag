@@ -1,6 +1,3 @@
-
-#include "./libgpucast/glsl/base/constants.frag"
-
 vec2 
 env_long_lat(in vec3 v) 
 { 
@@ -27,9 +24,7 @@ vec4 shade_phong_fresnel ( in vec4        p_world,
                            in bool        spheremapping,
                            in sampler2D   spheremap,
                            in bool        diffusemapping,
-                           in sampler2D   diffusemap,
-                           in bool        cubemapping,
-                           in samplerCube cubemap )
+                           in sampler2D   diffusemap )
 {
   vec4 result = vec4(0.0);
 

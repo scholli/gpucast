@@ -147,7 +147,7 @@ trimdomain_serializer_double_binary::serialize ( trimdomain_ptr const&          
       {
         address_type curve_index = trimdomain_serializer::serialize (cv->curve(), referenced_curves, output_curves );
         //address_type order_and_u_increase = cv->curve()->is_increasing(point_type::u) ? explicit_type_conversion<size_t, int>(cv->curve()->order()) : -explicit_type_conversion<size_t, int>(cv->curve()->order());
-        address_type order_and_u_increase = cv->curve()->is_increasing(point_type::u) ? cv->curve()->order() : -cv->curve()->order();
+        int order_and_u_increase = cv->curve()->is_increasing(point_type::u) ? int(cv->curve()->order()) : -1 * int(cv->curve()->order());
 
         output_curvelists.push_back ( float4_type( unsigned_bits_as_float ( curve_index ),
                                                    unsigned_bits_as_float ( order_and_u_increase ),

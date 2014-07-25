@@ -36,91 +36,6 @@ class contour_map_kd : public contour_map_base<value_t>
       bool                      inside;
     };
 
-    struct domain_start_event;
-    struct domain_end_event;
-    struct contour_start_event;
-    struct contour_end_event;
-
-    struct min_interval_compare 
-    {
-      bool operator()(interval_type const& lhs, interval_type const& rhs) const
-      {
-        return lhs.minimum() < rhs.minimum();
-      }
-    };
-
-    struct status_queue 
-    {
-      void process ( domain_start_event const& );
-      void process ( domain_end_event const& );
-      void process ( contour_start_event const& );
-      void process ( contour_end_event const& );
-      void update ( value_type const& u );
-
-      std::set<value_type>                                        splits;
-      std::set<contour_segment_ptr>                               segments;
-      interval_type                                               interval_v;
-      std::map<interval_type, value_type, min_interval_compare>   intervals;
-      std::vector<contour_cell>                                   result;
-    };
-
-    struct contour_event
-    {
-      contour_event ( value_type const& u ) : value_u(u) {};
-      value_type    value_u;
-      virtual unsigned priority () const=0;
-      virtual void     visit ( status_queue& s ) const=0;
-    };
-
-    struct contour_start_event : public contour_event
-    {
-      contour_start_event(value_type const& u, contour_segment_ptr const& s) : contour_event(u), segment(s) {};
-      contour_segment_ptr segment;
-      virtual unsigned priority () const { return 1; };
-      virtual void     visit ( status_queue& s ) const { s.process(*this); } ;
-    };
-
-    struct contour_end_event : public contour_event
-    {
-      contour_end_event(value_type const& u, contour_segment_ptr const& s) : contour_event(u), segment(s) {};
-      virtual unsigned priority () const { return 2; };
-      virtual void     visit ( status_queue& s ) const { s.process(*this); } ;
-      contour_segment_ptr segment;
-    };
-
-    struct domain_start_event : public contour_event
-    {
-      domain_start_event(value_type const& u, interval_type const& v) : contour_event(u), interval_v(v) {};     
-      virtual unsigned priority () const { return 3; };
-      virtual void     visit ( status_queue& s ) const { s.process(*this); } ;
-      interval_type interval_v;
-    };
-
-    struct domain_end_event : public contour_event
-    {
-      domain_end_event(value_type const& u, interval_type const& v) : contour_event(u), interval_v(v) {};
-      virtual unsigned priority () const { return 0; };
-      virtual void     visit ( status_queue& s ) const { s.process(*this); } ;
-      interval_type interval_v;
-    };
-
-    struct contour_compare 
-    {
-      bool operator()(contour_event* lhs, contour_event* rhs) const
-      {
-        if ( lhs->value_u == rhs->value_u ) {
-          return lhs->priority() > rhs->priority();
-        } else {
-          return lhs->value_u < rhs->value_u;
-        }
-      }
-    };
-
-    struct event_queue
-    {
-      std::set<contour_event*, contour_compare> events;
-    };
-
     struct kdnode
     {
       kdnode ( value_type const& s, 
@@ -169,6 +84,8 @@ class contour_map_kd : public contour_map_base<value_t>
   protected : // methods
 
   private : // internal/auxilliary methods
+
+    void _insert_contour_segment (contour_segment_ptr const&);
 
   protected : // attributes
 

@@ -2,7 +2,7 @@
 # search paths
 ##############################################################################
 SET(FREEGLUT_INCLUDE_SEARCH_DIRS
-  ${GLOBAL_EXT_DIR}/inc/freeglut
+  ${GLOBAL_EXT_DIR}/include/freeglut
   ${FREEGLUT_INCLUDE_SEARCH_DIR}
 )
 

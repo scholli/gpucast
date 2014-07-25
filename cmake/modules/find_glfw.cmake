@@ -2,7 +2,7 @@
 # search paths
 ##############################################################################
 SET(GLFW_INCLUDE_SEARCH_DIRS
-  ${GLOBAL_EXT_DIR}/inc/GLFW
+  ${GLOBAL_EXT_DIR}/include/GLFW
   ${GLFW_INCLUDE_SEARCH_DIR}
 )
 

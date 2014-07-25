@@ -2,7 +2,7 @@
 # search paths
 ##############################################################################
 SET(FREEIMAGE_INCLUDE_SEARCH_DIRS
-  ${GLOBAL_EXT_DIR}/inc/freeimage
+  ${GLOBAL_EXT_DIR}/include/freeimage
   ${FREEIMAGE_INCLUDE_SEARCH_DIR}
 )
 

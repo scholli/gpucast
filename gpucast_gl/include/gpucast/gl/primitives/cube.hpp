@@ -24,7 +24,7 @@
 
 namespace gpucast { namespace gl {
 
-class GPUCAST_GL cube : public boost::noncopyable
+class GPUCAST_GL cube
 {
 public : // c'tor/d'tor
 
@@ -34,6 +34,9 @@ public : // c'tor/d'tor
                      GLint texcoordattrib_index = 3 );
 
   ~cube            ( );
+
+  cube(cube const&  other) = delete;
+  cube operator=(cube const&  other) = delete;
 
 public : // methods
 

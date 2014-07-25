@@ -20,15 +20,13 @@
 #include <string>
 #include <stdexcept>
 
-#include <boost/noncopyable.hpp>
-
 // header project
 #include <gpucast/gl/glpp.hpp>
 
 
 namespace gpucast { namespace gl {
 
-class GPUCAST_GL buffer : boost::noncopyable
+class GPUCAST_GL buffer 
 {
 public : // c'tor, d'tor
 
@@ -36,6 +34,11 @@ public : // c'tor, d'tor
   buffer                  ( std::size_t bytes, GLenum usage = GL_STATIC_DRAW );
 
   virtual ~buffer         ( );
+
+private : 
+
+  buffer(buffer const& other) = delete;
+  buffer& operator=(buffer const& other) = delete;
 
 public : // methods
 

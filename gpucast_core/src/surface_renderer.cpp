@@ -25,7 +25,7 @@ namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
   surface_renderer::surface_renderer( int argc, char** argv )
-    :  renderer           ( argc, argv ),
+    :  renderer           (),
        _cube_mapping      ( false ),
        _sphere_mapping    ( false ),
        _diffuse_mapping   ( false ),
@@ -36,14 +36,14 @@ namespace gpucast {
   {
     _pathlist.insert(".");
     _pathlist.insert("../..");
-    _pathlist.insert("../../libgpucast/cl");
-    _pathlist.insert("../../libgpucast/glsl");
-    _pathlist.insert("../../libgpucast");
+    _pathlist.insert("../../gpucast_core/cl");
+    _pathlist.insert("../../gpucast_core/glsl");
+    _pathlist.insert("../../gpucast_core");
     _pathlist.insert("./cl");
     _pathlist.insert("./data/images");
     _pathlist.insert("./glsl");
-    _pathlist.insert("./libgpucast/glsl");
-    _pathlist.insert("./libgpucast/cl");
+    _pathlist.insert("./gpucast_core/glsl");
+    _pathlist.insert("./gpucast_core/cl");
   }
 
 

@@ -19,46 +19,40 @@
 #include <QtGui/QMouseEvent>
 #include <QtOpenGL/QGLFormat>
 
-#include <CL/cl.hpp>
-
 #include <sstream>
 #include <iostream>
 #include <cctype>
 #include <typeinfo>
 
-#include <glpp/fragmentshader.hpp>
-#include <glpp/vertexshader.hpp>
-#include <glpp/util/timer.hpp>
-#include <glpp/util/vsync.hpp>
-#include <glpp/util/init_glew.hpp>
-#include <glpp/error.hpp>
-#include <glpp/util/contextinfo.hpp>
+#include <gpucast/gl/fragmentshader.hpp>
+#include <gpucast/gl/vertexshader.hpp>
+#include <gpucast/gl/util/timer.hpp>
+#include <gpucast/gl/util/vsync.hpp>
+#include <gpucast/gl/util/init_glew.hpp>
+#include <gpucast/gl/error.hpp>
+#include <gpucast/gl/util/contextinfo.hpp>
 
-#include <glpp/test/dynamic_rotation.hpp>
-#include <glpp/test/dynamic_scaling.hpp> 
-#include <glpp/test/dynamic_translation.hpp>
+#include <gpucast/gl/test/dynamic_rotation.hpp>
+#include <gpucast/gl/test/dynamic_scaling.hpp> 
+#include <gpucast/gl/test/dynamic_translation.hpp>
 
-#include <tml/parametric/point.hpp>
-#include <tml/parametric/beziercurve.hpp>
-#include <tml/parametric/beziersurface.hpp>
-#include <tml/parametric/beziervolume.hpp>
-#include <tml/parametric/nurbsvolume.hpp>
+#include <gpucast/math/parametric/point.hpp>
+#include <gpucast/math/parametric/beziercurve.hpp>
+#include <gpucast/math/parametric/beziersurface.hpp>
+#include <gpucast/math/parametric/beziervolume.hpp>
+#include <gpucast/math/parametric/nurbsvolume.hpp>
 
-#include <gpucast/beziervolumeobject.hpp>
-#include <gpucast/nurbsvolumeobject.hpp>
-#include <gpucast/surface_renderer_gl.hpp>
+#include <gpucast/volume/beziervolumeobject.hpp>
+#include <gpucast/volume/nurbsvolumeobject.hpp>
 
-#include <gpucast/isosurface/fragment/isosurface_renderer_unified_sampling.hpp>
-#include <gpucast/isosurface/fragment/isosurface_renderer_interval_sampling.hpp>
-#include <gpucast/isosurface/octree/isosurface_renderer_octreebased.hpp>
-#include <gpucast/isosurface/grid/isosurface_renderer_gridbased.hpp>
-#include <gpucast/isosurface/splat/isosurface_renderer_splatbased.hpp>
+#include <gpucast/volume/isosurface/fragment/isosurface_renderer_interval_sampling.hpp>
+#include <gpucast/volume/isosurface/octree/isosurface_renderer_octreebased.hpp>
+#include <gpucast/volume/isosurface/grid/isosurface_renderer_gridbased.hpp>
+#include <gpucast/volume/isosurface/splat/isosurface_renderer_splatbased.hpp>
 
-#include <gpucast/import/xml_loader.hpp>
-#include <gpucast/import/xml2.hpp>
+#include <gpucast/volume/import/xml_loader.hpp>
+#include <gpucast/volume/import/xml2.hpp>
 
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem.hpp>
 
@@ -70,7 +64,6 @@ glwidget::glwidget( int argc, char** argv, QGLFormat const& context_format, QWid
     _argv                           ( argv ),
     _initialized                    ( false ),
     _fxaa                           ( false ),
-    _surface_renderer               (),
     _isosurface_renderer            (),
     _width                          ( 1 ),
     _height                         ( 1 ),
@@ -96,16 +89,7 @@ glwidget::recompile ( )
 {
   _init_shader();
 
-  if ( _surface_renderer )    _surface_renderer->recompile();
   if ( _isosurface_renderer ) _isosurface_renderer->recompile();
-}
-
-
-///////////////////////////////////////////////////////////////////////
-glwidget::surface_renderer_ptr const&
-glwidget::surface_renderer () const
-{
-  return _surface_renderer;
 }
 
 
@@ -130,7 +114,7 @@ void
 glwidget::boundingbox ( glwidget::boundingbox_t const& b )
 {
   _boundingbox = b;
-  _coordinate_system->set( glpp::vec4f(_boundingbox.min[0], _boundingbox.min[1], _boundingbox.min[2], 1.0f), float(0.1f * _boundingbox.size().abs()));
+  _coordinate_system->set( gpucast::gl::vec4f(_boundingbox.min[0], _boundingbox.min[1], _boundingbox.min[2], 1.0f), float(0.1f * _boundingbox.size().abs()));
 }
 
 
@@ -160,10 +144,7 @@ glwidget::apply ( render_settings const& settings )
 
     _isosurface_renderer->nearplane                  ( settings.nearplane );
     _isosurface_renderer->farplane                   ( settings.farplane );
-                                                     
-    _surface_renderer->nearplane                     ( settings.nearplane );
-    _surface_renderer->farplane                      ( settings.farplane );
-                                                     
+                                                                                                 
     _fxaa = settings.fxaa;
   }
 }
@@ -173,8 +154,8 @@ glwidget::apply ( render_settings const& settings )
 ///////////////////////////////////////////////////////////////////////
 void                    
 glwidget::apply ( render_settings const& settings,
-                  boost::shared_ptr<gpucast::nurbsvolumeobject> const& nurbsobject,
-                  boost::shared_ptr<gpucast::beziervolumeobject> const& bezierobject,
+                  std::shared_ptr<gpucast::nurbsvolumeobject> const& nurbsobject,
+                  std::shared_ptr<gpucast::beziervolumeobject> const& bezierobject,
                   std::string const& attribute,
                   std::string const& filename,
                   rendermode_t mode )
@@ -192,7 +173,6 @@ glwidget::apply ( render_settings const& settings,
   switch ( mode )
   {
     case splatting                : binary_extension = ".spb"; break;
-    case unified_sampling         : binary_extension = ".usb"; break;
     case face_interval_raycasting : binary_extension = ".fib"; break;
     case octree_isosurface        : binary_extension = ".ocb"; break;
     case grid_isosurface          : binary_extension = ".gdb"; break;
@@ -282,7 +262,6 @@ glwidget::resizeGL(int width, int height)
   if ( !_initialized ) return;
 
   if ( _isosurface_renderer )     _isosurface_renderer->resize(_width, _height);
-  if ( _surface_renderer )        _surface_renderer->resize(_width, _height);
 
   if ( _fxaa_input_color )
   {
@@ -376,17 +355,17 @@ glwidget::paintGL()
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-  glpp::vec3f translation = _boundingbox.center();
-  glpp::matrix4f view = glpp::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
+  gpucast::gl::vec3f translation = _boundingbox.center();
+  gpucast::gl::matrix4f view = gpucast::gl::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
                                      0.0f, 0.0f, 0.0f, 
                                      0.0f, 1.0f, 0.0f);
 
-  glpp::matrix4f cam  = glpp::make_translation( _trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
-                                                 glpp::make_translation(-translation[0], -translation[1], -translation[2]);
+  gpucast::gl::matrix4f cam  = gpucast::gl::make_translation( _trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
+                                                 gpucast::gl::make_translation(-translation[0], -translation[1], -translation[2]);
 
-  glpp::matrix4f proj = glpp::frustum ( -float(_width)/_height, float(_width)/_height, -1.0f, 1.0f, _surface_renderer->nearplane(), _surface_renderer->farplane());
-  glpp::matrix4f mv   = view * cam;
-  glpp::matrix4f mvp  = mv * proj;
+  gpucast::gl::matrix4f proj = gpucast::gl::frustum(-float(_width) / _height, float(_width) / _height, -1.0f, 1.0f, _isosurface_renderer->nearplane(), _isosurface_renderer->farplane());
+  gpucast::gl::matrix4f mv   = view * cam;
+  gpucast::gl::matrix4f mvp  = mv * proj;
 
   /////////////////////////////////////////
   // performance tests 
@@ -413,12 +392,12 @@ glwidget::paintGL()
     }
   }
   
-  _surface_renderer->modelviewmatrix    (mv);
-  _surface_renderer->projectionmatrix   (proj);
-
-  _surface_renderer->draw();
-
-  _surface_fbo->unbind();
+  //_surface_renderer->modelviewmatrix    (mv);
+  //_surface_renderer->projectionmatrix   (proj);
+  //
+  //_surface_renderer->draw();
+  //
+  //_surface_fbo->unbind();
 
   /////////////////////////////////////////
   // 2. CUDA workaround - copy depth-component depth texture to floating point texture
@@ -497,16 +476,16 @@ glwidget::paintGL()
 void 
 glwidget::mousePressEvent(QMouseEvent *event)
 {
-  enum glpp::eventhandler::button b;
+  enum gpucast::gl::eventhandler::button b;
 
   switch (event->button()) {
-    case Qt::MouseButton::LeftButton    : b = glpp::eventhandler::left; break;
-    case Qt::MouseButton::RightButton   : b = glpp::eventhandler::right; break;
-    case Qt::MouseButton::MiddleButton  : b = glpp::eventhandler::middle; break;
+    case Qt::MouseButton::LeftButton    : b = gpucast::gl::eventhandler::left; break;
+    case Qt::MouseButton::RightButton   : b = gpucast::gl::eventhandler::right; break;
+    case Qt::MouseButton::MiddleButton  : b = gpucast::gl::eventhandler::middle; break;
     default : return;
   }
 
-  _trackball->mouse(b, glpp::eventhandler::press, event->x(), event->y());
+  _trackball->mouse(b, gpucast::gl::eventhandler::press, event->x(), event->y());
 }
 
 
@@ -514,16 +493,16 @@ glwidget::mousePressEvent(QMouseEvent *event)
 void 
 glwidget::mouseReleaseEvent(QMouseEvent *event)
 {
-  enum glpp::eventhandler::button b;
+  enum gpucast::gl::eventhandler::button b;
 
   switch (event->button()) {
-    case Qt::MouseButton::LeftButton    : b = glpp::eventhandler::left; break;
-    case Qt::MouseButton::RightButton   : b = glpp::eventhandler::right; break;
-    case Qt::MouseButton::MiddleButton  : b = glpp::eventhandler::middle; break;
+    case Qt::MouseButton::LeftButton    : b = gpucast::gl::eventhandler::left; break;
+    case Qt::MouseButton::RightButton   : b = gpucast::gl::eventhandler::right; break;
+    case Qt::MouseButton::MiddleButton  : b = gpucast::gl::eventhandler::middle; break;
     default : return;
   }
 
-  _trackball->mouse(b, glpp::trackball::release, event->x(), event->y());
+  _trackball->mouse(b, gpucast::gl::trackball::release, event->x(), event->y());
 }
 
 
@@ -533,21 +512,21 @@ glwidget::mouseMoveEvent(QMouseEvent *event)
 {
   _trackball->motion(event->x(), event->y());
 
-  glpp::vec3f translation = _boundingbox.center();
-  glpp::matrix4f view = glpp::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
+  gpucast::gl::vec3f translation = _boundingbox.center();
+  gpucast::gl::matrix4f view = gpucast::gl::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
                                      0.0f, 0.0f, 0.0f, 
                                      0.0f, 1.0f, 0.0f);
 
-  glpp::matrix4f cam  = glpp::make_translation( _trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
-                                                 glpp::make_translation(-translation[0], -translation[1], -translation[2]);
+  gpucast::gl::matrix4f cam  = gpucast::gl::make_translation( _trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
+                                                 gpucast::gl::make_translation(-translation[0], -translation[1], -translation[2]);
 
-  glpp::matrix4f proj = glpp::frustum ( -float(_width)/_height, float(_width)/_height, -1.0f, 1.0f, _isosurface_renderer->nearplane(), _isosurface_renderer->farplane());
-  glpp::matrix4f mv   = view * cam;
-  glpp::matrix4f mvp  = mv * proj;
+  gpucast::gl::matrix4f proj = gpucast::gl::frustum ( -float(_width)/_height, float(_width)/_height, -1.0f, 1.0f, _isosurface_renderer->nearplane(), _isosurface_renderer->farplane());
+  gpucast::gl::matrix4f mv   = view * cam;
+  gpucast::gl::matrix4f mvp  = mv * proj;
 
   if ( _record_sequence )
   {
-    _test_sequence.add ( mv, glpp::inverse(mv), mvp, glpp::inverse(mvp), mv.normalmatrix() );
+    _test_sequence.add ( mv, gpucast::gl::inverse(mv), mvp, gpucast::gl::inverse(mvp), mv.normalmatrix() );
   }
 }
 
@@ -576,7 +555,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
       break;
     case 'P' :
       {
-        boost::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = boost::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
+        std::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = std::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
         if ( fraglist_gen )
         {
           int current_pagesize = fraglist_gen->pagesize();
@@ -587,7 +566,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
       }
     case 'p' :
      {
-       boost::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = boost::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
+       std::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = std::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
        if ( fraglist_gen )
        {
          int current_pagesize = fraglist_gen->pagesize();
@@ -598,7 +577,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
      }
     case 'w' :
      {
-       boost::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = boost::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
+       std::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = std::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
        if ( fraglist_gen )
        {
           int current_grid_width = fraglist_gen->allocation_grid_width();
@@ -610,7 +589,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
 
     case 'W' :
      {
-       boost::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = boost::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
+       std::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = std::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
        if ( fraglist_gen )
        {
          int current_grid_width = fraglist_gen->allocation_grid_width();
@@ -622,7 +601,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
 
     case 'h' :
      {
-       boost::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = boost::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
+       std::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = std::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
        if ( fraglist_gen )
        {
          int current_grid_height = fraglist_gen->allocation_grid_height();
@@ -634,7 +613,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
 
     case 'H' :
      {
-       boost::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = boost::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
+       std::shared_ptr<gpucast::fragmentlist_generator> fraglist_gen = std::static_pointer_cast<gpucast::fragmentlist_generator>(_isosurface_renderer);
        if ( fraglist_gen )
        {
          int current_grid_height = fraglist_gen->allocation_grid_height();
@@ -661,9 +640,7 @@ glwidget::_change_isosurface_renderer ( rendermode_t mode )
     case splatting                : _isosurface_renderer.reset ( new gpucast::isosurface_renderer_splatbased(_argc, _argv)); break;
     case octree_isosurface        : _isosurface_renderer.reset ( new gpucast::isosurface_renderer_octreebased(_argc, _argv)); break;
     case face_interval_raycasting : _isosurface_renderer.reset ( new gpucast::isosurface_renderer_interval_sampling(_argc, _argv)); break;
-    case unified_sampling         : _isosurface_renderer.reset ( new gpucast::isosurface_renderer_unified_sampling(_argc, _argv)); break;
     case grid_isosurface          : _isosurface_renderer.reset ( new gpucast::isosurface_renderer_gridbased(_argc, _argv)); break;
-    default                       : _isosurface_renderer.reset ( new gpucast::isosurface_renderer_unified_sampling(_argc, _argv)); break;
   };
   
   if ( _color_depth_texture->width() != _width || _color_depth_texture->height() != _height )
@@ -696,36 +673,36 @@ glwidget::_init()
     return;
   }
 
-  glpp::init_glew ( std::cout );
+  gpucast::gl::init_glew ( std::cout );
 
-  glpp::print_contextinfo               ( std::cout );
+  gpucast::gl::print_contextinfo               ( std::cout );
 
-  glpp::print_extensions                ( std::cout );
+  gpucast::gl::print_extensions                ( std::cout );
   
   // initialize renderer
-  _surface_renderer.reset               ( new gpucast::surface_renderer_gl(_argc, _argv));
+  //_surface_renderer.reset               ( new gpucast::surface_renderer_gl(_argc, _argv));
 
   // init trackball and coordinatesystem + shader
-  _trackball.reset            ( new glpp::trackball(0.3f, 0.2f, 0.1f));
-  _coordinate_system.reset    ( new glpp::coordinate_system(0, 1) );
-  _base_program.reset         ( new glpp::program );
+  _trackball.reset            ( new gpucast::gl::trackball(0.3f, 0.2f, 0.1f));
+  _coordinate_system.reset    ( new gpucast::gl::coordinate_system(0, 1) );
+  _base_program.reset         ( new gpucast::gl::program );
 
   // initialize shaders
   _init_shader                ();
 
   // init framebufferobject for fxaa
-  _fxaa_input_fbo.reset      ( new glpp::framebufferobject );
-  _fxaa_input_color.reset    ( new glpp::texture2d );
-  _fxaa_input_depth.reset    ( new glpp::texture2d );
+  _fxaa_input_fbo.reset      ( new gpucast::gl::framebufferobject );
+  _fxaa_input_color.reset    ( new gpucast::gl::texture2d );
+  _fxaa_input_depth.reset    ( new gpucast::gl::texture2d );
 
-  _color_depth_fbo.reset     ( new glpp::framebufferobject );
-  _color_depth_texture.reset ( new glpp::texture2d );
+  _color_depth_fbo.reset     ( new gpucast::gl::framebufferobject );
+  _color_depth_texture.reset ( new gpucast::gl::texture2d );
 
-  _surface_fbo.reset         ( new glpp::framebufferobject );
-  _surface_color.reset       ( new glpp::texture2d );
-  _surface_depth.reset       ( new glpp::texture2d );
+  _surface_fbo.reset         ( new gpucast::gl::framebufferobject );
+  _surface_color.reset       ( new gpucast::gl::texture2d );
+  _surface_depth.reset       ( new gpucast::gl::texture2d );
   
-  _quad.reset                ( new glpp::plane(0, -1, 1) );
+  _quad.reset                ( new gpucast::gl::plane(0, -1, 1) );
 
   // create default renderer
   _change_isosurface_renderer ( glwidget::face_interval_raycasting );

@@ -16,15 +16,15 @@
 
 // system includes
 #include <GL/glew.h>
-#include <QtGui/QMainWindow>
-#include <QtGui/QFileDialog>
-#include <QtGui/QDockWidget>
-#include <QtGui/QSlider>
-#include <QtGui/QLabel>
-#include <QtGui/QTextedit>
-#include <QtGui/QCheckBox>
-#include <QtGui/QPushButton>
-#include <QtGui/QComboBox>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QDockWidget>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QTextedit>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QComboBox>
 #include <glwidget.hpp>
 
 #include <gpucast/math/interval.hpp>

@@ -13,7 +13,7 @@
 
 // system includes
 #include <GL/glew.h>
-#include <QtGui/QApplication>
+#include <QtWidgets/QApplication>
 
 #include <mainwindow.hpp>
 #include <gpucast/gl/error.hpp>

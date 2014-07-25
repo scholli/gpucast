@@ -31,10 +31,8 @@
 namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
-  renderer::renderer( int argc, char** argv )
-    :  _argc              ( argc ),
-       _argv              ( argv ),
-       _width             ( 640 ),
+  renderer::renderer()
+    :  _width             ( 640 ),
        _height            ( 480 ),
        _pathlist          (),
        _background        ( 1.0f, 1.0f, 1.0f, 0.0f ),
