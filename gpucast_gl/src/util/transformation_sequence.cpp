@@ -14,6 +14,7 @@
 
 #include <gpucast/gl/glpp.hpp>
 
+#include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/bind.hpp>
 

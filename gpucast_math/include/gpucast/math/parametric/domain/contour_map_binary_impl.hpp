@@ -55,10 +55,10 @@ contour_map_binary<value_t>::initialize ()
   std::for_each ( this->_contour_segments.begin(), this->_contour_segments.end(), std::bind ( &base_type::contour_segment_type::clip_horizontal, std::placeholders::_1 ) );
 
   std::set<typename base_type::value_type>    vsplits;
-  _determine_splits ( vsplits, point_type::v, this->_contour_segments );
+  contour_map_base<value_t>::_determine_splits ( vsplits, point_type::v, this->_contour_segments );
 
   std::set<interval_type> vpartition;
-  _intervals_from_splits ( vsplits, vpartition );
+  contour_map_base<value_t>::_intervals_from_splits ( vsplits, vpartition );
 
   for ( interval_type const& v_interval : vpartition )
   {
@@ -72,10 +72,10 @@ contour_map_binary<value_t>::initialize ()
     }
 
     std::set<value_type> usplits;
-    _determine_splits ( usplits, point_type::u, segments_in_v_interval );
+    contour_map_base<value_t>::_determine_splits ( usplits, point_type::u, segments_in_v_interval );
 
     std::set<interval_type> upartition;
-    _intervals_from_splits ( usplits, upartition );
+    contour_map_base<value_t>::_intervals_from_splits ( usplits, upartition );
 
     contour_interval cells_in_v_interval;
     value_type umin = usplits.empty() ? 0 : *usplits.begin();
@@ -87,9 +87,9 @@ contour_map_binary<value_t>::initialize ()
     {
       contour_cell cell;
 
-      _contours_in_interval ( u_interval, point_type::u, segments_in_v_interval, cell.overlapping_segments );
+      contour_map_base<value_t>::_contours_in_interval ( u_interval, point_type::u, segments_in_v_interval, cell.overlapping_segments );
 
-      std::size_t intersections = _contours_greater ( u_interval.center(), point_type::u, segments_in_v_interval );
+      std::size_t intersections = contour_map_base<value_t>::_contours_greater ( u_interval.center(), point_type::u, segments_in_v_interval );
       cell.inside     = (intersections%2 == 1);
       cell.interval_u = u_interval;
       cell.interval_v = v_interval;

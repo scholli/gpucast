@@ -134,8 +134,6 @@ beziercurve_segment<point_type>::split( typename beziercurve_segment<point_type>
 {
   assert( t > _tmin && t < _tmax && _curve );
 
-  using namespace tml;
-
   decasteljau<point_type> evaluate_decasteljau;
   point_type              split_point;
 
@@ -154,8 +152,6 @@ beziercurve_segment<point_type>::split ( typename beziercurve_segment<point_type
                                          curve_ptr_type                                       more ) const
 {
   assert( t > _tmin && t < _tmax && _curve );
-
-  using namespace tml;
 
   decasteljau<point_type> evaluate_decasteljau;
   point_type              split_point;

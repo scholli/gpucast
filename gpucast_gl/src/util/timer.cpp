@@ -16,6 +16,8 @@
 // header, system
 #include <cassert>  // assert
 #include <iostream> // output
+#include <cmath> 
+#include <cstdint> 
 
 namespace gpucast { namespace gl {
 
@@ -97,6 +99,10 @@ namespace gpucast { namespace gl {
     secs              /= rhs;
 
     time_duration t;
+
+#ifndef WIN32
+    typedef int64_t LONGLONG;
+#endif
     t.fractional_seconds = double   ( std::fmod  ( secs, 1.0    ));
     t.seconds            = LONGLONG ( std::fmod  ( secs, 60.0   ));
     t.minutes            = LONGLONG ( std::fmod  ( secs, 3600.0 ));

@@ -12,6 +12,8 @@
 // include i/f header
 #include "gpucast/gl/util/init_glew.hpp"
 
+#include <stdexcept>
+
 namespace gpucast { namespace gl {
 
 /////////////////////////////////////////////////////////////////////////////

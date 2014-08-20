@@ -72,8 +72,8 @@ endif()
 # preprocessor configuration
 ################################################################
 IF (UNIX)
-	set(CMAKE_CXX_FLAGS_RELEASE "-s -O4 --std=c++0x")
-	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall --std=c++0x")
+	set(CMAKE_CXX_FLAGS_RELEASE "-s -O4 --std=c++0x -lGL -lGLU -lX11 -lXxf86vm -lXrandr -lpthread -lXi -lm")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall --std=c++0x -lGL -lGLU -lX11 -lXxf86vm -lXrandr -lpthread -lXi -lm")
 ELSEIF(MSVC)
 	set(CMAKE_CXX_FLAGS_RELEASE "-D NDEBUG -D _SECURE_SCL=0 -D _SCL_SECURE_NO_WARNINGS -D _CRT_SECURE_NO_DEPRECATE/MD /MP")
 	set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG /MDd /Zi")

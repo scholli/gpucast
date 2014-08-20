@@ -15,6 +15,7 @@
 // header, system
 #include <iostream> // std::cout
 #include <cassert> // assert
+#include <limits>
 
 // header, project
 #include <gpucast/gl/math/vec2.hpp>

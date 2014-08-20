@@ -13,6 +13,7 @@
 #define GPUCAST_MATH_POLYNOM_HPP
 
 #include <cassert>
+#include <cmath>
 #include <set>
 #include <limits>
 #include <array>
@@ -73,7 +74,7 @@ namespace gpucast { namespace math {
     {
       for ( std::size_t i = 0; i != order(); ++i ) 
       {
-        if ( fabs ( _coefficients[i] ) <= threshold ) 
+        if ( std::fabs ( _coefficients[i] ) <= threshold ) 
         {
           _coefficients[i] = 0;
         }

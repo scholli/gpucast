@@ -9,7 +9,7 @@
 *  description:
 *
 ********************************************************************************/
-#include <boost/numeric/conversion/bounds.hpp>
+#include <cmath>
 
 
 namespace gpucast { namespace gl {
@@ -242,18 +242,18 @@ template <typename value_t>
 /* static */ inline vec3<value_t>
 vec3<value_t>::maximum()
 {
-  return vec3<value_t> (std::numeric::bounds<value_t>::highest(),
-                        std::numeric::bounds<value_t>::highest(),
-                        std::numeric::bounds<value_t>::highest());
+  return vec3<value_t> (std::numeric_limits<value_t>::max(),
+                        std::numeric_limits<value_t>::max(),
+                        std::numeric_limits<value_t>::max());
 }
 ////////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
 /* static */ inline vec3<value_t>
 vec3<value_t>::minimum()
 {
-  return vec3<value_t> (std::numeric::bounds<value_t>::lowest(),
-                        std::numeric::bounds<value_t>::lowest(),
-                        std::numeric::bounds<value_t>::lowest());
+  return vec3<value_t> (std::numeric_limits<value_t>::min(),
+                        std::numeric_limits<value_t>::min(),
+                        std::numeric_limits<value_t>::min());
 }
 
 

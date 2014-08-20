@@ -16,12 +16,8 @@
 
 namespace gpucast { namespace gl {
 
-#if WIN32
-  
 GPUCAST_GL bool set_vsync ( bool enable );
 GPUCAST_GL bool get_vsync ( bool& vsync );
-
-#endif
 
 } } // namespace gpucast / namespace gl
 

@@ -1,6 +1,8 @@
 ###############################################################################
 # set sources
 ###############################################################################
+include (find_glfw)
+
 FILE(GLOB EXAMPLE_HELLO_WORLD_GLFW_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
 GET_FILENAME_COMPONENT(_EXE_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
@@ -14,6 +16,7 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
+                     ${GLFW_INCLUDE_DIR}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
@@ -37,12 +40,24 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-LIST(APPEND LIBRARIES ${GLFW_LIBRARIES} gpucast_gl gpucast_core)
-LIST(LENGTH LIBRARIES NUMBER_OF_LIBRARIES)
-
-IF ( ${NUMBER_OF_LIBRARIES} GREATER 0 )
-    TARGET_LINK_LIBRARIES(${_EXE_NAME} debug ${LIBRARIES} optimized ${LIBRARIES} )
-ENDIF ( ${NUMBER_OF_LIBRARIES} GREATER 0 )
+IF (MSVC)
+TARGET_LINK_LIBRARIES(${_EXE_NAME} gpucast_gl gpucast_core
+		     debug ${FREEGLUT_LIBRARY_DEBUG} optimized ${FREEGLUT_LIBRARY_RELEASE} )
+ELSE (MSVC)
+TARGET_LINK_LIBRARIES(${_EXE_NAME} 
+		      gpucast_gl 
+	              gpucast_core
+	              GL 
+                      GLU
+                      X11.a
+		      ${FREEGLUT_LIBRARY}
+		      ${GLFW_LIBRARY}
+		      ${FREEIMAGE_LIBRARY}
+		      ${FREEIMAGEPLUS_LIBRARY}
+		      boost_filesystem
+		      ${GLEW_LIBRARY}
+                     )
+ENDIF (MSVC)
 
 ###############################################################################
 # copy runtime libraries as a post-build process
