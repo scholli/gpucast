@@ -5,12 +5,17 @@ endif()
 IF (MSVC)
   LIST(APPEND CMAKE_PREFIX_PATH "${GLOBAL_EXT_DIR}/Qt5/lib/cmake")
   LIST(APPEND CMAKE_LIBRARY_PATH "C:\\\\Program Files (x86)\\\\Microsoft SDKs\\\\Windows\\\\v7.1A\\\\Lib\\\\x64")
+
+  find_package(Qt5OpenGL REQUIRED)
+  find_package(Qt5Core REQUIRED)
+  find_package(Qt5Gui REQUIRED)
+  find_package(Qt5Widgets REQUIRED)
+ELSE (MSVC)
+  include(FindQt)
 ENDIF (MSVC)
 
-find_package(Qt5OpenGL REQUIRED)
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Widgets REQUIRED)
+
+
 
 ###############################################################################
 # set sources
@@ -63,7 +68,7 @@ IF (MSVC)
     )
     
 ELSEIF (UNIX)
-    MESSAGE("linking libraries for example_igs_trimcurve_viewer.out not implemented")
+
 ENDIF(MSVC)
 
 

@@ -40,9 +40,15 @@ include(find_freeglut)
 include(find_freeimage)
 include(find_qhull)
 
-set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5)
-set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5/bin)
-include(findCUDA)
+IF (MSVC)
+	set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5)
+	set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5/bin)
+	include(findCUDA)
+ELSE (MSVC)
+	set(ENV{CUDA_PATH} /opt/cuda/current/cuda/)
+	set(ENV{CUDA_BIN_PATH} /opt/cuda/current/cuda/bin)
+	include(FindCUDA)
+ENDIF (MSVC)
 
 set(LIBRARIES
     ${BOOST_LIBRARIES}

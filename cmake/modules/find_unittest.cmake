@@ -4,11 +4,14 @@
 SET(UNITTEST_INCLUDE_SEARCH_DIRS
   ${GLOBAL_EXT_DIR}/include/unittest
   ${UNITTEST_INCLUDE_SEARCH_DIR}
+  /usr/include
 )
 
 SET(UNITTEST_LIBRARY_SEARCH_DIRS
   ${GLOBAL_EXT_DIR}/lib
   ${UNITTEST_LIBRARY_SEARCH_DIR}
+  /usr/lib
+  /usr/lib/x86_64-linux-gnu
 )
 
 ##############################################################################
@@ -16,10 +19,10 @@ SET(UNITTEST_LIBRARY_SEARCH_DIRS
 ##############################################################################
 message(STATUS "-- checking for UNITTEST")
 
-IF (MSVC)
-	find_dependency(UNITTEST ${UNITTEST_INCLUDE_SEARCH_DIRS} ${UNITTEST_LIBRARY_SEARCH_DIRS} UnitTest++.h UnitTest++.lib )
-ELSEIF (UNIX)
-	find_dependency(UNITTEST ${UNITTEST_INCLUDE_SEARCH_DIRS} ${UNITTEST_LIBRARY_SEARCH_DIRS} UnitTest++.h UnitTest++.a )
-ENDIF (MSVC)
+find_path(UNITTEST_INCLUDE_DIR NAMES unittest++/UnitTest++.h PATHS ${UNITTEST_INCLUDE_SEARCH_DIRS})
 
-verify_dependency(UNITTEST)
+IF (MSVC)
+	find_library(UNITTEST_LIBRARY NAMES UnitTest++.lib PATHS ${UNITTEST_LIBRARY_SEARCH_DIRS} PATH_SUFFIXES release debug)
+ELSEIF (UNIX)
+	find_library(UNITTEST_LIBRARY NAMES libUnitTest++.a PATHS ${UNITTEST_LIBRARY_SEARCH_DIRS})
+ENDIF (MSVC)
