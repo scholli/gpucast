@@ -304,7 +304,7 @@ namespace gpucast { namespace math {
   inline void
   beziercurve<point_t>::clip_left(value_type t)
   {
-    assert(t >= 0.0 && t <= 1.0);
+    assert(t >= value_type(0) && t <= value_type(1));
 
     for (point_iterator i = _points.begin(); i < _points.end(); ++i) {
       *i = i->as_homogenous();
@@ -317,7 +317,7 @@ namespace gpucast { namespace math {
 
     for (std::size_t i = 0; i <= _deg; ++i) {
       for (std::size_t j = 0; j < _deg - i; ++j) {
-	      _points[j] = value_type(1.0 - t) * _points[j] + t * _points[j+1];
+	      _points[j] = (value_type(1) - t) * _points[j] + t * _points[j+1];
       }
       if (i < _deg) {
 	      HP._points[_deg - i] = _points[_deg - i];
@@ -340,7 +340,7 @@ namespace gpucast { namespace math {
   inline void
   beziercurve<point_t>::clip_right(value_type t)
   {
-    assert(t >= 0.0 && t <= 1.0);
+    assert(t >= value_type(0) && t <= value_type(1));
 
     for (point_iterator i = _points.begin(); i < _points.end(); ++i) {
       *i = i->as_homogenous();
@@ -352,7 +352,7 @@ namespace gpucast { namespace math {
 
     for (std::size_t i = 0; i <= _deg; ++i) {
       for (std::size_t j = 0; j < _deg - i; ++j) {
-	      _points[j] = value_type(1.0 - t) * _points[j] + t * _points[j+1];
+	      _points[j] = (value_type(1) - t) * _points[j] + t * _points[j+1];
       }
       if (i < _deg) {
 	      HP._points[i+1] = _points[0];

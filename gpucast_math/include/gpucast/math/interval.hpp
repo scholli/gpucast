@@ -37,6 +37,8 @@ namespace gpucast { namespace math {
 
     interval( interval const& );
 
+    interval( value_t const& );
+
     explicit interval ( value_t const&     a, 
                         value_t const&     b, 
                         enum boundary_type lower = excluded, 
@@ -80,7 +82,11 @@ namespace gpucast { namespace math {
     // undefined intervals will be included into limits, e.g. [0,1] merged with [3,7) is [0,7)
     void            merge               ( interval const& rhs);
     
-    
+    interval&       operator+=          (interval const& rhs);
+    interval&       operator-=          (interval const& rhs);
+    interval&       operator*=          ( interval const& rhs);
+    interval&       operator/=          (interval const& rhs);
+
     void            print               ( std::ostream& os ) const;
 
   private :
@@ -104,6 +110,14 @@ namespace gpucast { namespace math {
 
     template <typename value_t>
     bool
+    operator>=(interval<value_t> const& lhs, interval<value_t> const& rhs);
+
+    template <typename value_t>
+    bool
+    operator<=(interval<value_t> const& lhs, interval<value_t> const& rhs);
+
+    template <typename value_t>
+    bool
     operator==(interval<value_t> const& lhs, interval<value_t> const& rhs);
 
     template <typename value_t>
@@ -123,7 +137,7 @@ namespace gpucast { namespace math {
     operator*(interval<value_t> const& lhs, interval<value_t> const& rhs);
 
     template <typename value_t>
-    std::vector<interval<value_t>>
+    interval<value_t>
     operator/(interval<value_t> const& lhs, interval<value_t> const& rhs);
 
     template <typename value_t>

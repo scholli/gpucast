@@ -373,7 +373,7 @@ public : // method
     point = (value_type(1.0) - v) * v0 + v * v1;
 
     /* transform to euclidian space */
-    dv = (order_v - 1) * ((v0.weight() * v1.weight()) / (point.weight() * point.weight())) * ((v1 / v1.weight()) - (v0 / v0.weight()));
+    dv = value_type(order_v - 1) * ((v0.weight() * v1.weight()) / (point.weight() * point.weight())) * ((v1 / v1.weight()) - (v0 / v0.weight()));
 
     /************************************ 5.step : dartial derivative over u ***********************************/
     bcv = 1.0;
@@ -463,7 +463,7 @@ public : // method
     u1 += un * u * vi;
 
     /* transform to euclidian space */
-    du = (order_u - 1) * ((u0.weight() * u1.weight()) / (point.weight() * point.weight())) * (u1.as_euclidian() - u0.as_euclidian());
+    du = value_type(order_u - 1) * ((u0.weight() * u1.weight()) / (point.weight() * point.weight())) * (u1.as_euclidian() - u0.as_euclidian());
     point = point.as_euclidian();
   }
 
@@ -658,7 +658,7 @@ public : // method
         pu0 += un * u * (points + order_u-2 + j * order_u + k * order_u * order_v )->as_homogenous();
         pu1 += un * u * (points + order_u-1 + j * order_u + k * order_u * order_v )->as_homogenous();
 
-        pu = (1-u) * pu0 + u * pu1;
+        pu = (value_type(1) - u) * pu0 + u * pu1;
 
         if (j == 0) { // first interpolation (1-v)^n
           pv00 = pu0 * one_minus_v;
@@ -810,9 +810,9 @@ public : // method
     // 2. project P[0, n-1] and P[1, n-1] into plane w=1
     // 3. use formula above to find out the correct length of P'(t)
 
-    du = (order_u - value_type(1)) * ((u0.weight() * u1.weight()) / (point.weight() * point.weight())) * (u1.as_euclidian() - u0.as_euclidian());
-    dv = (order_v - value_type(1)) * ((v0.weight() * v1.weight()) / (point.weight() * point.weight())) * (v1.as_euclidian() - v0.as_euclidian());
-    dw = (order_w - value_type(1)) * ((w0.weight() * w1.weight()) / (point.weight() * point.weight())) * (w1.as_euclidian() - w0.as_euclidian());
+    du = value_type(order_u - 1) * ((u0.weight() * u1.weight()) / (point.weight() * point.weight())) * (u1.as_euclidian() - u0.as_euclidian());
+    dv = value_type(order_v - 1) * ((v0.weight() * v1.weight()) / (point.weight() * point.weight())) * (v1.as_euclidian() - v0.as_euclidian());
+    dw = value_type(order_w - 1) * ((w0.weight() * w1.weight()) / (point.weight() * point.weight())) * (w1.as_euclidian() - w0.as_euclidian());
   }
 
 

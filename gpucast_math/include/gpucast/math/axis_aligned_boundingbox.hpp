@@ -95,6 +95,8 @@ namespace gpucast { namespace math {
     virtual void  write         ( std::ostream& os ) const;
     virtual void  read          ( std::istream& is );
 
+    
+
     point_t min;
     point_t max;
   };

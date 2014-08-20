@@ -36,6 +36,14 @@ namespace gpucast { namespace math {
         _upper_boundary_type(i._upper_boundary_type)
     {}
 
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    interval<value_t>::interval(value_t const& a)
+     : _min(a),
+       _max(a),
+       _lower_boundary_type(excluded),
+       _upper_boundary_type(excluded)
+    {}
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename value_t>
@@ -295,6 +303,78 @@ namespace gpucast { namespace math {
       return (_min == _max && (_upper_boundary_type == excluded || _lower_boundary_type == excluded));
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    interval<value_t>&
+    interval<value_t>::operator+=(interval const& rhs)
+    {
+      _min += rhs._min;
+      _max += rhs._max;
+      return *this;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    interval<value_t>&
+    interval<value_t>::operator-=(interval const& rhs)
+    {
+      _min -= rhs._max;
+      _max -= rhs._min;
+      return *this;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    interval<value_t>&
+    interval<value_t>::operator*=(interval const& rhs)
+    {
+      _min = std::min(std::min(_min * rhs.minimum(),
+                               _min * rhs.maximum()),
+                      std::min(_max * rhs.minimum(),
+                               _max * rhs.maximum()));
+
+      _max = std::max(std::max(_min * rhs.minimum(),
+                               _min * rhs.maximum()),
+                      std::max(_max * rhs.minimum(),
+                               _max * rhs.maximum()));
+      return *this;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    interval<value_t>&
+    interval<value_t>::operator/=(interval const& rhs)
+    {
+      static_assert(std::numeric_limits<float>::is_iec559, "IEEE 754 required");
+
+      if (rhs.minimum() < 0 && 0 < rhs.maximum())
+      {
+        throw std::runtime_error("interval<T>::operator/=(): Unhandled division of interval containing 0.");
+      }
+      else {
+        this->operator*=(interval<value_t>(value_t(1) / rhs.maximum(), value_t(1) / rhs.minimum()));
+      }
+      return *this;
+
+      // correct solution is to return both intervals
+#if 0
+      std::vector<interval<value_t>> solutions;
+
+      // if 0 is contained in interval -> two possible solutions
+      if (rhs.minimum() < 0 && 0 < rhs.maximum())
+      {
+        interval<value_t> one_divided_by_lhs0 = interval<value_t>(value_t(1) / rhs.maximum(), std::numeric_limits<value_t>::infinity());
+        interval<value_t> one_divided_by_lhs1 = interval<value_t>(-std::numeric_limits<value_t>::infinity(), value_t(1) / rhs.minimum());
+
+        solutions.push_back(lhs * one_divided_by_lhs0);
+        solutions.push_back(lhs * one_divided_by_lhs1);
+      }
+
+      return solutions;
+#endif
+    }
+
+
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename value_t>
@@ -338,6 +418,21 @@ namespace gpucast { namespace math {
              (lhs.minimum() > rhs.maximum());
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    bool
+    operator>=(interval<value_t> const& lhs, interval<value_t> const& rhs)
+    {
+      return lhs > rhs || lhs == rhs;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename value_t>
+    bool
+    operator<=(interval<value_t> const& lhs, interval<value_t> const& rhs)
+    {
+      return lhs < rhs || lhs == rhs;
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename value_t>
@@ -365,8 +460,9 @@ namespace gpucast { namespace math {
     interval<value_t>
     operator+(interval<value_t> const& lhs, interval<value_t> const& rhs)
     {
-      return interval<value_t>(lhs.minimum() + rhs.minimum(), 
-                               lhs.maximum() + rhs.maximum());
+      interval<value_t> tmp(lhs);
+      tmp += rhs;
+      return tmp;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -374,8 +470,9 @@ namespace gpucast { namespace math {
     interval<value_t>
     operator-(interval<value_t> const& lhs, interval<value_t> const& rhs)
     {
-      return interval<value_t>(lhs.minimum() - rhs.maximum(),
-                               lhs.maximum() + rhs.minimum());
+      interval<value_t> tmp(lhs);
+      tmp -= rhs;
+      return tmp;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -383,39 +480,20 @@ namespace gpucast { namespace math {
     interval<value_t>
     operator*(interval<value_t> const& lhs, interval<value_t> const& rhs)
     {
-      return interval<value_t>(
-        std::min(lhs.minimum() * rhs.minimum(),
-                 lhs.minimum() * rhs.maximum(),
-                 lhs.maximum() * rhs.minimum(),
-                 lhs.maximum() * rhs.maximum()),
-        std::max(lhs.minimum() * rhs.minimum(),
-                 lhs.minimum() * rhs.maximum(),
-                 lhs.maximum() * rhs.minimum(),
-                 lhs.maximum() * rhs.maximum()));
+      interval<value_t> tmp(lhs);
+      tmp *= rhs;
+      return tmp;
     }
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename value_t>
-    std::vector<interval<value_t>>
+    interval<value_t>
     operator/(interval<value_t> const& lhs, interval<value_t> const& rhs)
     {
-      static_assert(std::numeric_limits<float>::is_iec559, "IEEE 754 required");
-
-      std::vector<interval<value_t>> solutions;
-
-      // if 0 is contained in interval -> two possible solutions
-      if (rhs.minimum() < 0 && 0 < rhs.maximum())
-      {
-        interval<value_t> one_divided_by_lhs0 = interval<value_t>(value_t(1) / rhs.maximum(), std::numeric_limits<value_t>::infinity());
-        interval<value_t> one_divided_by_lhs1 = interval<value_t>(-std::numeric_limits<value_t>::infinity(), value_t(1) / rhs.minimum());
-
-        solutions.push_back(lhs * one_divided_by_lhs0);
-        solutions.push_back(lhs * one_divided_by_lhs1);
-      }
-
-      return solutions;
+      interval<value_t> tmp(lhs);
+      tmp /= rhs;
+      return tmp;
     }
-
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename value_t>

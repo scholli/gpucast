@@ -1,7 +1,7 @@
 ###############################################################################
 # set sources
 ###############################################################################
-file(GLOB EXAMPLE_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp *.hpp)
+file(GLOB EXAMPLE_VOLUME_CONVERTER_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp *.hpp)
 
 GET_FILENAME_COMPONENT(_EXE_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 SET(_EXE_NAME example_${_EXE_NAME}.out)
@@ -31,7 +31,7 @@ SET(LIBRARY_DIRS ${LIB_PATHS}
 LINK_DIRECTORIES (${LIBRARY_DIRS})
 
 ADD_EXECUTABLE( ${_EXE_NAME}
-    ${EXAMPLE_SRC}
+    ${EXAMPLE_VOLUME_CONVERTER_SRC}
 )
 
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
@@ -49,8 +49,8 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
 # copy runtime libraries as a post-build process
 ###############################################################################
 IF (MSVC)
-    copy_runtime_dependencies ( ${_EXE_NAME} \"${GLOBAL_EXT_DIR}/bin/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\")
-    copy_runtime_dependencies ( ${_EXE_NAME} \"${LIBRARY_OUTPUT_PATH}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\")
+    #copy_runtime_dependencies ( ${_EXE_NAME} \"${LIBRARY_OUTPUT_PATH}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\")
+    copy_runtime_dependencies ( ${_EXE_NAME} \"${GLOBAL_EXT_DIR}/Qt5/bin\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\")
     FOREACH (_LIB_DIR ${LIB_PATHS})
         copy_runtime_dependencies ( ${_EXE_NAME} \"${_LIB_DIR}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\")
     ENDFOREACH (_LIB_DIR ${LIB_PATHS})

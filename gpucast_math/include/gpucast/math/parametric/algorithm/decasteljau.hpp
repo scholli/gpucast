@@ -65,12 +65,12 @@ public : // method
     assert(order > 0);
 
     // special case : end points
-    if ( t == 0 ) {
+    if (t == value_type(0) ) {
       point = *(points);
       return;
     }
 
-    if ( t == 1 ) {
+    if (t == value_type(1) ) {
       point = *(points + order - 1);
       return;
     }
@@ -112,13 +112,13 @@ public : // method
     assert(order > 1);
 
     // special case : end points
-    if ( t == 0 ) {
+    if (t == value_type(0) ) {
       point = *(points);
       dt = value_type(order) * (*(points+1) - *points );
       return;
     }
 
-    if ( t == 1 ) {
+    if (t == value_type(1) ) {
       point = *(points + order - 1);
       dt = value_type(order) * (*(points) - *(points+1) );
       return;
@@ -151,7 +151,7 @@ public : // method
     // 2. project P[0, n-1] and P[1, n-1] into plane w=1
     // 3. use formula above to find out the correct length of P'(t)
 
-    dt = (order - value_type(1)) * ((aux_point.weight() * tmp[1].weight()) / (tmp[0].weight() * tmp[0].weight())) * (tmp[1].as_euclidian() - aux_point.as_euclidian());
+    dt = (value_type(order) - value_type(1)) * ((aux_point.weight() * tmp[1].weight()) / (tmp[0].weight() * tmp[0].weight())) * (tmp[1].as_euclidian() - aux_point.as_euclidian());
   }
 
 
@@ -467,9 +467,9 @@ public : // method
       // 2. project P[0, n-1] and P[1, n-1] into plane w=1
       // 3. use formula above to find out the correct length of P'(t)
 
-      du = (order_u - value_type(1)) * ((u0.weight() * u1.weight()) / (point.weight() * point.weight())) * (u1.as_euclidian() - u0.as_euclidian());
-      dv = (order_v - value_type(1)) * ((v0.weight() * v1.weight()) / (point.weight() * point.weight())) * (v1.as_euclidian() - v0.as_euclidian());
-      dw = (order_w - value_type(1)) * ((w0.weight() * w1.weight()) / (point.weight() * point.weight())) * (w1.as_euclidian() - w0.as_euclidian());
+      du = (value_type(order_u) - value_type(1)) * ((u0.weight() * u1.weight()) / (point.weight() * point.weight())) * (u1.as_euclidian() - u0.as_euclidian());
+      dv = (value_type(order_v) - value_type(1)) * ((v0.weight() * v1.weight()) / (point.weight() * point.weight())) * (v1.as_euclidian() - v0.as_euclidian());
+      dw = (value_type(order_w) - value_type(1)) * ((w0.weight() * w1.weight()) / (point.weight() * point.weight())) * (w1.as_euclidian() - w0.as_euclidian());
     }
 
 
