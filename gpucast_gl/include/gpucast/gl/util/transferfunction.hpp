@@ -14,6 +14,8 @@
 
 // header, system
 #include <map>
+#include <limits>
+#include <algorithm>
 
 // header, project
 #include <gpucast/gl/glpp.hpp>
@@ -30,7 +32,7 @@ public :
     assert(nodes.size() >= 2);
 
     value = std::min ( std::max ( value, 0.0f ), 1.0f );
-    unsigned char as_uchar = unsigned char( value * std::numeric_limits<unsigned char>::max() );
+    unsigned char as_uchar = static_cast<unsigned char>( value * std::numeric_limits<unsigned char>::max() );
 
     typename map_type::const_iterator first  = nodes.begin();
     typename map_type::const_iterator last   = nodes.begin();

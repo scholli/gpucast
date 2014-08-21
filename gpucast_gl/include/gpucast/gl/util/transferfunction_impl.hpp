@@ -13,8 +13,6 @@
 // header, system
 #include <limits>
 
-#include <boost/numeric/conversion/bounds.hpp>
-
 // header, project
 
 namespace gpucast { namespace gl {
@@ -40,7 +38,7 @@ namespace gpucast { namespace gl {
   inline bool
   transferfunction<value_t>::get ( unsigned char pos, value_t& v ) const
   {
-    map_type::const_iterator i = _nodemap.find ( pos );
+    typename map_type::const_iterator i = _nodemap.find ( pos );
 
     if ( i != _nodemap.end() ) 
     {
@@ -68,13 +66,13 @@ namespace gpucast { namespace gl {
   transferfunction<value_t>::remove ( unsigned char pos )
   {
     // do not remove if limits
-    if ( pos == std::numeric::bounds<unsigned char>::highest() ||
-         pos == std::numeric::bounds<unsigned char>::lowest() )
+    if ( pos == std::numeric_limits<unsigned char>::max() ||
+         pos == std::numeric_limits<unsigned char>::min() )
     {
       return false;
     }
 
-    map_type::const_iterator i = _nodemap.find (pos);
+    typename map_type::const_iterator i = _nodemap.find (pos);
 
     if ( i != _nodemap.end() ) {
       _nodemap.erase(i);

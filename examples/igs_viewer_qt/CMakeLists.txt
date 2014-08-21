@@ -85,6 +85,8 @@ ELSEIF (UNIX)
                         ${QT_QTMAIN_LIBRARY}
                         ${FREEIMAGE_LIBRARY}
                         ${FREEIMAGEPLUS_LIBRARY}
+                        boost_filesystem
+	                boost_system
   )
 ENDIF (MSVC)
 

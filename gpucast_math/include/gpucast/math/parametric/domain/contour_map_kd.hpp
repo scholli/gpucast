@@ -25,6 +25,14 @@ class contour_map_kd : public contour_map_base<value_t>
   public : // typedef / enums
 
     typedef contour_map_base<value_t>              base_type;
+    using typename contour_map_base<value_t>::interval_type;
+    using typename contour_map_base<value_t>::contour_segment_container;
+    using typename contour_map_base<value_t>::value_type;
+    using typename contour_map_base<value_t>::point_type;
+    using typename contour_map_base<value_t>::bbox_type;
+    using typename contour_map_base<value_t>::contour_segment_ptr;
+    using typename contour_map_base<value_t>::contour_type;
+    using typename contour_map_base<value_t>::contour_segment_type;
 
     struct contour_cell
     {
@@ -73,7 +81,7 @@ class contour_map_kd : public contour_map_base<value_t>
                                                          std::set<value_type> const& candidates,
                                                          std::vector<contour_cell> const& cells );
 
-    std::set<value_type>              split_candidates ( bbox_type const& bounds, 
+    std::set<value_t>                 split_candidates ( bbox_type const& bounds, 
                                                          typename point_type::coordinate_type const& dim, 
                                                          std::vector<contour_cell> const& cells );
 

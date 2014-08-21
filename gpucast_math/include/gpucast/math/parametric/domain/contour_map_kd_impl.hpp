@@ -54,13 +54,13 @@ contour_map_kd<value_t>::initialize ()
 {
   _cells.clear();
 
-  if ( _contour_segments.empty () ) return;
+  if ( this->_contour_segments.empty () ) return;
 
-  update_bounds();
+  this->update_bounds();
 
   std::cout << "Segments for partition : " << std::endl;
   unsigned tmp=0;
-  for (auto s : _contour_segments)
+  for (auto s : this->_contour_segments)
   {
     std::cout << tmp++ << " : " << s->bbox() << std::endl;
   }
@@ -72,9 +72,9 @@ contour_map_kd<value_t>::initialize ()
   //                                _bounds.max[point_type::v] }, 
   //                               { false } });
 
-  for (auto const& s : _contour_segments)
+  for (auto const& s : this->_contour_segments)
   {
-    _insert_contour_segment(s);
+    this->_insert_contour_segment(s);
   }
 
   //_cells = S.result;
@@ -89,7 +89,7 @@ contour_map_kd<value_t>::initialize ()
   // TODO: O(n^2)! improve performance by sorting
   for ( contour_cell& c : _cells )
   {
-    for ( contour_segment_ptr const& p : _contour_segments ) 
+    for ( contour_segment_ptr const& p : this->_contour_segments ) 
     {
       interval_type segment_v ( p->bbox().min[point_type::v], p->bbox().max[point_type::v],  gpucast::math::excluded,  gpucast::math::excluded );
       interval_type segment_u ( p->bbox().min[point_type::u], p->bbox().max[point_type::u],  gpucast::math::excluded,  gpucast::math::excluded );
@@ -109,7 +109,7 @@ contour_map_kd<value_t>::initialize ()
   }
 
   // create kd-tree
-  _root = create ( _bounds, _cells );
+  _root = create ( this->_bounds, _cells );
  
 }
 
