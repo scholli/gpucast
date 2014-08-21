@@ -47,15 +47,13 @@ ELSE (MSVC)
 TARGET_LINK_LIBRARIES(${_EXE_NAME} 
 		      gpucast_gl 
 	              gpucast_core
-	              GL 
-                      GLU
-                      X11.a
 		      ${FREEGLUT_LIBRARY}
 		      ${GLFW_LIBRARY}
 		      ${FREEIMAGE_LIBRARY}
 		      ${FREEIMAGEPLUS_LIBRARY}
 		      boost_filesystem
 		      ${GLEW_LIBRARY}
+		      X11 Xxf86vm Xrandr pthread m Xi GL GLU
                      )
 ENDIF (MSVC)
 
