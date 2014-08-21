@@ -11,7 +11,10 @@ IF (MSVC)
   find_package(Qt5Gui REQUIRED)
   find_package(Qt5Widgets REQUIRED)
 ELSE (MSVC)
-  include(FindQt)
+  find_package(Qt5OpenGL REQUIRED)
+  find_package(Qt5Core REQUIRED)
+  find_package(Qt5Gui REQUIRED)
+  find_package(Qt5Widgets REQUIRED)
 ENDIF (MSVC)
 
 
