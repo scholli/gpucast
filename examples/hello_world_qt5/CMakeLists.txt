@@ -11,9 +11,6 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 
-MESSAGE(${Qt5OpenGL_INCLUDE_DIRS})
-
-
 ###############################################################################
 # set sources
 ###############################################################################
@@ -55,22 +52,15 @@ ADD_EXECUTABLE( ${_EXE_NAME}
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-IF (MSVC)
-    TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-                          ${LIBRARIES} 
-                          gpucast_gl 
-                          gpucast_core 
-                          ${Qt5OpenGL_LIBRARIES}
-                          ${Qt5Core_LIBRARIES}
-                          ${Qt5Widgets_LIBRARIES}
-                          ${Qt5Gui_LIBRARIES}
-                          ${QT_QTMAIN_LIBRARY}
-    )
-    
-ELSEIF (UNIX)
-
-ENDIF(MSVC)
-
+TARGET_LINK_LIBRARIES(${_EXE_NAME} 
+                      gpucast_gl 
+                      gpucast_core 
+                      ${Qt5OpenGL_LIBRARIES}
+                      ${Qt5Core_LIBRARIES}
+                      ${Qt5Widgets_LIBRARIES}
+                      ${Qt5Gui_LIBRARIES}
+                      ${QT_QTMAIN_LIBRARY}
+)
 
 ###############################################################################
 # copy runtime libraries as a post-build process
