@@ -5,17 +5,13 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0020 OLD)
 endif()
 
-IF (MSVC)
-  LIST(APPEND CMAKE_PREFIX_PATH "${GLOBAL_EXT_DIR}/Qt5/lib/cmake")
-  LIST(APPEND CMAKE_LIBRARY_PATH "C:\\\\Program Files (x86)\\\\Microsoft SDKs\\\\Windows\\\\v7.1A\\\\Lib\\\\x64")
+LIST(APPEND CMAKE_PREFIX_PATH "${GLOBAL_EXT_DIR}/Qt5/lib/cmake")
+LIST(APPEND CMAKE_LIBRARY_PATH "C:\\\\Program Files (x86)\\\\Microsoft SDKs\\\\Windows\\\\v7.1A\\\\Lib\\\\x64")
 
-  find_package(Qt5OpenGL REQUIRED)
-  find_package(Qt5Core REQUIRED)
-  find_package(Qt5Gui REQUIRED)
-  find_package(Qt5Widgets REQUIRED)
-ELSE (MSVC)
-  include(FindQt)
-ENDIF (MSVC)
+find_package(Qt5OpenGL REQUIRED)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
+find_package(Qt5Widgets REQUIRED)
 
 FILE(GLOB HEADER_FILES_IGS_VIEWER_QT_GUI RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.hpp)
 
@@ -35,10 +31,10 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
                      ${FREEGLUT_INCLUDE_DIR}
                      ${GLEW_INCLUDE_DIR}
-                     ${Qt5Core_INCLUDE_DIRS}
-                     ${Qt5Gui_INCLUDE_DIRS}
-                     ${Qt5Widgets_INCLUDE_DIRS}
-                     ${Qt5OpenGL_INCLUDE_DIRS}
+                     ${Qt5Core_DIR}
+                     ${Qt5Gui_DIR}
+                     ${Qt5Widgets_DIR}
+                     ${Qt5OpenGL_DIR}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
