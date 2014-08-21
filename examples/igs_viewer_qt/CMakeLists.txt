@@ -31,10 +31,10 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
                      ${FREEGLUT_INCLUDE_DIR}
                      ${GLEW_INCLUDE_DIR}
-                     ${Qt5Core_DIR}
-                     ${Qt5Gui_DIR}
-                     ${Qt5Widgets_DIR}
-                     ${Qt5OpenGL_DIR}
+                     ${Qt5Core_INCLUDE_DIRS}
+                     ${Qt5Gui_INCLUDE_DIRS}
+                     ${Qt5Widgets_INCLUDE_DIRS}
+                     ${Qt5OpenGL_INCLUDE_DIRS}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 

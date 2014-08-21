@@ -21,14 +21,14 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                     ${Qt5Core_DIR}
-                     ${Qt5Gui_DIR}
-                     ${Qt5Widgets_DIR}
-                     ${Qt5OpenGL_DIR}
-                     ${GLEW_INCLUDE_DIRS}
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
+                     ${Qt5Core_INCLUDE_DIRS}
+                     ${Qt5Gui_INCLUDE_DIRS}
+                     ${Qt5Widgets_INCLUDE_DIRS}
+                     ${Qt5OpenGL_INCLUDE_DIRS}
+                     ${GLEW_INCLUDE_DIRS}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
