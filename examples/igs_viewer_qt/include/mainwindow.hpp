@@ -21,7 +21,7 @@
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QTextedit>
+#include <QtWidgets/QTextEdit>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QComboBox>
