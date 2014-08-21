@@ -10,11 +10,7 @@
 *
 ********************************************************************************/
 
-#if WIN32
-#include <UnitTest++.h>
-#else
 #include <unittest++/UnitTest++.h>
-#endif
 
 #include <gpucast/math/parametric/beziersurface.hpp>
 

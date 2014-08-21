@@ -9,11 +9,11 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                     ${FREEGLUT_INCLUDE_DIRS}
-                     ${GLEW_INCLUDE_DIRS}
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
+                     ${FREEGLUT_INCLUDE_DIR}
+                     ${GLEW_INCLUDE_DIR}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
@@ -38,20 +38,24 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
 IF (MSVC)
-TARGET_LINK_LIBRARIES(${_EXE_NAME} gpucast_gl gpucast_core
-		     debug ${FREEGLUT_LIBRARY_DEBUG} optimized ${FREEGLUT_LIBRARY_RELEASE} )
+TARGET_LINK_LIBRARIES(${_EXE_NAME} 
+                      gpucast_gl 
+                      gpucast_core
+		                  debug ${FREEGLUT_LIBRARY_DEBUG} optimized ${FREEGLUT_LIBRARY_RELEASE} 
+                      debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY_RELEASE}
+                      debug ${FREEIMAGEPLUS_LIBRARY_DEBUG} optimized ${FREEIMAGEPLUS_LIBRARY_RELEASE}
+                      debug ${FREEIMAGEPLUS_LIBRARY_DEBUG} optimized ${FREEIMAGEPLUS_LIBRARY_RELEASE}
+                      )
 ELSE (MSVC)
 TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-		      gpucast_gl 
-	              gpucast_core
-	              GL 
-                      GLU
-		      ${FREEGLUT_LIBRARY}
-		      ${FREEIMAGE_LIBRARY}
-		      ${FREEIMAGEPLUS_LIBRARY}
-		      boost_filesystem
-		      ${GLEW_LIBRARY}
-                     )
+		                  gpucast_gl 
+	                    gpucast_core
+		                  ${FREEGLUT_LIBRARY}
+		                  ${FREEIMAGE_LIBRARY}
+		                  ${FREEIMAGEPLUS_LIBRARY}
+		                  ${GLEW_LIBRARY}
+                      boost_filesystem
+                      GL GLU )
 ENDIF (MSVC)
 
 ###############################################################################

@@ -84,8 +84,8 @@ CUDA_ADD_LIBRARY( gpucast_volume SHARED
 )
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
-                     ${GLEW_INCLUDE_DIRS}
-                     ${QHULL_INCLUDE_DIRS} 
+                     ${GLEW_INCLUDE_DIR}
+                     ${QHULL_INCLUDE_DIR} 
                      ${CUDA_INCLUDE_DIRS}
                      ../gpucast_core/include
                      ../gpucast_gl/include
@@ -109,9 +109,16 @@ SET_TARGET_PROPERTIES( gpucast_volume PROPERTIES COMPILE_FLAGS ${GPUCAST_VOLUME_
 ###############################################################################
 ADD_DEPENDENCIES(gpucast_volume gpucast_math gpucast_core gpucast_gl)
 
-TARGET_LINK_LIBRARIES( gpucast_volume 
-                        ${LIBRARIES} 
-                        ${CUDA_LIBRARIES}
-                        gpucast_core 
-                        gpucast_gl
-)
+IF (MSVC)
+  TARGET_LINK_LIBRARIES( gpucast_volume 
+                         gpucast_core 
+                         gpucast_gl
+                         ${CUDA_LIBRARIES}
+  )
+ELSEIF (UNIX)
+  TARGET_LINK_LIBRARIES( gpucast_volume 
+                         gpucast_core 
+                         gpucast_gl
+                         ${CUDA_LIBRARIES}
+  )
+ENDIF (MSVC)

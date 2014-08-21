@@ -10,12 +10,12 @@ SET(_EXE_NAME example_${_EXE_NAME}.out)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
-                     ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                     ${GLFW_INCLUDE_DIR}
-                     ${GLEW_INCLUDE_DIRS}
+                     ${CMAKE_CURRENT_SOURCE_DIR}/include                      
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
+                     ${GLFW_INCLUDE_DIR}
+                     ${GLEW_INCLUDE_DIR}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
@@ -38,18 +38,32 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 # dependencies
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
-TARGET_LINK_LIBRARIES(${_EXE_NAME}  
-		      gpucast_gl 
-		      gpucast_core 
-                      ${GLFW_LIBRARY}
-                      ${GLEW_LIBRARY}
-                      ${QHULL_LIBRARY}
-                      ${FREEIMAGE_LIBRARY}
-                      ${FREEIMAGEPLUS_LIBRARY}
-                      ${FREEGLUT_LIBRARY}
-                      boost_thread boost_filesystem
-                      GL GLU X11 Xi Xxf86vm Xrandr pthread
-)
+
+IF (MSVC)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME}  
+		        gpucast_gl 
+		        gpucast_core   
+            debug ${GLFW_LIBRARY_DEBUG}           optimized ${GLFW_LIBRARY_RELEASE}         
+            debug ${GLEW_LIBRARY_DEBUG}           optimized ${GLEW_LIBRARY_RELEASE}         
+            debug ${QHULL_LIBRARY_DEBUG}          optimized ${QHULL_LIBRARY_RELEASE}        
+            debug ${FREEIMAGE_LIBRARY_DEBUG}      optimized ${FREEIMAGE_LIBRARY_RELEASE}    
+            debug ${FREEIMAGEPLUS_LIBRARY_DEBUG}  optimized ${FREEIMAGEPLUS_LIBRARY_RELEASE}
+            debug ${FREEGLUT_LIBRARY_DEBUG}       optimized ${FREEGLUT_LIBRARY_RELEASE}     
+  )
+ELSEIF (UNIX)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME}  
+		        gpucast_gl 
+		        gpucast_core 
+            ${GLFW_LIBRARY}
+            ${GLEW_LIBRARY}
+            ${QHULL_LIBRARY}
+            ${FREEIMAGE_LIBRARY}
+            ${FREEIMAGEPLUS_LIBRARY}
+            ${FREEGLUT_LIBRARY}
+            boost_thread boost_filesystem
+            GL GLU X11 Xi Xxf86vm Xrandr pthread
+  )
+ENDIF (MSVC)
 
 ###############################################################################
 # copy runtime libraries as a post-build process

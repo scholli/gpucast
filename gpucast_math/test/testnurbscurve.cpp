@@ -13,11 +13,7 @@
 #include <iostream>
 #include <set>
 
-#if WIN32
-  #include <UnitTest++.h>
-#else
-  #include <unittest++/UnitTest++.h>
-#endif
+#include <unittest++/UnitTest++.h>
 
 #include <gpucast/math/parametric/nurbscurve.hpp>
 

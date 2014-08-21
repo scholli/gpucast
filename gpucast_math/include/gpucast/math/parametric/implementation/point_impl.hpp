@@ -285,11 +285,19 @@ namespace gpucast { namespace math {
   inline void
   point<value_t, SIZE>::print(std::ostream& os) const
   {
+#if WIN32
+    os << "[ ";
+    for (unsigned i = 0; i != MEMSIZE; ++i) {
+      os << _data[i] << " ";
+    }
+    os << " ]";
+#else
     os << std::string("[ ");
     for (unsigned i = 0; i != MEMSIZE; ++i) {
       os << _data[i] << " ";
     }
     os << std::string(" ]");
+#endif
   }
 
 

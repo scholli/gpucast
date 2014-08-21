@@ -30,16 +30,15 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                     ${FREEGLUT_INCLUDE_DIRS}
-                     ${GLEW_INCLUDE_DIRS}
+                     ${CMAKE_SOURCE_DIR}/gpucast_math/include 
+                     ${CMAKE_SOURCE_DIR}/gpucast_gl/include
+                     ${CMAKE_SOURCE_DIR}/gpucast_core/include
+                     ${FREEGLUT_INCLUDE_DIR}
+                     ${GLEW_INCLUDE_DIR}
                      ${Qt5Core_INCLUDE_DIRS}
                      ${Qt5Gui_INCLUDE_DIRS}
                      ${Qt5Widgets_INCLUDE_DIRS}
                      ${Qt5OpenGL_INCLUDE_DIRS}
-                     ${GLEW_INCLUDE_DIRS}
-                     ${CMAKE_SOURCE_DIR}/gpucast_math/include 
-                     ${CMAKE_SOURCE_DIR}/gpucast_gl/include
-                     ${CMAKE_SOURCE_DIR}/gpucast_core/include
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
@@ -67,17 +66,31 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-                      ${LIBRARIES} 
-                      gpucast_gl 
-                      gpucast_core                           
-                      ${Qt5OpenGL_LIBRARIES}
-                      ${Qt5Core_LIBRARIES}
-                      ${Qt5Widgets_LIBRARIES}
-                      ${Qt5Gui_LIBRARIES}
-                      ${QT_QTMAIN_LIBRARY}
-                      ${FREEIMAGE_LIBRARIES}
-                      )
+IF (MSVC)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME} 
+                        gpucast_gl 
+                        gpucast_core                           
+                        ${Qt5OpenGL_LIBRARIES}
+                        ${Qt5Core_LIBRARIES}
+                        ${Qt5Widgets_LIBRARIES}
+                        ${Qt5Gui_LIBRARIES}
+                        ${QT_QTMAIN_LIBRARY}
+                        debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY_RELEASE}
+                        debug ${FREEIMAGEPLUS_LIBRARY_DEBUG} optimized ${FREEIMAGEPLUS_LIBRARY_RELEASE}
+  )
+ELSEIF (UNIX)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME} 
+                        gpucast_gl 
+                        gpucast_core                           
+                        ${Qt5OpenGL_LIBRARIES}
+                        ${Qt5Core_LIBRARIES}
+                        ${Qt5Widgets_LIBRARIES}
+                        ${Qt5Gui_LIBRARIES}
+                        ${QT_QTMAIN_LIBRARY}
+                        ${FREEIMAGE_LIBRARY}
+                        ${FREEIMAGEPLUS_LIBRARY}
+  )
+ENDIF (MSVC)
 
 ###############################################################################
 # copy runtime libraries as a post-build process

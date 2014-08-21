@@ -64,10 +64,10 @@ ADD_LIBRARY( gpucast_gl SHARED
 )
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
-                     ${GLEW_INCLUDE_DIRS}
+                     ${GLEW_INCLUDE_DIR}
                      ../gpucast_core/include
-                     ${FREEIMAGE_INCLUDE_DIRS}
-                     ${FREEGLUT_INCLUDE_DIRS}
+                     ${FREEIMAGE_INCLUDE_DIR}
+                     ${FREEGLUT_INCLUDE_DIR}
                      include 
                      ../gpucast_math/include )
 
@@ -77,7 +77,7 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
 SET (GPUCAST_GL_BUILD_FLAGS ${BUILD_FLAGS})
 
 IF (MSVC)
-  SET(GPUCAST_GL_BUILD_FLAGS "${GPUCAST_GL_BUILD_FLAGS} -lX11 -D GPUCAST_GL_EXPORT")
+  SET(GPUCAST_GL_BUILD_FLAGS "${GPUCAST_GL_BUILD_FLAGS} -D GPUCAST_GL_EXPORT")
 ENDIF (MSVC)
 
 SET_TARGET_PROPERTIES( gpucast_gl PROPERTIES COMPILE_FLAGS ${GPUCAST_GL_BUILD_FLAGS})
@@ -87,9 +87,22 @@ SET_TARGET_PROPERTIES( gpucast_gl PROPERTIES COMPILE_FLAGS ${GPUCAST_GL_BUILD_FL
 ###############################################################################
 ADD_DEPENDENCIES(gpucast_gl gpucast_math)
 
-LIST(APPEND LIBRARIES ${GLEW_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${FREEGLUT_LIBRARIES} )
-LIST(LENGTH LIBRARIES NUMBER_OF_LIBRARIES)
+IF (MSVC)
+  TARGET_LINK_LIBRARIES( gpucast_gl
+                         OpenGL32.lib 
+                         debug ${FREEGLUT_LIBRARY_DEBUG} optimized ${FREEGLUT_LIBRARY_RELEASE}
+                         debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY_RELEASE}
+                         debug ${FREEIMAGEPLUS_LIBRARY_DEBUG} optimized ${FREEIMAGEPLUS_LIBRARY_RELEASE}
+                         debug ${GLEW_LIBRARY_DEBUG} optimized ${GLEW_LIBRARY_RELEASE}
+                       )
 
-IF ( ${NUMBER_OF_LIBRARIES} GREATER 0 )
-    TARGET_LINK_LIBRARIES( gpucast_gl debug ${LIBRARIES} optimized ${LIBRARIES} )
-ENDIF ( ${NUMBER_OF_LIBRARIES} GREATER 0 )
+ELSE (MSVC)
+  TARGET_LINK_LIBRARIES( gpucast_gl
+                         ${GLEW_LIBRARY} 
+                         ${FREEGLUT_LIBRARY}
+                         ${FREEIMAGE_LIBRARY}
+                         ${FREEIMAGEPLUS_LIBRARY}
+                         GL GLU
+                       )
+ENDIF (MSVC)
+

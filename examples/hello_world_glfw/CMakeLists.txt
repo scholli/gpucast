@@ -11,12 +11,11 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                     ${GLFW_INCLUDE_DIRS}
-                     ${GLEW_INCLUDE_DIRS}
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
                      ${GLFW_INCLUDE_DIR}
+                     ${GLEW_INCLUDE_DIR}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
@@ -41,20 +40,30 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
 IF (MSVC)
-TARGET_LINK_LIBRARIES(${_EXE_NAME} gpucast_gl gpucast_core
-		     debug ${FREEGLUT_LIBRARY_DEBUG} optimized ${FREEGLUT_LIBRARY_RELEASE} )
-ELSE (MSVC)
+
 TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-		      gpucast_gl 
-	              gpucast_core
-		      ${FREEGLUT_LIBRARY}
-		      ${GLFW_LIBRARY}
-		      ${FREEIMAGE_LIBRARY}
-		      ${FREEIMAGEPLUS_LIBRARY}
-		      boost_filesystem
-		      ${GLEW_LIBRARY}
-		      X11 Xxf86vm Xrandr pthread m Xi GL GLU
-                     )
+                      gpucast_gl 
+                      gpucast_core
+		                  debug ${FREEGLUT_LIBRARY_DEBUG} optimized ${FREEGLUT_LIBRARY_RELEASE} 
+                      debug ${GLFW_LIBRARY_DEBUG} optimized ${GLFW_LIBRARY_RELEASE}
+                      ${GLEW_LIBRARY}
+		                  ${FREEIMAGE_LIBRARY}
+		                  ${FREEIMAGEPLUS_LIBRARY}
+)
+
+ELSEIF (UNIX)
+
+TARGET_LINK_LIBRARIES(${_EXE_NAME} 
+		                  gpucast_gl 
+	                    gpucast_core
+		                  ${FREEGLUT_LIBRARY}
+		                  ${GLFW_LIBRARY}
+		                  ${FREEIMAGE_LIBRARY}
+		                  ${FREEIMAGEPLUS_LIBRARY}
+		                  boost_filesystem
+		                  ${GLEW_LIBRARY}
+		                  X11 Xxf86vm Xrandr pthread m Xi GL GLU
+)
 ENDIF (MSVC)
 
 ###############################################################################

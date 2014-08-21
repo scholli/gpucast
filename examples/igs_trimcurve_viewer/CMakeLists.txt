@@ -29,11 +29,11 @@ file(GLOB EXAMPLE_TRIMVIEW_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp in
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                     ${QT_INCLUDE_DIRS}
-                     ${GLEW_INCLUDE_DIRS}
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
+                     ${QT_INCLUDE_DIRS}
+                     ${GLEW_INCLUDE_DIR}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
@@ -59,7 +59,6 @@ ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
 IF (MSVC)
     TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-                          ${LIBRARIES} 
                           gpucast_gl 
                           gpucast_core                           
                           ${Qt5OpenGL_LIBRARIES}

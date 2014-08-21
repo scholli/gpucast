@@ -19,10 +19,11 @@ SET(QHULL_LIBRARY_SEARCH_DIRS
 ##############################################################################
 message(STATUS "-- checking for QHULL")
 
-find_path(QHULL_INCLUDE_DIR NAMES qhull/qhull_a.h PATHS ${QHULL_INCLUDE_SEARCH_DIRS})
+find_path(QHULL_INCLUDE_DIR NAMES libqhull/libqhull.h PATHS ${QHULL_INCLUDE_SEARCH_DIRS})
 
 IF (MSVC)
-	find_library(QHULL_LIBRARY NAMES qhullstatic.lib PATHS ${QHULL_LIBRARY_SEARCH_DIRS} PATH_SUFFIXES release debug)
+	find_library(QHULL_LIBRARY_DEBUG NAMES qhullstatic.lib PATHS ${QHULL_LIBRARY_SEARCH_DIRS} PATH_SUFFIXES debug)
+  find_library(QHULL_LIBRARY_RELEASE NAMES qhullstatic.lib PATHS ${QHULL_LIBRARY_SEARCH_DIRS} PATH_SUFFIXES release)
 ELSEIF (UNIX)
 	find_library(QHULL_LIBRARY NAMES libqhull.a PATHS ${QHULL_LIBRARY_SEARCH_DIRS})
 ENDIF (MSVC)

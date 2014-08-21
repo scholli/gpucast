@@ -9,12 +9,12 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                     ${FREEGLUT_INCLUDE_DIRS}
-                     ${GLEW_INCLUDE_DIRS}
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
                      ${CMAKE_SOURCE_DIR}/gpucast_volume/include
+                     ${FREEGLUT_INCLUDE_DIR}
+                     ${GLEW_INCLUDE_DIR}
 )
 
 ###############################################################################
@@ -36,14 +36,21 @@ ADD_EXECUTABLE( ${_EXE_NAME}
 
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-                      ${LIBRARIES} 
-                      gpucast_gl 
-                      gpucast_core                           
-                      gpucast_volume   
-                      ${FREEGLUT_LIBRARIES}                        
-                      ${FREEIMAGE_LIBRARIES}
-                      )
+IF (MSVC)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME} 
+                        gpucast_gl 
+                        gpucast_core                           
+                        gpucast_volume   
+                        )
+ELSEIF (UNIX)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME} 
+                        gpucast_gl 
+                        gpucast_core                           
+                        gpucast_volume   
+                        ${FREEGLUT_LIBRARIES}                        
+                        ${FREEIMAGE_LIBRARIES}
+                        )
+ENDIF (MSVC)
 
 ###############################################################################
 # copy runtime libraries as a post-build process
