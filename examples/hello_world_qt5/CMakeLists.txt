@@ -11,6 +11,9 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 
+MESSAGE(${Qt5OpenGL_INCLUDE_DIRS})
+
+
 ###############################################################################
 # set sources
 ###############################################################################
@@ -35,7 +38,10 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
 SET(LIBRARY_DIRS ${LIB_PATHS} 
                  ${GLEW_LIBRARY_DIRS} 
                  ${BOOST_LIBRARY_DIRS} 
-		             ${QT_LIBRARY_DIRS}
+		             
+
+
+${QT_LIBRARY_DIRS}
 )
 
 LINK_DIRECTORIES (${LIBRARY_DIRS})
