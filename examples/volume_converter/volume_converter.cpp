@@ -4,7 +4,7 @@
 #include <memory>
 
 #include <GL/glew.h>
-#include <gpucast/gl/glut/window.hpp>
+#include <gpucast/glut/window.hpp>
 #include <gpucast/gl/util/init_glew.hpp>
 
 #include <boost/program_options.hpp>

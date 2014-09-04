@@ -106,9 +106,9 @@ namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
   void                                
-  grid::serialize ( std::vector<gpucast::gl::vec4u>& cellbuffer,
-                    std::vector<gpucast::gl::vec4u>& facebuffer,
-                    std::vector<gpucast::gl::vec4f>& bboxbuffer ) const
+  grid::serialize ( std::vector<gpucast::math::vec4u>& cellbuffer,
+                    std::vector<gpucast::math::vec4u>& facebuffer,
+                    std::vector<gpucast::math::vec4f>& bboxbuffer ) const
   {
     cellbuffer.clear();
     facebuffer.clear();
@@ -125,9 +125,9 @@ namespace gpucast {
   /////////////////////////////////////////////////////////////////////////////
   unsigned                            
   grid::serialize ( gridcell const&               cell, 
-                    std::vector<gpucast::gl::vec4u>&     cellbuffer,
-                    std::vector<gpucast::gl::vec4u>&     facebuffer,
-                    std::vector<gpucast::gl::vec4f>&     bboxbuffer,
+                    std::vector<gpucast::math::vec4u>&     cellbuffer,
+                    std::vector<gpucast::math::vec4u>&     facebuffer,
+                    std::vector<gpucast::math::vec4f>&     bboxbuffer,
                     std::map<face_ptr, unsigned>& face_map ) const
   {
     unsigned first_face_id = facebuffer.size();
@@ -136,7 +136,7 @@ namespace gpucast {
     unsigned outer_faces   = 0;
     std::for_each ( cell.begin(), cell.end(), [&outer_faces] ( face_ptr const& f ) { outer_faces += int(f->outer); } );
     
-    gpucast::gl::vec4u cell_entry (bit_cast<float,unsigned>(cell.attribute_min()),
+    gpucast::math::vec4u cell_entry (bit_cast<float,unsigned>(cell.attribute_min()),
                             bit_cast<float,unsigned>(cell.attribute_max()),
                             uint2ToUInt ( cell.faces(), outer_faces ),
                             first_face_id );
@@ -148,7 +148,7 @@ namespace gpucast {
       for ( auto face_iter = cell.begin(); face_iter != cell.end(); ++face_iter )
       {
         unsigned face_data_id  = serialize ( *face_iter, bboxbuffer, face_map );
-        gpucast::gl::vec4u face_entry ( face_data_id, 
+        gpucast::math::vec4u face_entry ( face_data_id, 
                                  (**face_iter).outer,
                                  (**face_iter).surface_id,
                                  0 );
@@ -156,7 +156,7 @@ namespace gpucast {
         facebuffer.push_back (face_entry);
       }
     } else {
-      facebuffer.push_back ( gpucast::gl::vec4u (0,0,0,0) );
+      facebuffer.push_back ( gpucast::math::vec4u (0,0,0,0) );
     }
 
     return first_face_id;
@@ -165,7 +165,7 @@ namespace gpucast {
   /////////////////////////////////////////////////////////////////////////////
   unsigned                            
   grid::serialize ( face_ptr const& face, 
-                    std::vector<gpucast::gl::vec4f>& bboxbuffer,
+                    std::vector<gpucast::math::vec4f>& bboxbuffer,
                     std::map<face_ptr, unsigned>& face_map ) const
   {
     auto face_iter = face_map.find(face);
@@ -181,26 +181,26 @@ namespace gpucast {
   /////////////////////////////////////////////////////////////////////////////
   unsigned                            
   grid::serialize ( gpucast::math::obbox3f const& b,
-                    std::vector<gpucast::gl::vec4f>& bboxbuffer ) const
+                    std::vector<gpucast::math::vec4f>& bboxbuffer ) const
   {
     unsigned id = unsigned(bboxbuffer.size());
  
     auto m_inverse = b.orientation().inverse();
 
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( b.orientation().col(0)[0], b.orientation().col(0)[1], b.orientation().col(0)[2], 0.0f ) );
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( b.orientation().col(1)[0], b.orientation().col(1)[1], b.orientation().col(1)[2], 0.0f ) );
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( b.orientation().col(2)[0], b.orientation().col(2)[1], b.orientation().col(2)[2], 0.0f ) );
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( 0.0f, 0.0f, 0.0f, 1.0f ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( b.orientation().col(0)[0], b.orientation().col(0)[1], b.orientation().col(0)[2], 0.0f ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( b.orientation().col(1)[0], b.orientation().col(1)[1], b.orientation().col(1)[2], 0.0f ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( b.orientation().col(2)[0], b.orientation().col(2)[1], b.orientation().col(2)[2], 0.0f ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( 0.0f, 0.0f, 0.0f, 1.0f ) );
               
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( m_inverse.col(0)[0], m_inverse.col(0)[1], m_inverse.col(0)[2], 0.0f ) );
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( m_inverse.col(1)[0], m_inverse.col(1)[1], m_inverse.col(1)[2], 0.0f ) );
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( m_inverse.col(2)[0], m_inverse.col(2)[1], m_inverse.col(2)[2], 0.0f ) );
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( 0.0f,                0.0f,                0.0f,                1.0f ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( m_inverse.col(0)[0], m_inverse.col(0)[1], m_inverse.col(0)[2], 0.0f ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( m_inverse.col(1)[0], m_inverse.col(1)[1], m_inverse.col(1)[2], 0.0f ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( m_inverse.col(2)[0], m_inverse.col(2)[1], m_inverse.col(2)[2], 0.0f ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( 0.0f,                0.0f,                0.0f,                1.0f ) );
               
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( b.low() ) );
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( b.high() ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( b.low() ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( b.high() ) );
               
-    bboxbuffer.push_back ( gpucast::gl::vec4f ( b.center() ) );
+    bboxbuffer.push_back ( gpucast::math::vec4f ( b.center() ) );
 
     return id;
   }

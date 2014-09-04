@@ -16,8 +16,8 @@ namespace gpucast { namespace gl {
 
   ///////////////////////////////////////////////////////////////////////////////
   dynamic_scaling::dynamic_scaling( unsigned dsteps,
-                                    vec3f const& originalsize,
-                                    vec3f const& targetsize )
+                                    gpucast::math::vec3f const& originalsize,
+                                    gpucast::math::vec3f const& targetsize )
     : dynamic_transform ( dsteps ),
       _originalsize     ( originalsize ),
       _targetsize       ( targetsize )
@@ -30,12 +30,12 @@ namespace gpucast { namespace gl {
 
 
   ///////////////////////////////////////////////////////////////////////////////
-  /* virtual */ matrix4f    
+  /* virtual */ gpucast::math::matrix4f    
   dynamic_scaling::current_transform()
   {
     float alpha = float(_current_step) / float(_discrete_steps);
-    vec3f s = (1.0f - alpha) * _originalsize + alpha * _targetsize;
-    return make_scale ( s[0], s[1], s[2] );
+    gpucast::math::vec3f s = (1.0f - alpha) * _originalsize + alpha * _targetsize;
+    return gpucast::math::make_scale ( s[0], s[1], s[2] );
   }
 
 } } // namespace gpucast / namespace gl

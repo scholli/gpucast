@@ -21,11 +21,6 @@
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
-#include <gpucast/gl/fragmentshader.hpp>
-#include <gpucast/gl/geometryshader.hpp>
-#include <gpucast/gl/vertexshader.hpp>
-#include <gpucast/gl/error.hpp>
-
 // header, project
 
 namespace gpucast {
@@ -87,7 +82,7 @@ namespace gpucast {
   renderer::nearplane ( float n )
   {
     _nearplane = n;
-    projectionmatrix(gpucast::gl::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
+    projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
   }
 
 
@@ -96,13 +91,13 @@ namespace gpucast {
   renderer::farplane ( float f )
   {
     _farplane = f;
-    projectionmatrix(gpucast::gl::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
+    projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
   void
-  renderer::modelviewmatrix ( gpucast::gl::matrix4f const& m )
+  renderer::modelviewmatrix ( gpucast::math::matrix4f const& m )
   {
     // set matrix
     _modelviewmatrix = m;
@@ -119,19 +114,19 @@ namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
   void
-  renderer::projectionmatrix ( gpucast::gl::matrix4f const& m )
+  renderer::projectionmatrix ( gpucast::math::matrix4f const& m )
   {
     // set matrix
     _projectionmatrix = m;
 
     // recompute matrices that depend on projection
     _modelviewprojectionmatrix        = _projectionmatrix * _modelviewmatrix;
-    _modelviewprojectionmatrixinverse = gpucast::gl::inverse ( _modelviewprojectionmatrix );
+    _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
-  gpucast::gl::matrix4f const& 
+  gpucast::math::matrix4f const& 
   renderer::modelviewmatrix () const 
   {
     return _modelviewmatrix;
@@ -139,7 +134,7 @@ namespace gpucast {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  gpucast::gl::matrix4f const& 
+  gpucast::math::matrix4f const& 
   renderer::modelviewmatrixinverse () const 
   {
     return _modelviewmatrixinverse;
@@ -147,7 +142,7 @@ namespace gpucast {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  gpucast::gl::matrix4f const& 
+  gpucast::math::matrix4f const& 
   renderer::modelviewprojection () const 
   {
     return _modelviewprojectionmatrix;
@@ -155,7 +150,7 @@ namespace gpucast {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  gpucast::gl::matrix4f const& 
+  gpucast::math::matrix4f const& 
   renderer::modelviewprojectioninverse () const 
   {
     return _modelviewprojectionmatrixinverse;
@@ -163,7 +158,7 @@ namespace gpucast {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  gpucast::gl::matrix4f const& 
+  gpucast::math::matrix4f const& 
   renderer::normalmatrix () const 
   {
     return _normalmatrix;
@@ -171,7 +166,7 @@ namespace gpucast {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  gpucast::gl::matrix4f const& 
+  gpucast::math::matrix4f const& 
   renderer::projectionmatrix () const 
   {
     return _projectionmatrix;
@@ -180,14 +175,14 @@ namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
   void                   
-  renderer::background ( gpucast::gl::vec4f const& rgba )
+  renderer::background ( gpucast::math::vec4f const& rgba )
   {
     _background = rgba;
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
-  gpucast::gl::vec4f const&     
+  gpucast::math::vec4f const&     
   renderer::background ( ) const
   {
     return _background;
@@ -262,7 +257,7 @@ namespace gpucast {
   }
 
 
-
+#if 0
   /////////////////////////////////////////////////////////////////////////////
   void
   renderer::init_program ( std::shared_ptr<gpucast::gl::program>&  p,
@@ -336,5 +331,5 @@ namespace gpucast {
       std::cerr << "renderer::init_program(): failed to init program : " << vertexshader_filename << ", " << fragmentshader_filename << "( " << e.what () << ")\n";
     }
   }
-
+#endif
 } // namespace gpucast

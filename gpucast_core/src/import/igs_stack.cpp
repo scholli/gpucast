@@ -29,11 +29,9 @@
 #include <gpucast/core/nurbssurfaceobject.hpp>
 #include <gpucast/core/nurbssurface.hpp>
 
-#include <gpucast/gl/math/matrix4x4.hpp>
-#include <gpucast/gl/math/vec3.hpp>
-#include <gpucast/gl/math/vec4.hpp>
-#include <gpucast/gl/util/material.hpp>
-
+#include <gpucast/math/matrix4x4.hpp>
+#include <gpucast/math/vec3.hpp>
+#include <gpucast/math/vec4.hpp>
 
 using namespace gpucast::math;
 
@@ -47,7 +45,7 @@ namespace gpucast {
     {}
 
     // typedefs
-    typedef gpucast::gl::matrix4x4<double>  matrix_t;
+    typedef gpucast::math::matrix4x4<double>  matrix_t;
     typedef nurbssurface                    surface_t;
     typedef nurbscurve<point2d>             curve_t;
 
@@ -78,7 +76,7 @@ namespace gpucast {
     std::map<int, std::vector<curve_t> >    composites_;
     std::map<int, igs_curve_on_surface>     curve_surfs_;
     std::map<int, igs_trim>                 trims_;
-    std::map<int, gpucast::gl::material>    materials_;
+    //std::map<int, gpucast::gl::material>    materials_;
 
     // globals
     std::string                             globalstring_;
@@ -488,7 +486,7 @@ void igs_stack::clear()
   impl_->composites_.clear();
   impl_->curve_surfs_.clear();
   impl_->trims_.clear();
-  impl_->materials_.clear();
+  //impl_->materials_.clear();
 }
 
 
@@ -853,14 +851,14 @@ void igs_stack::createLine(igs_data const& data, std::size_t index)
 ////////////////////////////////////////////////////////////////////////////////
 void igs_stack::createMaterial(igs_data const& data, std::size_t index)
 {
-  gpucast::gl::material m;
-  igs_parameter& p = impl_->parameter_[data.parameter];
-
-  gpucast::gl::vec3d color(p.numeric_values[1], p.numeric_values[2], p.numeric_values[3]);
-  m.diffuse = gpucast::gl::vec3f(float(color[0]), float(color[1]), float(color[2]));
-  m.ambient = gpucast::gl::vec3f(float(color[0]), float(color[1]), float(color[2]));
-
-  impl_->materials_.insert(std::make_pair(int(index), m));
+  //gpucast::gl::material m;
+  //igs_parameter& p = impl_->parameter_[data.parameter];
+  //
+  //gpucast::math::vec3d color(p.numeric_values[1], p.numeric_values[2], p.numeric_values[3]);
+  //m.diffuse = gpucast::math::vec3f(float(color[0]), float(color[1]), float(color[2]));
+  //m.ambient = gpucast::math::vec3f(float(color[0]), float(color[1]), float(color[2]));
+  //
+  //impl_->materials_.insert(std::make_pair(int(index), m));
 }
 
 
@@ -872,7 +870,7 @@ void igs_stack::createMatrix(igs_data const& data, std::size_t index)
   //nurbscurve<double3_t> nc;
   igs_parameter& p = impl_->parameter_[data.parameter];
 
-  gpucast::gl::matrix4x4<double> m;
+  gpucast::math::matrix4x4<double> m;
   // scale and rotation
   m[0] = p.numeric_values[1];
   m[4] = p.numeric_values[2];
@@ -889,8 +887,8 @@ void igs_stack::createMatrix(igs_data const& data, std::size_t index)
   m[15] = 1.0;
 
   // translation
-  gpucast::gl::vec3d trans(p.numeric_values[4], p.numeric_values[8], p.numeric_values[12]);
-  gpucast::gl::matrix4x4<double> result = m * gpucast::gl::make_translation(trans[0], trans[1], trans[2]);
+  gpucast::math::vec3d trans(p.numeric_values[4], p.numeric_values[8], p.numeric_values[12]);
+  gpucast::math::matrix4x4<double> result = m * gpucast::math::make_translation(trans[0], trans[1], trans[2]);
 
   impl_->matrices_.insert(std::make_pair(int(index), result));
 }

@@ -19,7 +19,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/unordered_map.hpp>
 
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 // header, project
 #include <gpucast/volume/isosurface/octree/node.hpp>
@@ -55,33 +55,33 @@ public :
 
   void                              finalize              () const;
 
-  std::vector<gpucast::gl::vec4u> const&   nodebuffer            () const;
-  std::vector<gpucast::gl::vec4u> const&   facelistbuffer        () const;
-  std::vector<gpucast::gl::vec4f> const&   bboxbuffer            () const;
+  std::vector<gpucast::math::vec4u> const&   nodebuffer            () const;
+  std::vector<gpucast::math::vec4u> const&   facelistbuffer        () const;
+  std::vector<gpucast::math::vec4f> const&   bboxbuffer            () const;
   std::vector<float> const&         limitbuffer           () const;
 
 private : 
 
   std::vector<std::size_t>*         placeholder;
   std::map<std::size_t, unsigned>*  ocnode_map;  // uniqueid - bufferid
-  std::map<face_ptr, gpucast::gl::vec4u>*  face_map;     // avoid multiple storage of faces
+  std::map<face_ptr, gpucast::math::vec4u>*  face_map;     // avoid multiple storage of faces
 
   // octree structure
-  std::vector<gpucast::gl::vec4u>*         ocnode_buffer;
+  std::vector<gpucast::math::vec4u>*         ocnode_buffer;
   // [ nodetype(parent/no_outer = 0, parent/outer = 1, leaf/no_outer = 2, leaf/outer = 3 ) ] [optional: child0 ] [optional: child5 ]
   // [ attributelimit ocnode id                                                            ] [optional: child1 ] [optional: child6 ]
   // [ first face id                                                                       ] [optional: child2 ] [optional: child7 ]
   // [ number of faces                                                                     ] [optional: child3 ] [optional: child8 ]
 
   // facelist buffer
-  std::vector<gpucast::gl::vec4u>*         facelist_buffer;
+  std::vector<gpucast::math::vec4u>*         facelist_buffer;
   //  first face id         first face id + number of faces 
   // [ surface_id ]             [ surface_id ]
   // [ limit id   ]             [ limit id   ]
   // [ obb id     ]             [ obb id     ]
   // [ outer      ]             [ outer      ]
 
-  std::vector<gpucast::gl::vec4f>*         bbox_buffer;
+  std::vector<gpucast::math::vec4f>*         bbox_buffer;
   // each oriented boudning box points to this buffer matrix + limits + center
   // [m00] [m10] [m20] [m30] [minv00] [minv10] [minv20] [minv30] [low0] [high0] [cx]
   // [m01] [m11] [m21] [m31] [minv01] [minv11] [minv21] [minv31] [low1] [high1] [cy]

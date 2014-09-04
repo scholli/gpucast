@@ -85,32 +85,36 @@ namespace gpucast { namespace math {
   template <typename value_t, unsigned N> 
   value_t compute_determinant ( matrix<value_t, N, N> const& );
 
-  template <typename value_t> 
-  value_t compute_determinant ( matrix<value_t, 2, 2> const& );
-
-  template <typename value_t> 
-  value_t compute_determinant ( matrix<value_t, 3, 3> const& );
-
   template <typename value_t, unsigned NROWS, unsigned NCOLS> 
   matrix<value_t, NROWS, NCOLS>  compute_inverse ( matrix<value_t, NROWS, NCOLS> const& rhs );
 
   template <typename value_t, unsigned N> 
   matrix<value_t, N, N> compute_inverse ( matrix<value_t, N, N> const& rhs );
 
-  template <typename value_t> 
-  matrix<value_t, 3, 3> compute_inverse ( matrix<value_t, 3, 3> const& rhs );
+  template <typename value_t>
+  value_t compute_determinant(matrix<value_t, 2, 2> const&);
 
-  template <typename value_t> 
-  matrix<value_t, 3, 3> compute_inverse ( matrix<value_t, 3, 3> const& rhs );
+  template <typename value_t>
+  value_t compute_determinant(matrix<value_t, 3, 3> const&);
 
-  template <typename value_t> 
-  matrix<value_t, 3, 3> make_rotation_x ( value_t const& arc );
+  template <typename value_t>
+  matrix<value_t, 3, 3> compute_inverse(matrix<value_t, 3, 3> const& rhs);
 
-  template <typename value_t> 
-  matrix<value_t, 3, 3> make_rotation_y ( value_t const& arc );
+  template <typename value_t>
+  matrix<value_t, 3, 3> compute_inverse(matrix<value_t, 3, 3> const& rhs);
 
-  template <typename value_t> 
-  matrix<value_t, 3, 3> make_rotation_z ( value_t const& arc );
+  namespace mat3 {
+
+    template <typename value_t>
+    matrix<value_t, 3, 3> make_rotation_x(value_t const& arc);
+
+    template <typename value_t>
+    matrix<value_t, 3, 3> make_rotation_y(value_t const& arc);
+
+    template <typename value_t>
+    matrix<value_t, 3, 3> make_rotation_z(value_t const& arc);
+
+  } // namepspace mat3
 
   template <typename value_t, unsigned N> 
   std::set<value_t> compute_eigenvalues ( matrix<value_t, N, N> const& m, 
@@ -156,7 +160,6 @@ namespace gpucast { namespace math {
   template <typename value_t, unsigned NROWS, unsigned NCOLS>
   std::ostream& operator<<(std::ostream& os, matrix<value_t, NROWS, NCOLS> const& a);
 
-  typedef matrix<float, 4, 4> matrix4f;
   typedef matrix<float, 3, 3> matrix3f;
 
 } } // namespace gpucast / namespace math

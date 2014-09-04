@@ -17,7 +17,7 @@
 
 // header, project
 #include <gpucast/gl/glpp.hpp>
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec3.hpp>
 
 
 namespace gpucast { namespace gl {

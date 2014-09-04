@@ -30,7 +30,7 @@
 #include <boost/shared_ptr.hpp>
 
 // header project
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec3.hpp>
 
 #include <FreeImagePlus.h>
 

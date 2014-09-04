@@ -25,13 +25,13 @@ namespace gpucast {
 ///////////////////////////////////////////////////////////////////////////////
 serialize_tree_dfs_traversal::serialize_tree_dfs_traversal()
   : nodevisitor     (),
-    ocnode_buffer   ( new std::vector<gpucast::gl::vec4u>(1) ), 
-    facelist_buffer ( new std::vector<gpucast::gl::vec4u>(1) ), 
-    bbox_buffer     ( new std::vector<gpucast::gl::vec4f>(1) ), 
+    ocnode_buffer   ( new std::vector<gpucast::math::vec4u>(1) ), 
+    facelist_buffer ( new std::vector<gpucast::math::vec4u>(1) ), 
+    bbox_buffer     ( new std::vector<gpucast::math::vec4f>(1) ), 
     range_buffer    ( new std::vector<float>(1) ),
     placeholder     ( new std::vector<std::size_t> ),
     ocnode_map      ( new std::map<std::size_t, unsigned> ),
-    face_map        ( new std::map<face_ptr, gpucast::gl::vec4u> )
+    face_map        ( new std::map<face_ptr, gpucast::math::vec4u> )
 {}
 
 
@@ -70,9 +70,9 @@ serialize_tree_dfs_traversal::serialize_inner_node  ( ocnode& n ) const
                 
   unsigned range_id = serialize_range ( n.range().minimum(), n.range().maximum() );
 
-  ocnode_buffer->push_back ( gpucast::gl::vec4u ( determine_nodetype(n), range_id, 0U, 0U ));
-  ocnode_buffer->push_back ( gpucast::gl::vec4u ( unsigned(n.get_children()[0]->id()), unsigned(n.get_children()[1]->id()), unsigned(n.get_children()[2]->id()), unsigned(n.get_children()[3]->id()) ));
-  ocnode_buffer->push_back ( gpucast::gl::vec4u ( unsigned(n.get_children()[4]->id()), unsigned(n.get_children()[5]->id()), unsigned(n.get_children()[6]->id()), unsigned(n.get_children()[7]->id()) ));
+  ocnode_buffer->push_back ( gpucast::math::vec4u ( determine_nodetype(n), range_id, 0U, 0U ));
+  ocnode_buffer->push_back ( gpucast::math::vec4u ( unsigned(n.get_children()[0]->id()), unsigned(n.get_children()[1]->id()), unsigned(n.get_children()[2]->id()), unsigned(n.get_children()[3]->id()) ));
+  ocnode_buffer->push_back ( gpucast::math::vec4u ( unsigned(n.get_children()[4]->id()), unsigned(n.get_children()[5]->id()), unsigned(n.get_children()[6]->id()), unsigned(n.get_children()[7]->id()) ));
   
   placeholder->push_back ( id + 1 );
   placeholder->push_back ( id + 2 );
@@ -91,7 +91,7 @@ serialize_tree_dfs_traversal::serialize_outer_node  ( ocnode& n ) const
   unsigned face_id   = unsigned ( facelist_buffer->size() );
   unsigned range_id = serialize_range ( n.range().minimum(), n.range().maximum() );
 
-  gpucast::gl::vec4u entry ( determine_nodetype(n), range_id, face_id, unsigned(n.faces()) );
+  gpucast::math::vec4u entry ( determine_nodetype(n), range_id, face_id, unsigned(n.faces()) );
 
   std::for_each ( n.face_begin(), n.face_end(), std::bind ( &serialize_tree_dfs_traversal::serialize_face, this, std::placeholders::_1 ) );
 
@@ -123,7 +123,7 @@ serialize_tree_dfs_traversal::serialize_face ( face_ptr const& f ) const
   {
     facelist_buffer->push_back ( face_map->at(f) );
   } else { // create new entry
-    gpucast::gl::vec4u face_entry ( f->surface_id, 
+    gpucast::math::vec4u face_entry ( f->surface_id, 
                              serialize_range ( f->attribute_range.minimum(), f->attribute_range.maximum() ), 
                              serialize_bbox  ( f->obb ), 
                              f->outer );
@@ -144,20 +144,20 @@ unsigned
  
   auto m_inverse = b.orientation().inverse();
 
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( b.orientation().col(0)[0], b.orientation().col(0)[1], b.orientation().col(0)[2], 0.0f ) );
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( b.orientation().col(1)[0], b.orientation().col(1)[1], b.orientation().col(1)[2], 0.0f ) );
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( b.orientation().col(2)[0], b.orientation().col(2)[1], b.orientation().col(2)[2], 0.0f ) );
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( 0.0f, 0.0f, 0.0f, 1.0f ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( b.orientation().col(0)[0], b.orientation().col(0)[1], b.orientation().col(0)[2], 0.0f ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( b.orientation().col(1)[0], b.orientation().col(1)[1], b.orientation().col(1)[2], 0.0f ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( b.orientation().col(2)[0], b.orientation().col(2)[1], b.orientation().col(2)[2], 0.0f ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( 0.0f, 0.0f, 0.0f, 1.0f ) );
   
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( m_inverse.col(0)[0], m_inverse.col(0)[1], m_inverse.col(0)[2], 0.0f ) );
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( m_inverse.col(1)[0], m_inverse.col(1)[1], m_inverse.col(1)[2], 0.0f ) );
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( m_inverse.col(2)[0], m_inverse.col(2)[1], m_inverse.col(2)[2], 0.0f ) );
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( 0.0f,                0.0f,                0.0f,                1.0f ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( m_inverse.col(0)[0], m_inverse.col(0)[1], m_inverse.col(0)[2], 0.0f ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( m_inverse.col(1)[0], m_inverse.col(1)[1], m_inverse.col(1)[2], 0.0f ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( m_inverse.col(2)[0], m_inverse.col(2)[1], m_inverse.col(2)[2], 0.0f ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( 0.0f,                0.0f,                0.0f,                1.0f ) );
 
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( b.low() ) );
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( b.high() ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( b.low() ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( b.high() ) );
  
-  bbox_buffer->push_back ( gpucast::gl::vec4f ( b.center() ) );
+  bbox_buffer->push_back ( gpucast::math::vec4f ( b.center() ) );
 
   return id;
 }
@@ -185,7 +185,7 @@ serialize_tree_dfs_traversal::finalize () const
   for ( auto i = placeholder->begin(); i != placeholder->end(); ++i )
   {
     // replace unique id with buffer id
-    gpucast::gl::vec4u entry = (*ocnode_buffer)[*i];
+    gpucast::math::vec4u entry = (*ocnode_buffer)[*i];
 
     entry[0] = ocnode_map->at(entry[0]);
     entry[1] = ocnode_map->at(entry[1]);
@@ -200,7 +200,7 @@ serialize_tree_dfs_traversal::finalize () const
 
 
 ///////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::gl::vec4u> const& 
+std::vector<gpucast::math::vec4u> const& 
 serialize_tree_dfs_traversal::nodebuffer () const
 {
   finalize();
@@ -209,7 +209,7 @@ serialize_tree_dfs_traversal::nodebuffer () const
 
 
 ///////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::gl::vec4u> const& 
+std::vector<gpucast::math::vec4u> const& 
 serialize_tree_dfs_traversal::facelistbuffer () const
 {
   return *facelist_buffer;
@@ -217,7 +217,7 @@ serialize_tree_dfs_traversal::facelistbuffer () const
 
 
 ///////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::gl::vec4f> const& 
+std::vector<gpucast::math::vec4f> const& 
 serialize_tree_dfs_traversal::bboxbuffer () const
 {
   return *bbox_buffer;

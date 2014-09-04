@@ -21,8 +21,7 @@
 #include <iostream>
 
 // header, external
-#include <boost/shared_ptr.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 #include <gpucast/math/parametric/point.hpp>
 #include <gpucast/math/parametric/beziercurve.hpp>
@@ -39,21 +38,21 @@ class GPUCAST_CORE trimdomain
 {
   public : // enums/typedefs
 
-    typedef double                                    value_type;                               
-    typedef gpucast::math::point<double,2>                      point_type;
+    typedef double                                     value_type;                               
+    typedef gpucast::math::point<double,2>             point_type;
 
-    typedef gpucast::math::contour_segment<value_type>          contour_segment_type;
-    typedef std::shared_ptr<contour_segment_type>   contour_segment_ptr;
-    typedef std::shared_ptr<trimdomain>             domain_ptr;
+    typedef gpucast::math::contour_segment<value_type> contour_segment_type;
+    typedef std::shared_ptr<contour_segment_type>      contour_segment_ptr;
+    typedef std::shared_ptr<trimdomain>                domain_ptr;
 
-    typedef gpucast::math::beziercurve<point_type>              curve_type;
-    typedef std::shared_ptr<curve_type>             curve_ptr;
-    typedef std::vector<curve_ptr>                    curve_container;
+    typedef gpucast::math::beziercurve<point_type>     curve_type;
+    typedef std::shared_ptr<curve_type>                curve_ptr;
+    typedef std::vector<curve_ptr>                     curve_container;
 
     typedef gpucast::math::axis_aligned_boundingbox<point_type> bbox_type;
-    typedef gpucast::math::contour<value_type>                  contour_type;
+    typedef gpucast::math::contour<value_type>         contour_type;
 
-    typedef std::vector<contour_type>                 trimloop_container;
+    typedef std::vector<contour_type>                  trimloop_container;
 
   public : // c'tor/d'tor
 

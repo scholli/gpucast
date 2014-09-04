@@ -14,7 +14,7 @@
 
 #include <gpucast/gl/glpp.hpp>
 #include <gpucast/gl/test/dynamic_transform.hpp>
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec3.hpp>
 
 namespace gpucast { namespace gl {
 
@@ -23,19 +23,19 @@ namespace gpucast { namespace gl {
   public :
 
     dynamic_scaling                 ( unsigned      discrete_steps,
-                                      vec3f const&  original_size, 
-                                      vec3f const&  target_size );
+                                      gpucast::math::vec3f const&  original_size, 
+                                      gpucast::math::vec3f const&  target_size );
 
     virtual ~dynamic_scaling        ();
 
   public :
 
-    /* virtual */ matrix4f    current_transform ();
+    /* virtual */ gpucast::math::matrix4f    current_transform ();
 
   private :
 
-    vec3f _originalsize;
-    vec3f _targetsize;
+    gpucast::math::vec3f _originalsize;
+    gpucast::math::vec3f _targetsize;
 
   };
 

@@ -22,8 +22,8 @@
 // header, project
 #include <gpucast/core/gpucast.hpp>
 
-#include <gpucast/gl/math/vec3.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec3.hpp>
+#include <gpucast/math/vec4.hpp>
 
 
 
@@ -57,11 +57,11 @@ public : // enums, typedefs
 
   typedef std::vector<int>::const_iterator            const_index_iterator;
 
-  typedef std::vector<gpucast::gl::vec3d>::iterator          vec3d_iterator;
-  typedef std::vector<gpucast::gl::vec3d>::const_iterator    const_vec3d_iterator;
+  typedef std::vector<gpucast::math::vec3d>::iterator          vec3d_iterator;
+  typedef std::vector<gpucast::math::vec3d>::const_iterator    const_vec3d_iterator;
 
-  typedef std::vector<gpucast::gl::vec4f>::iterator          vec4f_iterator;
-  typedef std::vector<gpucast::gl::vec4f>::const_iterator    const_vec4f_iterator;
+  typedef std::vector<gpucast::math::vec4f>::iterator          vec4f_iterator;
+  typedef std::vector<gpucast::math::vec4f>::const_iterator    const_vec4f_iterator;
 
 public : // c'tors / d'tor
 
@@ -91,7 +91,7 @@ public : // methods
   //////////////////////////////////////////////////////////////////////////////
   void          set_trimid    ( std::size_t id );
   void          set_dataid    ( std::size_t id );
-  void          set_parameter ( gpucast::gl::vec4d const& parameter_range );
+  void          set_parameter ( gpucast::math::vec4d const& parameter_range );
   void          set_trimtype  ( bool outer_trim );
   void          set_order     ( std::size_t u, std::size_t v );
 
@@ -108,8 +108,8 @@ public : // methods
 private : // data
 
   // vertices necessary for convex hull and their texcoords
-  std::vector<gpucast::gl::vec3d>  _vertices;
-  std::vector<gpucast::gl::vec4f>  _parameter;
+  std::vector<gpucast::math::vec3d>  _vertices;
+  std::vector<gpucast::math::vec4f>  _parameter;
 
   // resulting triangle id's
   std::vector<int>          _indices;

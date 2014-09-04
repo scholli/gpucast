@@ -9,8 +9,8 @@
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_AABB_HPP
-#define GPUCAST_AABB_HPP
+#ifndef GPUCAST_GL_AABB_HPP
+#define GPUCAST_GL_AABB_HPP
 
 // header, system
 
@@ -28,19 +28,16 @@
 #include <gpucast/math/vec4.hpp>
 
 // header, project
-#include <gpucast/volume/gpucast.hpp>
-#include <gpucast/volume/beziervolume.hpp>
-
-
+#include <gpucast/core/gpucast.hpp>
 
 namespace gpucast {
+  namespace gl {
 
-class GPUCAST_VOLUME aabb : public gpucast::math::axis_aligned_boundingbox<gpucast::math::point<beziervolume::value_type, 3> >
+class GPUCAST_GL aabb : public gpucast::math::axis_aligned_boundingbox<gpucast::math::point<float, 3> >
 {
   public : // typedefs / enums
 
-    typedef gpucast::math::axis_aligned_boundingbox<gpucast::math::point<beziervolume::value_type, 3> >  base_type;
-    
+    typedef gpucast::math::axis_aligned_boundingbox<gpucast::math::point<float, 3> >  base_type;
 
   public : // c'tor / d'tor
 
@@ -59,17 +56,18 @@ class GPUCAST_VOLUME aabb : public gpucast::math::axis_aligned_boundingbox<gpuca
 
   private : // attributes
 
-    bool                                         _initialized;
+    bool                                              _initialized;
 
     std::shared_ptr<gpucast::gl::arraybuffer>         _vertexarray;
     std::shared_ptr<gpucast::gl::arraybuffer>         _colorarray;
     std::shared_ptr<gpucast::gl::vertexarrayobject>   _arrayobject;
 
     std::shared_ptr<gpucast::gl::program>             _program; 
-    gpucast::math::vec4f                                  _color;
+    gpucast::math::vec4f                                _color;
 
 };
 
+  } // namespace gl
 } // namespace gpucast
 
-#endif // GPUCAST_AABB_HPP
+#endif // GPUCAST_GL_AABB_HPP

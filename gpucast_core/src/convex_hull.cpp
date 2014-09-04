@@ -78,7 +78,7 @@ convex_hull::set(vec3d_iterator       p_beg,
   _vertices.clear();
   _indices.clear();
 
-  convex_hull_compute<3, gpucast::gl::vec3d>(&(*p_beg)[0],
+  convex_hull_compute<3, gpucast::math::vec3d>(&(*p_beg)[0],
                                       std::distance(p_beg, p_end),
                                       std::back_inserter(_vertices),
                                       std::back_inserter(_indices),
@@ -109,7 +109,7 @@ convex_hull::clear ()
 void
 convex_hull::print(std::ostream& os) const
 {
-  std::for_each(_indices.begin(), _indices.end(), triangle_printer<gpucast::gl::vec3d>(_vertices, os));
+  std::for_each(_indices.begin(), _indices.end(), triangle_printer<gpucast::math::vec3d>(_vertices, os));
 }
 
 

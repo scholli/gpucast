@@ -19,9 +19,9 @@
 #include <ostream>                // std::ostream
 
 // includes, project
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec3.hpp>
 
-namespace gpucast { namespace gl {
+namespace gpucast { namespace math {
 
 // functions, internal
 
@@ -792,4 +792,4 @@ operator<<(std::ostream& os, matrix4x4<value_t> const& a)
   return os;
 }
 
-} } // namespace gpucast / namespace gl
+} } // namespace gpucast / namespace math

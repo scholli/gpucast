@@ -22,8 +22,6 @@
 #include <map>
 #include <memory>
 
-#include <boost/noncopyable.hpp>
-
 // header, project
 #include <gpucast/core/gpucast.hpp>
 
@@ -136,7 +134,7 @@ struct map_adapter {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class GPUCAST_CORE igs_stack : public boost::noncopyable
+class GPUCAST_CORE igs_stack 
 {
 public :
 
@@ -145,8 +143,8 @@ public :
 
 private :
 
-  igs_stack(igs_stack const& igs_stack);
-  igs_stack& operator=(igs_stack const& rhs);
+  igs_stack(igs_stack const& igs_stack) = delete;
+  igs_stack& operator=(igs_stack const& rhs) = delete;
 
 public : // methods
 

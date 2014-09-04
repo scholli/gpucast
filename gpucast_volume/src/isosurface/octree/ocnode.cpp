@@ -221,7 +221,7 @@ ocnode::accept ( nodevisitor const& visitor )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/* virtual */ void ocnode::draw(gpucast::gl::matrix4x4<float> const& mvp)
+/* virtual */ void ocnode::draw(gpucast::math::matrix4x4<float> const& mvp)
 {
 
 }

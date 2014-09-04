@@ -158,7 +158,7 @@ namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
   void                      
-  fragmentlist_generator::transform ( gpucast::gl::matrix4f const& m )
+  fragmentlist_generator::transform ( gpucast::math::matrix4f const& m )
   {
     _modelmatrix = m;
   }
@@ -381,8 +381,8 @@ namespace gpucast {
   {
     if ( !_vertices.empty() )
     {
-      std::cout << "Allocating " << sizeof(gpucast::gl::vec3f) * std::distance(_vertices.begin(),        _vertices.end()) / 1024 << " kB for attribarray0" << std::endl;
-      std::cout << "Allocating " << sizeof(gpucast::gl::vec4f) * std::distance(_vertexparameter.begin(), _vertexparameter.end()) / 1024 << " kB for attribarray1" <<std::endl;
+      std::cout << "Allocating " << sizeof(gpucast::math::vec3f) * std::distance(_vertices.begin(),        _vertices.end()) / 1024 << " kB for attribarray0" << std::endl;
+      std::cout << "Allocating " << sizeof(gpucast::math::vec4f) * std::distance(_vertexparameter.begin(), _vertexparameter.end()) / 1024 << " kB for attribarray1" <<std::endl;
 
       // copy vertex and attribute data to gpu
       _drawable->attribarray0.update ( _vertices.begin(),         _vertices.end() );
@@ -438,12 +438,12 @@ namespace gpucast {
     std::size_t attrdata   = std::distance ( _attribute_data.begin(), _attribute_data.end());
     std::size_t attrpoints = std::distance ( _attribute_points.begin(),  _attribute_points.end());
 
-    std::cout << "Allocating : " << srfdata    * sizeof(gpucast::gl::vec4u) / 1024 << " kB for surface data" << std::endl;
-    std::cout << "Allocating : " << srfpoints  * sizeof(gpucast::gl::vec4f) / 1024 << " kB for surface points" << std::endl;
-    std::cout << "Allocating : " << voldata    * sizeof(gpucast::gl::vec4f) / 1024 << " kB for volume data" << std::endl;
-    std::cout << "Allocating : " << volpoints  * sizeof(gpucast::gl::vec4f) / 1024 << " kB for volume points" << std::endl;
-    std::cout << "Allocating : " << attrdata   * sizeof(gpucast::gl::vec4u) / 1024 << " kB for attribute data" << std::endl;
-    std::cout << "Allocating : " << attrpoints * sizeof(gpucast::gl::vec2f) / 1024 << " kB for attribute points" << std::endl;
+    std::cout << "Allocating : " << srfdata    * sizeof(gpucast::math::vec4u) / 1024 << " kB for surface data" << std::endl;
+    std::cout << "Allocating : " << srfpoints  * sizeof(gpucast::math::vec4f) / 1024 << " kB for surface points" << std::endl;
+    std::cout << "Allocating : " << voldata    * sizeof(gpucast::math::vec4f) / 1024 << " kB for volume data" << std::endl;
+    std::cout << "Allocating : " << volpoints  * sizeof(gpucast::math::vec4f) / 1024 << " kB for volume points" << std::endl;
+    std::cout << "Allocating : " << attrdata   * sizeof(gpucast::math::vec4u) / 1024 << " kB for attribute data" << std::endl;
+    std::cout << "Allocating : " << attrpoints * sizeof(gpucast::math::vec2f) / 1024 << " kB for attribute points" << std::endl;
 
     gpucast::gl::print_memory_usage ( std::cout );
   }
@@ -540,11 +540,11 @@ namespace gpucast {
 
       _hull_pass->set_uniform1f        ("threshold",                normalized_threshold);
 
-      gpucast::gl::matrix4f modelview        = _modelviewmatrix * _modelmatrix;
-      gpucast::gl::matrix4f modelviewinverse = gpucast::gl::inverse(modelview);
-      gpucast::gl::matrix4f normalmatrix     = modelview.normalmatrix();
-      gpucast::gl::matrix4f mvp              = _projectionmatrix * modelview;
-      gpucast::gl::matrix4f mvp_inverse      = gpucast::gl::inverse(mvp);
+      gpucast::math::matrix4f modelview        = _modelviewmatrix * _modelmatrix;
+      gpucast::math::matrix4f modelviewinverse = gpucast::math::inverse(modelview);
+      gpucast::math::matrix4f normalmatrix     = modelview.normalmatrix();
+      gpucast::math::matrix4f mvp              = _projectionmatrix * modelview;
+      gpucast::math::matrix4f mvp_inverse      = gpucast::math::inverse(mvp);
 
       _hull_pass->set_uniform_matrix4fv ("normalmatrix",              1, false, &normalmatrix[0] );
       _hull_pass->set_uniform_matrix4fv ("modelviewmatrix",           1, false, &modelview[0] );

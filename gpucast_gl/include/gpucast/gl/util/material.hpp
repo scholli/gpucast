@@ -17,7 +17,7 @@
 #include <algorithm>
 
 #include <gpucast/gl/glpp.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 #include <gpucast/gl/texture2d.hpp>
 
 namespace gpucast { namespace gl {
@@ -36,9 +36,9 @@ namespace gpucast { namespace gl {
     {}
 
     material(
-             vec4f const& amb,
-             vec4f const& diff,
-	           vec4f const& spec,
+             gpucast::math::vec4f const& amb,
+             gpucast::math::vec4f const& diff,
+	           gpucast::math::vec4f const& spec,
 	           float shine,
 	           float opac
              )
@@ -79,9 +79,9 @@ namespace gpucast { namespace gl {
       os << "has normal map : "   << int(normalmap != 0)    << std::endl;
     }
 
-    vec4f                       ambient;
-    vec4f                       diffuse;
-    vec4f                       specular;
+    gpucast::math::vec4f        ambient;
+    gpucast::math::vec4f        diffuse;
+    gpucast::math::vec4f        specular;
 
     float                       shininess;
     float                       opacity;

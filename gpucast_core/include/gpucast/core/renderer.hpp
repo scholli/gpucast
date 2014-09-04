@@ -17,10 +17,8 @@
 #include <set>
 #include <memory>
 
-#include <gpucast/gl/glpp.hpp>
-#include <gpucast/gl/math/vec4.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
-#include <gpucast/gl/program.hpp>
+#include <gpucast/math/vec4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 // header, external
 
@@ -52,25 +50,20 @@ public : // methods
   void                  nearplane               ( float );
   void                  farplane                ( float );
 
-  virtual void          modelviewmatrix         ( gpucast::gl::matrix4f const& );
-  virtual void          projectionmatrix        ( gpucast::gl::matrix4f const& );
+  virtual void          modelviewmatrix         ( gpucast::math::matrix4f const& );
+  virtual void          projectionmatrix        ( gpucast::math::matrix4f const& );
 
-  gpucast::gl::matrix4f const& modelviewmatrix         () const;
-  gpucast::gl::matrix4f const& modelviewmatrixinverse  () const;
-  gpucast::gl::matrix4f const& modelviewprojection     () const;
-  gpucast::gl::matrix4f const& modelviewprojectioninverse () const;
-  gpucast::gl::matrix4f const& normalmatrix            () const;
-  gpucast::gl::matrix4f const& projectionmatrix        () const;
+  gpucast::math::matrix4f const& modelviewmatrix         () const;
+  gpucast::math::matrix4f const& modelviewmatrixinverse  () const;
+  gpucast::math::matrix4f const& modelviewprojection     () const;
+  gpucast::math::matrix4f const& modelviewprojectioninverse () const;
+  gpucast::math::matrix4f const& normalmatrix            () const;
+  gpucast::math::matrix4f const& projectionmatrix        () const;
 
-  void                  background              ( gpucast::gl::vec4f const& rgba );
-  gpucast::gl::vec4f const&    background              ( ) const;
+  void                  background              ( gpucast::math::vec4f const& rgba );
+  gpucast::math::vec4f const&    background              ( ) const;
 
   virtual void          resize                  ( int width, int height );
-
-  void                  init_program            ( std::shared_ptr<gpucast::gl::program>& program,
-                                                  std::string const&                vertexshader_filename,
-                                                  std::string const&                fragmentshader_filename,
-                                                  std::string const&                geometryshader_filename = "" );
 
 protected : // attributes 
 
@@ -84,17 +77,17 @@ protected : // attributes
   bool                                  _initialized_cuda;
 
   std::set<std::string>                 _pathlist;
-  gpucast::gl::vec4f                    _background;
+  gpucast::math::vec4f                    _background;
 
   float                                 _nearplane;
   float                                 _farplane;
 
-  gpucast::gl::matrix4f                 _modelviewmatrix;
-  gpucast::gl::matrix4f                 _modelviewmatrixinverse;
-  gpucast::gl::matrix4f                 _projectionmatrix;
-  gpucast::gl::matrix4f                 _normalmatrix;
-  gpucast::gl::matrix4f                 _modelviewprojectionmatrix;
-  gpucast::gl::matrix4f                 _modelviewprojectionmatrixinverse;
+  gpucast::math::matrix4f                 _modelviewmatrix;
+  gpucast::math::matrix4f                 _modelviewmatrixinverse;
+  gpucast::math::matrix4f                 _projectionmatrix;
+  gpucast::math::matrix4f                 _normalmatrix;
+  gpucast::math::matrix4f                 _modelviewprojectionmatrix;
+  gpucast::math::matrix4f                 _modelviewprojectionmatrixinverse;
 };
 
 } // namespace gpucast

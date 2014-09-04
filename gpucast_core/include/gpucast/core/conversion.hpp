@@ -18,10 +18,21 @@
 
 namespace gpucast {
 
+  //////////////////////////////////////////////////////////////////////////////
   template <typename source_t, typename target_t>
   target_t explicit_type_conversion(source_t const& t) {
     return target_t(t);
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename source_t, typename target_t>
+  target_t const bit_cast(source_t const& s)
+  {
+    assert(sizeof (source_t) == sizeof(target_t));
+
+    return *reinterpret_cast<target_t const*>(&s);
+  }
+
 
 }
 

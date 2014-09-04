@@ -13,7 +13,7 @@
 #define GPUCAST_DRAW_TRAVERSAL_HPP
 
 // header, system
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 // header, project
 #include <gpucast/volume/isosurface/octree/nodevisitor.hpp>
@@ -25,13 +25,13 @@ class draw_traversal : public nodevisitor
 {
 public :
 
-  draw_traversal ( gpucast::gl::matrix4x4<float> const& mvp );
+  draw_traversal ( gpucast::math::matrix4x4<float> const& mvp );
 
   /* virtual */ void      visit          ( ocnode& ) const;
 
 private :
 
-  gpucast::gl::matrix4x4<float> _mvp;
+  gpucast::math::matrix4x4<float> _mvp;
 
 };
 

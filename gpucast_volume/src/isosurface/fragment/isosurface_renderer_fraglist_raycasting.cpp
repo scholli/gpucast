@@ -60,7 +60,7 @@ namespace gpucast {
     _backface_culling    = false;
     _initialized_cuda    = false;
     _render_side_chulls  = true;
-    //_background          = gpucast::gl::vec3f(0.0, 0.0, 0.0);
+    //_background          = gpucast::math::vec3f(0.0, 0.0, 0.0);
   }
 
 
@@ -222,7 +222,7 @@ namespace gpucast {
 
     // allocate memory for matrices
     _matrixbuffer.reset         ( new gpucast::gl::arraybuffer );
-    _matrixbuffer->bufferdata   ( 5 * sizeof(gpucast::gl::matrix4f), 0, GL_STATIC_READ ); 
+    _matrixbuffer->bufferdata   ( 5 * sizeof(gpucast::math::matrix4f), 0, GL_STATIC_READ ); 
 
     _initialized_gl = true;
   }
@@ -362,14 +362,14 @@ namespace gpucast {
   void
   isosurface_renderer_fraglist_raycasting::_update_matrices()
   {
-    std::size_t matrix_elements = sizeof(gpucast::gl::matrix4f)/sizeof(gpucast::gl::matrix4f::value_type);
+    std::size_t matrix_elements = sizeof(gpucast::math::matrix4f)/sizeof(gpucast::math::matrix4f::value_type);
     std::vector<float> matrixbuffer;
 
-    gpucast::gl::matrix4f modelview        = _modelviewmatrix * _modelmatrix;
-    gpucast::gl::matrix4f modelviewinverse = gpucast::gl::inverse(modelview);
-    gpucast::gl::matrix4f normalmatrix     = modelview.normalmatrix();
-    gpucast::gl::matrix4f mvp              = _projectionmatrix * modelview;
-    gpucast::gl::matrix4f mvp_inv          = gpucast::gl::inverse(mvp);
+    gpucast::math::matrix4f modelview        = _modelviewmatrix * _modelmatrix;
+    gpucast::math::matrix4f modelviewinverse = gpucast::math::inverse(modelview);
+    gpucast::math::matrix4f normalmatrix     = modelview.normalmatrix();
+    gpucast::math::matrix4f mvp              = _projectionmatrix * modelview;
+    gpucast::math::matrix4f mvp_inv          = gpucast::math::inverse(mvp);
 
     std::copy(&modelview[0],        &modelview[0]         + matrix_elements, std::back_inserter(matrixbuffer));
     std::copy(&modelviewinverse[0], &modelviewinverse[0]  + matrix_elements, std::back_inserter(matrixbuffer));

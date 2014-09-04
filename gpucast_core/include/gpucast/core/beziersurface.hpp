@@ -16,10 +16,6 @@
 #include <vector> // std::vector
 
 // header, external
-#include <boost/shared_ptr.hpp>
-
-#include <gpucast/gl/math/vec4.hpp>
-
 #include <gpucast/math/parametric/beziersurface.hpp>
 #include <gpucast/math/parametric/point.hpp>
 
@@ -32,16 +28,6 @@
 
 
 namespace gpucast {
-
-// convert point_t to double3_t for convex_hull ////////////////////////////////
-template <typename point_t>
-class rational_to_euclid3d {
-public :
-  gpucast::gl::vec3d operator()(point_t const& point) const
-  {
-    return gpucast::gl::vec3d(point[0], point[1], point[2]);
-  }
-};
 
 class beziersurfaceobject;
 
@@ -95,7 +81,7 @@ public : // methods
   void                          preprocess     ( std::size_t subdivision_level_u, 
                                                  std::size_t subdivision_level_v );
 
-  void                          tesselate      ( std::vector<gpucast::gl::vec3f>& vertices,
+  void                          tesselate      ( std::vector<gpucast::math::vec3f>& vertices,
                                                  std::vector<int>&         indices ) const;
 
   void                          update         ();

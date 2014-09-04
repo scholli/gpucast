@@ -82,7 +82,7 @@ public : // methods
   /* virtual */ value_type              surface             () const;
 
   /* virtual */ void                    accept              ( nodevisitor const& visitor );
-  /* virtual */ void                    draw                ( gpucast::gl::matrix4x4<float> const& mvp );
+  /* virtual */ void                    draw                ( gpucast::math::matrix4x4<float> const& mvp );
 
   /* virtual */ void                    print               ( std::ostream& os ) const;
 

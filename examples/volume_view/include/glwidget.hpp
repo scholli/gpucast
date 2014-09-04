@@ -39,7 +39,7 @@
 
 #include <gpucast/gl/util/transformation_sequence.hpp>
 
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
 #include <gpucast/volume/nurbsvolumeobject.hpp>
@@ -169,8 +169,8 @@ private : // attributes
   isosurface_renderer_ptr                             _isosurface_renderer;
 
   boost::shared_ptr<gpucast::gl::trackball>                  _trackball;
-  gpucast::gl::matrix4f                                      _projection;
-  gpucast::gl::matrix4f                                      _modelview;
+  gpucast::math::matrix4f                                      _projection;
+  gpucast::math::matrix4f                                      _modelview;
   
   boundingbox_t                                       _boundingbox;
 

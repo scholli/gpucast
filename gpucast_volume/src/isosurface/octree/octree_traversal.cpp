@@ -161,7 +161,7 @@ obbtree_refinement::visit ( ocnode& n )
 
 
 ///////////////////////////////////////////////////////////////////////////////
-draw_traversal::draw_traversal(gpucast::gl::matrix4x4<float> const& mvp)
+draw_traversal::draw_traversal(gpucast::math::matrix4x4<float> const& mvp)
   : _mvp(mvp)
 {}
 
@@ -310,7 +310,7 @@ serialize_tree_dfs_traversal::visit ( ocnode& n )
   }
 
   // write independent information about this node
-  treebuffer.push_back ( gpucast::gl::vec4i( nodetype, id_limits, ndata, id_data ) );
+  treebuffer.push_back ( gpucast::math::vec4i( nodetype, id_limits, ndata, id_data ) );
   for ( std::string const& name : n.data() )
   {
     limitbuffer[name].push_back( determine_minimum(n, name) );
@@ -329,12 +329,12 @@ serialize_tree_dfs_traversal::visit ( ocnode& n )
         //if (!node) throw std::runtime_error("Unresolved conflict! non-ocnode child!");
         if (!node) std::cerr << "Unresolved conflict! non-ocnode child!" << std::endl;
 
-        std::size_t base_index = treebuffer.size() + node->id() / gpucast::gl::vec4<int>::size;
-        std::size_t sub_index  = node->id() % gpucast::gl::vec4<int>::size;
+        std::size_t base_index = treebuffer.size() + node->id() / gpucast::math::vec4<int>::size;
+        std::size_t sub_index  = node->id() % gpucast::math::vec4<int>::size;
         indirection_map.insert(std::make_pair(*i, std::make_pair(base_index, sub_index)));
       }
-      treebuffer.push_back(gpucast::gl::vec4i()); // indirection indices are filled by children
-      treebuffer.push_back(gpucast::gl::vec4i()); // indirection indices are filled by children
+      treebuffer.push_back(gpucast::math::vec4i()); // indirection indices are filled by children
+      treebuffer.push_back(gpucast::math::vec4i()); // indirection indices are filled by children
     } else {
       // handle different kind/amount of nodes
       //throw std::runtime_error("OBBNodes not handled yet.");
@@ -386,8 +386,8 @@ serialize_tree_dfs_traversal::add_subvolume ( beziersubvolume const& i )
   int limitbuffer_id   = int(limitbuffer.begin()->second.size());
 
   // set indices in volumelistbuffer
-  gpucast::gl::vec4i volumeinfo1 = gpucast::gl::vec4i ( volume_id, int(i.parent->degree_u() + 1), int(i.parent->degree_v() + 1), int(i.parent->degree_w() + 1) );
-  gpucast::gl::vec4i volumeinfo2 = gpucast::gl::vec4i ( surfacebuffer_id, bboxbuffer_id, limitbuffer_id, 0 );
+  gpucast::math::vec4i volumeinfo1 = gpucast::math::vec4i ( volume_id, int(i.parent->degree_u() + 1), int(i.parent->degree_v() + 1), int(i.parent->degree_w() + 1) );
+  gpucast::math::vec4i volumeinfo2 = gpucast::math::vec4i ( surfacebuffer_id, bboxbuffer_id, limitbuffer_id, 0 );
   volumelistbuffer.push_back( volumeinfo1 );
   volumelistbuffer.push_back( volumeinfo2 );
 
@@ -397,7 +397,7 @@ serialize_tree_dfs_traversal::add_subvolume ( beziersubvolume const& i )
   // copy volume control points into volumebuffer
   for(beziervolume::point_type const& p : *(i.volume) )
   {
-    volumebuffer.push_back  ( gpucast::gl::vec4f ( p.as_homogenous() ) );
+    volumebuffer.push_back  ( gpucast::math::vec4f ( p.as_homogenous() ) );
   }
 
   // copy outer surfaces in order : umin, umax, vmin, vmax, wmin, wmax
@@ -415,25 +415,25 @@ serialize_tree_dfs_traversal::add_subvolume ( beziersubvolume const& i )
   orientation_inverse       = orientation_inverse.transpose();
 
   // push orientation
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(orientation[0][0]), float(orientation[0][1]), float(orientation[0][2]), 0.0f ));
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(orientation[1][0]), float(orientation[1][1]), float(orientation[1][2]), 0.0f ));
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(orientation[2][0]), float(orientation[2][1]), float(orientation[2][2]), 0.0f ));
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( 0.0f, 0.0f, 0.0f, 1.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(orientation[0][0]), float(orientation[0][1]), float(orientation[0][2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(orientation[1][0]), float(orientation[1][1]), float(orientation[1][2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(orientation[2][0]), float(orientation[2][1]), float(orientation[2][2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( 0.0f, 0.0f, 0.0f, 1.0f ));
 
   // push inverse orientation
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(orientation_inverse[0][0]), float(orientation_inverse[0][1]), float(orientation_inverse[0][2]), 0.0f ));
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(orientation_inverse[1][0]), float(orientation_inverse[1][1]), float(orientation_inverse[1][2]), 0.0f ));
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(orientation_inverse[2][0]), float(orientation_inverse[2][1]), float(orientation_inverse[2][2]), 0.0f ));
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( 0.0f, 0.0f, 0.0f, 1.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(orientation_inverse[0][0]), float(orientation_inverse[0][1]), float(orientation_inverse[0][2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(orientation_inverse[1][0]), float(orientation_inverse[1][1]), float(orientation_inverse[1][2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(orientation_inverse[2][0]), float(orientation_inverse[2][1]), float(orientation_inverse[2][2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( 0.0f, 0.0f, 0.0f, 1.0f ));
 
   // push dimension and center
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(obb.low()[0]),    float(obb.low()[1]),    float(obb.low()[2]), 0.0f ));
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(obb.high()[0]),   float(obb.high()[1]),   float(obb.high()[2]), 0.0f ));
-  boundingboxbuffer.push_back( gpucast::gl::vec4f( float(obb.center()[0]), float(obb.center()[1]), float(obb.center()[2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(obb.low()[0]),    float(obb.low()[1]),    float(obb.low()[2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(obb.high()[0]),   float(obb.high()[1]),   float(obb.high()[2]), 0.0f ));
+  boundingboxbuffer.push_back( gpucast::math::vec4f( float(obb.center()[0]), float(obb.center()[1]), float(obb.center()[2]), 0.0f ));
 
   // compute parameter values of oob's corner's
   std::list<beziervolume::point_type> corners;
-  std::vector<gpucast::gl::vec4f>            corner_uvw_values;
+  std::vector<gpucast::math::vec4f>            corner_uvw_values;
   obb.generate_corners( std::back_inserter (corners) );
 
   unsigned point_index = 0;
@@ -449,10 +449,10 @@ serialize_tree_dfs_traversal::add_subvolume ( beziersubvolume const& i )
                                                         if ( uvw.abs() < error_threshold )
                                                         {
                                                           // expect iteration to be converged
-                                                          corner_uvw_values.push_back( gpucast::gl::vec4f ( float(uvw[0]), float(uvw[1]), float(uvw[2]), 0.0f ));
+                                                          corner_uvw_values.push_back( gpucast::math::vec4f ( float(uvw[0]), float(uvw[1]), float(uvw[2]), 0.0f ));
                                                         } else {
                                                           // iteration converged to point quite far away -> iteration failed -> use starting value
-                                                          corner_uvw_values.push_back( gpucast::gl::vec4f ( float(uvw_start[0]), float(uvw_start[1]), float(uvw_start[2]), 0.0f ));
+                                                          corner_uvw_values.push_back( gpucast::math::vec4f ( float(uvw_start[0]), float(uvw_start[1]), float(uvw_start[2]), 0.0f ));
                                                         }
 
                                                         ++point_index;
@@ -470,13 +470,13 @@ serialize_tree_dfs_traversal::add_subvolume ( beziersubvolume const& i )
 
     // compute bounds
     beziervolume::boundingbox_type aabb = d->second.bbox();
-    limitbuffer[name].push_back( gpucast::gl::vec4f( aabb.min ));
-    limitbuffer[name].push_back( gpucast::gl::vec4f( aabb.max ));
+    limitbuffer[name].push_back( gpucast::math::vec4f( aabb.min ));
+    limitbuffer[name].push_back( gpucast::math::vec4f( aabb.max ));
 
     // points
     for (beziervolume::point_type const& p : d->second)
     {
-      databuffer[name].push_back( gpucast::gl::vec4f ( p.as_homogenous() ) );
+      databuffer[name].push_back( gpucast::math::vec4f ( p.as_homogenous() ) );
     }
   }
 }
@@ -496,27 +496,27 @@ serialize_tree_dfs_traversal::add_outer_surfaces ( beziervolume const& v )
   gpucast::math::beziersurface<beziervolume::point_type> wmax = v.slice(2, v.degree_w() );
 
   for (beziervolume::point_type const& p : umin) {
-    surfacebuffer.push_back( gpucast::gl::vec4f( p.as_homogenous() ) );
+    surfacebuffer.push_back( gpucast::math::vec4f( p.as_homogenous() ) );
   }
 
   for (beziervolume::point_type const& p : umax) {
-    surfacebuffer.push_back( gpucast::gl::vec4f( p.as_homogenous() ) );
+    surfacebuffer.push_back( gpucast::math::vec4f( p.as_homogenous() ) );
   }
 
   for (beziervolume::point_type const& p : vmin) {
-    surfacebuffer.push_back( gpucast::gl::vec4f( p.as_homogenous() ) );
+    surfacebuffer.push_back( gpucast::math::vec4f( p.as_homogenous() ) );
   }
 
   for (beziervolume::point_type const& p : vmax) {
-    surfacebuffer.push_back( gpucast::gl::vec4f( p.as_homogenous() ) );
+    surfacebuffer.push_back( gpucast::math::vec4f( p.as_homogenous() ) );
   }
 
   for (beziervolume::point_type const& p : wmin) {
-    surfacebuffer.push_back( gpucast::gl::vec4f( p.as_homogenous() ) );
+    surfacebuffer.push_back( gpucast::math::vec4f( p.as_homogenous() ) );
   }
 
   for (beziervolume::point_type const& p : wmax) {
-    surfacebuffer.push_back( gpucast::gl::vec4f( p.as_homogenous() ) );
+    surfacebuffer.push_back( gpucast::math::vec4f( p.as_homogenous() ) );
   }
 }
 

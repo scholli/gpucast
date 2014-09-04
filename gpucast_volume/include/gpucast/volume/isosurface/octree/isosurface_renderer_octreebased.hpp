@@ -65,14 +65,14 @@ private : // auxilliary methods
 
 private : // attributes
 
-  std::vector<gpucast::gl::vec4u>      _nodebuffer;
+  std::vector<gpucast::math::vec4u>      _nodebuffer;
   //-----------------------------------------------------------------------------   
   // [nodetype]       [childnodeid_uvw] [childnodeid_Uvw]
   // [limitbuffer_id] [childnodeid_uvW] [childnodeid_UvW]
   // [0]              [childnodeid_uVw] [childnodeid_UVw]
   // [0]              [childnodeid_uVW] [childnodeid_UVW]
 
-  std::vector<gpucast::gl::vec4u>      _facebuffer;
+  std::vector<gpucast::math::vec4u>      _facebuffer;
   //-----------------------------------------------------------------------------   
   // [surface_data_id] 
   // [limitbuffer_id]
@@ -80,7 +80,7 @@ private : // attributes
   // [is_outer] 
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _bboxbuffer;
+  std::vector<gpucast::math::vec4f>      _bboxbuffer;
   // [bbox_id]                             [bbox_id+4]                          [bbox_id+8] [bbox_id+9] [bbox_id+10] 
   //-----------------------------------------------------------------------------    
   // [Orientation00] .. [orientation30]  [OrientationInv00] .. [orientationInv30] [lowx]      [highx]    [centerx]

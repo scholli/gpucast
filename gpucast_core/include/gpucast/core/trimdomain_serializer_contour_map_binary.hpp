@@ -78,7 +78,7 @@ trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&     
     return referenced_trimdomains.find ( input_domain )->second;
   }
 
-  address_type partition_index = explicit_type_conversion<std::size_t, unsigned>(output_partition.size());
+  address_type partition_index = explicit_type_conversion<std::size_t, address_type>(output_partition.size());
   contour_map_type map;
 
   // fill loops into contour map

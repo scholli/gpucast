@@ -15,6 +15,7 @@
 
 // header, project
 #include <gpucast/core/uvgenerator.hpp>
+#include <gpucast/math/vec3.hpp>
 
 using namespace gpucast::math;
 
@@ -219,13 +220,13 @@ namespace gpucast {
 
     cp_uv.transpose();
 
-    std::vector<gpucast::gl::vec4f> uv(cp_uv.width() * cp_uv.height());
+    std::vector<gpucast::math::vec4f> uv(cp_uv.width() * cp_uv.height());
     //    std::generate(uv.begin(), uv.end(), gen_uv(cp_uv.width(), cp_uv.height(),
     //					       min_u_, max_u_, min_v_, max_v_));
 
     // for bezier patches always 0.0 - 1.0 -> min_u, max_u, min_v, max_v are only for trimming ...
     // ... as they transform the parameter space into the original b-spline space
-    std::generate(uv.begin(), uv.end(), uvgenerator<gpucast::gl::vec4f> ( cp_uv.width(), 
+    std::generate(uv.begin(), uv.end(), uvgenerator<gpucast::math::vec4f> ( cp_uv.width(), 
                                                                    cp_uv.height(), 
                                                                    float(0), 
                                                                    float(1), 
@@ -234,10 +235,10 @@ namespace gpucast {
                                                                    float(order_u()), 
                                                                    float(order_v())));
 
-    std::vector<gpucast::gl::vec4f> attrib(uv.size());
+    std::vector<gpucast::math::vec4f> attrib(uv.size());
 
-    pointmesh2d<gpucast::gl::vec4f> cp_color (uv.begin(),  uv.end(), cp_uv.width(), cp_uv.height());
-    pointmesh2d<gpucast::gl::vec4f> cp_attrib(uv.begin(),  uv.end(), cp_uv.width(), cp_uv.height());
+    pointmesh2d<gpucast::math::vec4f> cp_color (uv.begin(),  uv.end(), cp_uv.width(), cp_uv.height());
+    pointmesh2d<gpucast::math::vec4f> cp_attrib(uv.begin(),  uv.end(), cp_uv.width(), cp_uv.height());
 
     // generate chulls for each subdivision and merge them
     for (std::size_t v = 0; v <= subdiv_v; ++v)
@@ -248,11 +249,11 @@ namespace gpucast {
         pointmesh2d<point3d>      subpat     = cp_uv.subpatch    (u * _degree_u, (u+1)*_degree_u, v * _degree_v, (v+1)*_degree_v);
 
         // copy 4-double texture coordinate information from submesh
-        pointmesh2d<gpucast::gl::vec4f>  subpat_col = cp_color.subpatch (u * _degree_u, (u+1)*_degree_u, v * _degree_v, (v+1)*_degree_v);
+        pointmesh2d<gpucast::math::vec4f>  subpat_col = cp_color.subpatch (u * _degree_u, (u+1)*_degree_u, v * _degree_v, (v+1)*_degree_v);
 
         // discard rational component of control points for convex hull generation
-        std::vector<gpucast::gl::vec3d> tmp;
-        std::transform(subpat.begin(), subpat.end(), std::inserter(tmp, tmp.end()), rational_to_euclid3d<point3d>());
+        std::vector<gpucast::math::vec3d> tmp;
+        std::transform(subpat.begin(), subpat.end(), std::inserter(tmp, tmp.end()), gpucast::math::rational_to_euclid3d<point3d>());
 
         // generate chull for subpatch
         convex_hull tmp_ch;

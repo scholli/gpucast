@@ -237,9 +237,9 @@ extern "C" void invoke_grid_raycasting_kernel  ( renderconfig const&          co
     _face_arraybuffer->update     ( _facebuffer.begin(),  _facebuffer.end());
     _bbox_arraybuffer->update     ( _bboxbuffer.begin(),  _bboxbuffer.end());
 
-    std::size_t gridbufsize = _gridbuffer.size() * sizeof(gpucast::gl::vec4u);
-    std::size_t facebufsize = _facebuffer.size() * sizeof(gpucast::gl::vec4u);
-    std::size_t bboxbufsize = _bboxbuffer.size() * sizeof(gpucast::gl::vec4f);
+    std::size_t gridbufsize = _gridbuffer.size() * sizeof(gpucast::math::vec4u);
+    std::size_t facebufsize = _facebuffer.size() * sizeof(gpucast::math::vec4u);
+    std::size_t bboxbufsize = _bboxbuffer.size() * sizeof(gpucast::math::vec4f);
 
     std::cout << "Allocating : " << gridbufsize << " Bytes" << std::endl;
     std::cout << "Allocating : " << facebufsize << " Bytes" << std::endl;

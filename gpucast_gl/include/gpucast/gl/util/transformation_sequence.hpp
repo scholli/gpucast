@@ -17,25 +17,25 @@
 
 // header, project
 #include <gpucast/gl/glpp.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 namespace gpucast { namespace gl {
 
 struct GPUCAST_GL transformation_set
 {
-  matrix4f modelview;
-  matrix4f modelview_inverse;
-  matrix4f modelviewprojection;
-  matrix4f modelviewprojection_inverse;
-  matrix4f normalmatrix;
+  gpucast::math::matrix4f modelview;
+  gpucast::math::matrix4f modelview_inverse;
+  gpucast::math::matrix4f modelviewprojection;
+  gpucast::math::matrix4f modelviewprojection_inverse;
+  gpucast::math::matrix4f normalmatrix;
 
   transformation_set () {}
 
-  transformation_set ( matrix4f const& mv, 
-                       matrix4f const& mvi,
-                       matrix4f const& mvp,
-                       matrix4f const& mvpi,
-                       matrix4f const& nm ) 
+  transformation_set ( gpucast::math::matrix4f const& mv, 
+                       gpucast::math::matrix4f const& mvi,
+                       gpucast::math::matrix4f const& mvp,
+                       gpucast::math::matrix4f const& mvpi,
+                       gpucast::math::matrix4f const& nm ) 
    : 
      modelview                    ( mv   ),
      modelview_inverse            ( mvi  ),
@@ -76,11 +76,11 @@ public :
 
 public :
 
-  void                      add   ( matrix4f const& mv,
-                                    matrix4f const& mvi, 
-                                    matrix4f const& mvp,
-                                    matrix4f const& mvpi,
-                                    matrix4f const& nm );
+  void                      add   ( gpucast::math::matrix4f const& mv,
+                                    gpucast::math::matrix4f const& mvi, 
+                                    gpucast::math::matrix4f const& mvp,
+                                    gpucast::math::matrix4f const& mvpi,
+                                    gpucast::math::matrix4f const& nm );
 
   void                      clear ();
 

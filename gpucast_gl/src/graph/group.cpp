@@ -115,7 +115,7 @@ group::end () const
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
-group::set_transform ( matrix4f const& matrix )
+group::set_transform ( gpucast::math::matrix4f const& matrix )
 {
   _matrix = matrix;
 }
@@ -123,26 +123,26 @@ group::set_transform ( matrix4f const& matrix )
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
-group::translate ( vec3f const& t)
+group::translate ( gpucast::math::vec3f const& t)
 {
-  _matrix *= make_translation(t[0], t[1], t[2]);
+  _matrix *= gpucast::math::make_scale(t[0], t[1], t[2]);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
-group::rotate ( float alpha, vec3f const& axis)
+group::rotate ( float alpha, gpucast::math::vec3f const& axis)
 {
-  _matrix *= make_rotation_x(alpha * axis[0]) *
-             make_rotation_y(alpha * axis[1]) *
-             make_rotation_z(alpha * axis[2]);
+  _matrix *= gpucast::math::make_rotation_x(alpha * axis[0]) *
+             gpucast::math::make_rotation_y(alpha * axis[1]) *
+             gpucast::math::make_rotation_z(alpha * axis[2]);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
-group::scale ( vec3f const& scale )
+group::scale ( gpucast::math::vec3f const& scale )
 {
-  _matrix *= make_scale(scale[0], scale[1], scale[2]);
+  _matrix *= gpucast::math::make_scale(scale[0], scale[1], scale[2]);
 }
 
 } } // namespace gpucast / namespace gl

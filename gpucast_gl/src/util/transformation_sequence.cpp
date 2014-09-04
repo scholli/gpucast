@@ -32,7 +32,7 @@ namespace gpucast { namespace gl {
 
   /////////////////////////////////////////////////////////////////////////////
   void                      
-  transformation_sequence::add ( matrix4f const& mv, matrix4f const& mvi, matrix4f const& mvp, matrix4f const& mvpi, matrix4f const& nm )
+  transformation_sequence::add ( gpucast::math::matrix4f const& mv, gpucast::math::matrix4f const& mvi, gpucast::math::matrix4f const& mvp, gpucast::math::matrix4f const& mvpi, gpucast::math::matrix4f const& nm )
   {
     _transformations.push_back ( transformation_set (mv, mvi, mvp, mvpi, nm ) );
   }

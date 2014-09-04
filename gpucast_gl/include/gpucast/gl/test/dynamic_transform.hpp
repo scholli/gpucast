@@ -13,7 +13,7 @@
 #define GPUCAST_GL_DYNAMIC_TRANSFORM_HPP
 
 #include <gpucast/gl/glpp.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 #include <boost/shared_ptr.hpp>
 
@@ -32,7 +32,7 @@ namespace gpucast { namespace gl {
     void                reset     ();
     void                step      ();
     
-    virtual matrix4f    current_transform   () = 0;
+    virtual gpucast::math::matrix4f    current_transform   () = 0;
 
   protected :
 

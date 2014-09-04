@@ -135,7 +135,7 @@ namespace gpucast { namespace gl {
     std::string::const_iterator b = s.begin();
     if (boost::spirit::qi::phrase_parse(b, s.end(), _grammar.ambient_r, boost::spirit::ascii::space, c))
     {
-      m[_current_material].ambient = vec4f(c.r, c.g, c.b, 1.0);
+      m[_current_material].ambient = gpucast::math::vec4f(c.r, c.g, c.b, 1.0);
     } 
   }
 
@@ -148,7 +148,7 @@ namespace gpucast { namespace gl {
     std::string::const_iterator b = s.begin();
     if (boost::spirit::qi::phrase_parse(b, s.end(), _grammar.diffuse_r, boost::spirit::ascii::space, c))
     {
-      m[_current_material].diffuse = vec4f(c.r, c.g, c.b, 1.0);
+      m[_current_material].diffuse = gpucast::math::vec4f(c.r, c.g, c.b, 1.0);
     } 
   }
 
@@ -161,7 +161,7 @@ namespace gpucast { namespace gl {
     std::string::const_iterator b = s.begin();
     if (boost::spirit::qi::phrase_parse(b, s.end(), _grammar.specular_r, boost::spirit::ascii::space, c))
     {
-      m[_current_material].specular = vec4f(c.r, c.g, c.b, 1.0);
+      m[_current_material].specular = gpucast::math::vec4f(c.r, c.g, c.b, 1.0);
     }
   }
 
@@ -177,7 +177,7 @@ namespace gpucast { namespace gl {
       switch (illum) {
         // turn off specularity
         case 1 : 
-          m[_current_material].specular = vec4f(0.0, 0.0, 0.0, 0.0);
+          m[_current_material].specular = gpucast::math::vec4f(0.0, 0.0, 0.0, 0.0);
           break;
         case 2 :
           // turn on specularity - do nothing

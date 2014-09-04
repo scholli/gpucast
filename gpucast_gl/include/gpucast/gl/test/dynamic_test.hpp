@@ -19,8 +19,8 @@
 
 #include <gpucast/gl/glpp.hpp>
 #include <gpucast/gl/util/timer.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
+#include <gpucast/math/vec4.hpp>
 #include <gpucast/gl/test/dynamic_transform.hpp>
 
 namespace gpucast { namespace gl {
@@ -44,7 +44,7 @@ namespace gpucast { namespace gl {
     void                  end_frame                   ();
     unsigned              frames                      ();
 
-    matrix4f              get_current_modeltransform  () const;
+    gpucast::math::matrix4f              get_current_modeltransform  () const;
     time_duration const&  get_total_time              () const;
     float                 get_average_fps             () const;
 

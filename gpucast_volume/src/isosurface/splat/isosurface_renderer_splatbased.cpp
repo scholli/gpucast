@@ -84,7 +84,7 @@ namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
   void                      
-  isosurface_renderer_splatbased::transform ( gpucast::gl::matrix4f const& m )
+  isosurface_renderer_splatbased::transform ( gpucast::math::matrix4f const& m )
   {
     throw std::runtime_error("not implemented yet");
   }

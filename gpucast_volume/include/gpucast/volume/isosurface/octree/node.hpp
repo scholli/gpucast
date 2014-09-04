@@ -23,7 +23,7 @@
 
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
 
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 // header, project
 #include <gpucast/volume/gpucast.hpp>

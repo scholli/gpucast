@@ -11,7 +11,7 @@
 ********************************************************************************/
 #include <cmath>
 
-namespace gpucast { namespace gl {
+namespace gpucast { namespace math {
 
 ////////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
@@ -377,4 +377,4 @@ dot(vec2<value_t> const& lhs, vec2<value_t> const& rhs)
 }
 
 
-} } // namespace gpucast / namespace gl
+} } // namespace gpucast / namespace math

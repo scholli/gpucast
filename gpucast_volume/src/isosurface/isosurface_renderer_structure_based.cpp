@@ -275,7 +275,7 @@ namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
   void                      
-  isosurface_renderer_structure_based::transform ( gpucast::gl::matrix4f const& m )
+  isosurface_renderer_structure_based::transform ( gpucast::math::matrix4f const& m )
   {
     _modelmatrix = m;
   }
@@ -425,7 +425,7 @@ namespace gpucast {
     _attribute_points_arraybuffer.reset       ( new gpucast::gl::arraybuffer );
 
     _matrix_arraybuffer.reset                 ( new gpucast::gl::arraybuffer );
-    _matrix_arraybuffer->bufferdata           ( 5 * sizeof(gpucast::gl::matrix4f), 0, GL_STATIC_DRAW );
+    _matrix_arraybuffer->bufferdata           ( 5 * sizeof(gpucast::math::matrix4f), 0, GL_STATIC_DRAW );
 
     _raygeneration_geometry.reset             ( new gpucast::gl::cube );
     
@@ -474,11 +474,11 @@ namespace gpucast {
 
     std::vector<float> matrixbuffer ( elements * nmatrices );
 
-    gpucast::gl::matrix4f modelviewmatrix                    = _modelviewmatrix;
-    gpucast::gl::matrix4f modelviewprojectionmatrix          = _modelviewprojectionmatrix;
-    gpucast::gl::matrix4f modelviewinverse                   = gpucast::gl::inverse(_modelviewmatrix);
-    gpucast::gl::matrix4f modelviewprojectionmatrixinverse   = _modelviewprojectionmatrixinverse;
-    gpucast::gl::matrix4f normalmatrix                       = _modelviewmatrix.normalmatrix();
+    gpucast::math::matrix4f modelviewmatrix                    = _modelviewmatrix;
+    gpucast::math::matrix4f modelviewprojectionmatrix          = _modelviewprojectionmatrix;
+    gpucast::math::matrix4f modelviewinverse                   = gpucast::math::inverse(_modelviewmatrix);
+    gpucast::math::matrix4f modelviewprojectionmatrixinverse   = _modelviewprojectionmatrixinverse;
+    gpucast::math::matrix4f normalmatrix                       = _modelviewmatrix.normalmatrix();
 
     auto ins_pos = matrixbuffer.begin();
     ins_pos = std::copy(&modelviewmatrix[0],                   &modelviewmatrix[16],                  ins_pos );
@@ -622,7 +622,7 @@ namespace gpucast {
       _volume_data.resize ( _volume_data.size() + volume_renderer::volume_data_header );
 
       // transform volume controlpoints to hyperspace and copy to volume-buffer
-      std::transform (v->begin(), v->end(), std::back_inserter(_volume_points), hyperspace_adapter_3D_to_4D<beziervolume::point_type, gpucast::gl::vec4f>());
+      std::transform (v->begin(), v->end(), std::back_inserter(_volume_points), hyperspace_adapter_3D_to_4D<beziervolume::point_type, gpucast::math::vec4f>());
 
       // write attached data into buffer and store related index
       unsigned attribute_data_id   = 0;
@@ -643,7 +643,7 @@ namespace gpucast {
       attrib_min = attrib_vol.bbox().min[beziervolume::point_type::x];
       attrib_max = attrib_vol.bbox().max[beziervolume::point_type::x];
 
-      _attribute_data.push_back ( gpucast::gl::vec4f ( attrib_min, attrib_max, bit_cast<unsigned, float>(attribute_points_id), 0) );
+      _attribute_data.push_back ( gpucast::math::vec4f ( attrib_min, attrib_max, bit_cast<unsigned, float>(attribute_points_id), 0) );
 
       // write attribute's control points into buffer
       std::transform ( attrib_vol.begin(), 
@@ -651,24 +651,24 @@ namespace gpucast {
                        std::back_inserter(_attribute_points), 
                          [] ( beziervolume::attribute_type const& p ) 
                          { 
-                           return gpucast::gl::vec2f(p.as_homogenous()[0], p.as_homogenous()[1]); 
+                           return gpucast::math::vec2f(p.as_homogenous()[0], p.as_homogenous()[1]); 
                          } 
                       );
 
       // create actual proxy geometry
       _create_proxy_geometry ( *v, deferred_surface_jobs );
 
-      gpucast::gl::vec3u order ( unsigned(v->order_u()), unsigned(v->order_v()), unsigned(v->order_w()));
+      gpucast::math::vec3u order ( unsigned(v->order_u()), unsigned(v->order_v()), unsigned(v->order_w()));
 
       // write per volume header info into volume data buffer
-      _volume_data[volume_data_id    ] = gpucast::gl::vec4f(bit_cast<unsigned,float>(volume_points_id), bit_cast<unsigned,float>(v->id()),   bit_cast<unsigned,float>(attribute_data_id),  float(v->bbox().size().abs()) );
-      _volume_data[volume_data_id + 1] = gpucast::gl::vec4f(bit_cast<unsigned,float>(order[0]),         bit_cast<unsigned,float>(order[1]), bit_cast<unsigned,float>(order[2]),            0.0f);
-      _volume_data[volume_data_id + 2] = gpucast::gl::vec4f(float(v->uvwmin_local()[0]),   float(v->uvwmin_local()[1]),  float(v->uvwmin_local()[2]),  0.0f);
-      _volume_data[volume_data_id + 3] = gpucast::gl::vec4f(float(v->uvwmax_local()[0]),   float(v->uvwmax_local()[1]),  float(v->uvwmax_local()[2]),  0.0f);
-      _volume_data[volume_data_id + 4] = gpucast::gl::vec4f(float(v->uvwmin_global()[0]),  float(v->uvwmin_global()[1]), float(v->uvwmin_global()[2]), 0.0f);
-      _volume_data[volume_data_id + 5] = gpucast::gl::vec4f(float(v->uvwmax_global()[0]),  float(v->uvwmax_global()[1]), float(v->uvwmax_global()[2]), 0.0f);
-      _volume_data[volume_data_id + 6] = gpucast::gl::vec4f(float(v->bbox().min[0]),       float(v->bbox().min[1]),      float(v->bbox().min[2]),      0.0);
-      _volume_data[volume_data_id + 7] = gpucast::gl::vec4f(float(v->bbox().max[0]),       float(v->bbox().max[1]),      float(v->bbox().max[2]),      0.0);
+      _volume_data[volume_data_id    ] = gpucast::math::vec4f(bit_cast<unsigned,float>(volume_points_id), bit_cast<unsigned,float>(v->id()),   bit_cast<unsigned,float>(attribute_data_id),  float(v->bbox().size().abs()) );
+      _volume_data[volume_data_id + 1] = gpucast::math::vec4f(bit_cast<unsigned,float>(order[0]),         bit_cast<unsigned,float>(order[1]), bit_cast<unsigned,float>(order[2]),            0.0f);
+      _volume_data[volume_data_id + 2] = gpucast::math::vec4f(float(v->uvwmin_local()[0]),   float(v->uvwmin_local()[1]),  float(v->uvwmin_local()[2]),  0.0f);
+      _volume_data[volume_data_id + 3] = gpucast::math::vec4f(float(v->uvwmax_local()[0]),   float(v->uvwmax_local()[1]),  float(v->uvwmax_local()[2]),  0.0f);
+      _volume_data[volume_data_id + 4] = gpucast::math::vec4f(float(v->uvwmin_global()[0]),  float(v->uvwmin_global()[1]), float(v->uvwmin_global()[2]), 0.0f);
+      _volume_data[volume_data_id + 5] = gpucast::math::vec4f(float(v->uvwmax_global()[0]),  float(v->uvwmax_global()[1]), float(v->uvwmax_global()[2]), 0.0f);
+      _volume_data[volume_data_id + 6] = gpucast::math::vec4f(float(v->bbox().min[0]),       float(v->bbox().min[1]),      float(v->bbox().min[2]),      0.0);
+      _volume_data[volume_data_id + 7] = gpucast::math::vec4f(float(v->bbox().max[0]),       float(v->bbox().max[1]),      float(v->bbox().max[2]),      0.0);
     }
 
     // do deferred jobs
@@ -701,35 +701,35 @@ namespace gpucast {
       }
       
       /*
-      gpucast::gl::vec4u surface_info0 ( job.surface_uid,
+      gpucast::math::vec4u surface_info0 ( job.surface_uid,
                                   job.volume_uid,
                                   volume_data_id, 
                                   attribute_data_id );*/
-      gpucast::gl::vec4u surface_info0 ( bit_cast<float,unsigned>(attrib_min),
+      gpucast::math::vec4u surface_info0 ( bit_cast<float,unsigned>(attrib_min),
                                   bit_cast<float,unsigned>(attrib_max),
                                   volume_data_id, 
                                   attribute_data_id );
 
-      gpucast::gl::vec4u surface_info1 ( job.outer_cell, 
+      gpucast::math::vec4u surface_info1 ( job.outer_cell, 
                                   job.surface_points_id, 
                                   adjacent_volume_data_id,
                                   adjacent_attribute_data_id );
 
-      gpucast::gl::vec4u surface_info2 ( job.outer_face, 
+      gpucast::math::vec4u surface_info2 ( job.outer_face, 
                                   job.order_u,
                                   job.order_v,
                                   job.surface_type );
                                                                     
-      gpucast::gl::vec4u surface_info3;
+      gpucast::math::vec4u surface_info3;
 
       switch ( job.surface_type ) 
       {
-        case beziervolume::boundary_t::umin : surface_info3 = gpucast::gl::vec4u(1, 2, 0, 0); break;
-        case beziervolume::boundary_t::umax : surface_info3 = gpucast::gl::vec4u(1, 2, 0, 1); break;
-        case beziervolume::boundary_t::vmin : surface_info3 = gpucast::gl::vec4u(0, 2, 1, 0); break;
-        case beziervolume::boundary_t::vmax : surface_info3 = gpucast::gl::vec4u(0, 2, 1, 1); break;
-        case beziervolume::boundary_t::wmin : surface_info3 = gpucast::gl::vec4u(0, 1, 2, 0); break;
-        case beziervolume::boundary_t::wmax : surface_info3 = gpucast::gl::vec4u(0, 1, 2, 1); break;
+        case beziervolume::boundary_t::umin : surface_info3 = gpucast::math::vec4u(1, 2, 0, 0); break;
+        case beziervolume::boundary_t::umax : surface_info3 = gpucast::math::vec4u(1, 2, 0, 1); break;
+        case beziervolume::boundary_t::vmin : surface_info3 = gpucast::math::vec4u(0, 2, 1, 0); break;
+        case beziervolume::boundary_t::vmax : surface_info3 = gpucast::math::vec4u(0, 2, 1, 1); break;
+        case beziervolume::boundary_t::wmin : surface_info3 = gpucast::math::vec4u(0, 1, 2, 0); break;
+        case beziervolume::boundary_t::wmax : surface_info3 = gpucast::math::vec4u(0, 1, 2, 1); break;
       };
 
       _surface_data[job.surface_data_id  ] = surface_info0;
@@ -760,22 +760,22 @@ namespace gpucast {
         unsigned surface_data_id   = unsigned ( _surface_data.size() );
         unsigned surface_points_id = unsigned ( _surface_points.size() );
 
-        gpucast::math::beziersurface<gpucast::gl::vec3d> outer_face;
+        gpucast::math::beziersurface<gpucast::math::vec3d> outer_face;
         switch ( surface )
         {
-          case beziervolume::boundary_t::umin : outer_face = v.slice<gpucast::gl::vec3d> (beziervolume::point_type::x, 0); break;
-          case beziervolume::boundary_t::umax : outer_face = v.slice<gpucast::gl::vec3d> (beziervolume::point_type::x, v.degree_u() ); break;
-          case beziervolume::boundary_t::vmin : outer_face = v.slice<gpucast::gl::vec3d> (beziervolume::point_type::y, 0 ); break;
-          case beziervolume::boundary_t::vmax : outer_face = v.slice<gpucast::gl::vec3d> (beziervolume::point_type::y, v.degree_v() ); break;
-          case beziervolume::boundary_t::wmin : outer_face = v.slice<gpucast::gl::vec3d> (beziervolume::point_type::z, 0 ); break;
-          case beziervolume::boundary_t::wmax : outer_face = v.slice<gpucast::gl::vec3d> (beziervolume::point_type::z, v.degree_w() ); break;
+          case beziervolume::boundary_t::umin : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::x, 0); break;
+          case beziervolume::boundary_t::umax : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::x, v.degree_u() ); break;
+          case beziervolume::boundary_t::vmin : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::y, 0 ); break;
+          case beziervolume::boundary_t::vmax : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::y, v.degree_v() ); break;
+          case beziervolume::boundary_t::wmin : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::z, 0 ); break;
+          case beziervolume::boundary_t::wmax : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::z, v.degree_w() ); break;
         }
 
         // write header of surface
         _surface_data.resize(_surface_data.size() + volume_renderer::surface_data_header);
 
         // write control points of surface
-        std::transform (outer_face.begin(), outer_face.end(), std::back_inserter(_surface_points), hyperspace_adapter_3D_to_4D<gpucast::math::point3d, gpucast::gl::vec4f>());
+        std::transform (outer_face.begin(), outer_face.end(), std::back_inserter(_surface_points), hyperspace_adapter_3D_to_4D<gpucast::math::point3d, gpucast::math::vec4f>());
 
         // deferred fill job, because not all neighbor volumes are stored yet -> not all buffer id's are known
         deferred_surface_header_write   job;
@@ -808,9 +808,9 @@ namespace gpucast {
       face_ptr f ( new face );
       f->surface_id = unsigned(i);
 
-      gpucast::gl::vec4u face_info0 = _surface_data[i  ];
-      gpucast::gl::vec4u face_info1 = _surface_data[i+1];
-      gpucast::gl::vec4u face_info2 = _surface_data[i+2];
+      gpucast::math::vec4u face_info0 = _surface_data[i  ];
+      gpucast::math::vec4u face_info1 = _surface_data[i+1];
+      gpucast::math::vec4u face_info2 = _surface_data[i+2];
 
       unsigned order_u          = face_info2[1];
       unsigned order_v          = face_info2[2];

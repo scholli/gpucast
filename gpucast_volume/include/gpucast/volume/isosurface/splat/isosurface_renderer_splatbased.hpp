@@ -49,7 +49,7 @@ public : // methods
 
   /* virtual */ void                  draw                  ();
 
-  /* virtual */ void                  transform             ( gpucast::gl::matrix4f const& m );
+  /* virtual */ void                  transform             ( gpucast::math::matrix4f const& m );
 
   /* virtual */ void                  compute_nearfar       ();
 

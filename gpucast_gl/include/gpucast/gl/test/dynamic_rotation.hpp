@@ -28,7 +28,7 @@ namespace gpucast { namespace gl {
 
   public :
 
-    /* virtual */ matrix4f  current_transform  ();
+    /* virtual */ gpucast::math::matrix4f  current_transform  ();
 
   private :
 

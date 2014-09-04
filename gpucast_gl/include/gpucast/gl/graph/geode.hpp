@@ -16,7 +16,7 @@
 #include <vector>
 
 #include <gpucast/gl/glpp.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
@@ -41,7 +41,7 @@ namespace gpucast { namespace gl {
       struct attribute_buffer 
       {
         std::size_t                     location;
-        std::vector<vec4f>              clientbuffer;
+        std::vector<gpucast::math::vec4f>              clientbuffer;
         std::shared_ptr<arraybuffer>  buffer;
         attribute_type                  type; 
       };
@@ -63,7 +63,7 @@ namespace gpucast { namespace gl {
 
 
       void            add_attribute_buffer    ( std::size_t               location,
-                                                std::vector<vec4f> const& data, 
+                                                std::vector<gpucast::math::vec4f> const& data, 
                                                 attribute_type            type = unspecified );
 
       // get and set information on attributes

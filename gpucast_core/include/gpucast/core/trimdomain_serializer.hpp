@@ -16,10 +16,11 @@
 #include <unordered_map>
 
 #include <gpucast/math/halffloat.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
+#include <gpucast/core/util.hpp>
 #include <gpucast/core/beziersurface.hpp>
 #include <gpucast/core/hyperspace_adapter.hpp>
 

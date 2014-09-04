@@ -42,22 +42,22 @@ class GPUCAST_VOLUME grid
     void                                generate ( volume_ptr const&              volume,
                                                    std::vector<face_ptr> const&   serialized_faces );
 
-    void                                serialize ( std::vector<gpucast::gl::vec4u>&     cellbuffer,
-                                                    std::vector<gpucast::gl::vec4u>&     facebuffer,
-                                                    std::vector<gpucast::gl::vec4f>&     bboxbuffer ) const;
+    void                                serialize ( std::vector<gpucast::math::vec4u>&     cellbuffer,
+                                                    std::vector<gpucast::math::vec4u>&     facebuffer,
+                                                    std::vector<gpucast::math::vec4f>&     bboxbuffer ) const;
 
     unsigned                            serialize ( gridcell const&               cell, 
-                                                    std::vector<gpucast::gl::vec4u>&     cellbuffer,
-                                                    std::vector<gpucast::gl::vec4u>&     facebuffer,
-                                                    std::vector<gpucast::gl::vec4f>&     bboxbuffer,
+                                                    std::vector<gpucast::math::vec4u>&     cellbuffer,
+                                                    std::vector<gpucast::math::vec4u>&     facebuffer,
+                                                    std::vector<gpucast::math::vec4f>&     bboxbuffer,
                                                     std::map<face_ptr, unsigned>& face_map ) const;
 
     unsigned                            serialize ( face_ptr const&               face, 
-                                                    std::vector<gpucast::gl::vec4f>&     bboxbuffer,
+                                                    std::vector<gpucast::math::vec4f>&     bboxbuffer,
                                                     std::map<face_ptr, unsigned>& face_map ) const;
 
     unsigned                            serialize ( gpucast::math::obbox3f const&           bbox,
-                                                    std::vector<gpucast::gl::vec4f>&     bboxbuffer ) const;
+                                                    std::vector<gpucast::math::vec4f>&     bboxbuffer ) const;
 
     std::array<unsigned, 3> const&      size () const;
 

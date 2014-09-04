@@ -273,12 +273,12 @@ beziersurfaceobject::_add ( surface_ptr const& surface,
   // store number of vertices in convex hull
   std::size_t points_in_chull = surface->convexhull().size();
 
-  gpucast::gl::vec4f additional_attrib2(cmb_serializer.unsigned_bits_as_float(explicit_type_conversion<std::size_t, unsigned> (db_index) ),
+  gpucast::math::vec4f additional_attrib2(cmb_serializer.unsigned_bits_as_float(explicit_type_conversion<std::size_t, unsigned> (db_index) ),
                                         cmb_serializer.unsigned_bits_as_float(explicit_type_conversion<std::size_t, unsigned>(controlpointdata_index)),
                                         cmb_serializer.unsigned_bits_as_float( surface->trimtype() ),
                                         cmb_serializer.unsigned_bits_as_float(explicit_type_conversion<std::size_t, unsigned>(cmb_index)));
 
-  gpucast::gl::vec4f additional_attrib3 ( float(surface->bezierdomain().min[trimdomain::point_type::u]),
+  gpucast::math::vec4f additional_attrib3 ( float(surface->bezierdomain().min[trimdomain::point_type::u]),
                                           float(surface->bezierdomain().max[trimdomain::point_type::u]),
                                           float(surface->bezierdomain().min[trimdomain::point_type::v]),
                                           float(surface->bezierdomain().max[trimdomain::point_type::v]) );
@@ -300,7 +300,7 @@ beziersurfaceobject::_add (  gpucast::math::pointmesh2d< gpucast::math::point3d>
   for (beziersurface::point_type const& p : points)
   {
     // convert point to hyperspace
-    _controlpoints.push_back ( gpucast::gl::vec4f (float (p[0] * p.weight()),
+    _controlpoints.push_back ( gpucast::math::vec4f (float (p[0] * p.weight()),
                                             float (p[1] * p.weight()),
                                             float (p[2] * p.weight()),
                                             float (p.weight())));

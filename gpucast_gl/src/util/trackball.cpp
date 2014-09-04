@@ -52,7 +52,7 @@ namespace gpucast { namespace gl {
 
 
   ////////////////////////////////////////////////////////////////////////////////
-  matrix4x4<float>
+   gpucast::math::matrix4f
   trackball::rotation() const
   {
     return rotation_euler_;
@@ -91,7 +91,7 @@ namespace gpucast { namespace gl {
     button_right_    = false;
     mousepos_x_      = 0;
     mousepos_y_      = 0;
-    rotation_euler_  = matrix4f();
+    rotation_euler_  = gpucast::math::matrix4f();
     distance_        = 0.0; 
     shiftx_          = 0.0;
     shifty_          = 0.0;
@@ -166,8 +166,8 @@ namespace gpucast { namespace gl {
       float rady = (config_.mapping_rotate * 2.0f * float(M_PI) * float(x - mousepos_x_)) / 360.0f;
       float radx = (config_.mapping_rotate * 2.0f * float(M_PI) * float(y - mousepos_y_)) / 360.0f;
 
-      rotation_euler_ = make_rotation_x(-radx) * rotation_euler_;
-      rotation_euler_ = make_rotation_y(-rady) * rotation_euler_;
+      rotation_euler_ =  gpucast::math::make_rotation_x(-radx) * rotation_euler_;
+      rotation_euler_ =  gpucast::math::make_rotation_y(-rady) * rotation_euler_;
 
       mousepos_x_ = x;
       mousepos_y_ = y;

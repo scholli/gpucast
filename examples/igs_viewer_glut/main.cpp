@@ -19,8 +19,8 @@
 #include <gpucast/gl/util/init_glew.hpp>
 
 #include <gpucast/gl/error.hpp>
-#include <gpucast/gl/glut/window.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/glut/window.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 #include <gpucast/gl/primitives/bezierobject.hpp>
 
 #include <gpucast/core/import/igs.hpp>
@@ -113,19 +113,19 @@ public:
     auto& renderer = gpucast::gl::bezierobject_renderer::instance();
     renderer.set_nearfar(0.01f * _bbox.size().abs(), 1.5f  * _bbox.size().abs());
 
-    gpucast::gl::matrix4f view = gpucast::gl::lookat(0.0f, 0.0f, float(_bbox.size().abs()),
+    gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_bbox.size().abs()),
       0.0f, 0.0f, 0.0f,
       0.0f, 1.0f, 0.0f);
 
-    gpucast::gl::vec3f translation = _bbox.center();
+    gpucast::math::vec3f translation = _bbox.center();
 
-    gpucast::gl::matrix4f model = gpucast::gl::make_translation(shiftx(), shifty(), distance()) * rotation() *
-                                  gpucast::gl::make_translation(-translation[0], -translation[1], -translation[2]);
+    gpucast::math::matrix4f model = gpucast::math::make_translation(shiftx(), shifty(), distance()) * rotation() *
+                                  gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
 
-    gpucast::gl::matrix4f proj = gpucast::gl::perspective(60.0f, 1.0f, 1.0f, 1000.0f);
-    gpucast::gl::matrix4f mv = view * model;
-    gpucast::gl::matrix4f mvp = proj * mv;
-    gpucast::gl::matrix4f nm = mv.normalmatrix();
+    gpucast::math::matrix4f proj = gpucast::math::perspective(60.0f, 1.0f, 1.0f, 1000.0f);
+    gpucast::math::matrix4f mv = view * model;
+    gpucast::math::matrix4f mvp = proj * mv;
+    gpucast::math::matrix4f nm = mv.normalmatrix();
 
     renderer.projectionmatrix(proj);
     renderer.modelviewmatrix(mv);

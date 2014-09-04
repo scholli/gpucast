@@ -19,7 +19,7 @@
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 
 namespace gpucast { namespace gl {
@@ -42,42 +42,42 @@ public : // methods
 
   void draw            ( bool wireframe = false );
 
-  void set_vertices    ( vec4f const& lbf = vec4f(-1.0f, -1.0f, -1.0f, 1.0f),
-                         vec4f const& rbf = vec4f( 1.0f, -1.0f, -1.0f, 1.0f),
-                         vec4f const& ltf = vec4f(-1.0f,  1.0f, -1.0f, 1.0f),
-                         vec4f const& rtf = vec4f( 1.0f,  1.0f, -1.0f, 1.0f),
-                         vec4f const& lbr = vec4f(-1.0f, -1.0f,  1.0f, 1.0f),
-                         vec4f const& rbr = vec4f( 1.0f, -1.0f,  1.0f, 1.0f),
-                         vec4f const& ltr = vec4f(-1.0f,  1.0f,  1.0f, 1.0f),
-                         vec4f const& rtr = vec4f( 1.0f,  1.0f,  1.0f, 1.0f) ); // left/right(l/r) - bottom/top(b/t) - front/rear(f/r)
+  void set_vertices    ( gpucast::math::vec4f const& lbf = gpucast::math::vec4f(-1.0f, -1.0f, -1.0f, 1.0f),
+                         gpucast::math::vec4f const& rbf = gpucast::math::vec4f( 1.0f, -1.0f, -1.0f, 1.0f),
+                         gpucast::math::vec4f const& ltf = gpucast::math::vec4f(-1.0f,  1.0f, -1.0f, 1.0f),
+                         gpucast::math::vec4f const& rtf = gpucast::math::vec4f( 1.0f,  1.0f, -1.0f, 1.0f),
+                         gpucast::math::vec4f const& lbr = gpucast::math::vec4f(-1.0f, -1.0f,  1.0f, 1.0f),
+                         gpucast::math::vec4f const& rbr = gpucast::math::vec4f( 1.0f, -1.0f,  1.0f, 1.0f),
+                         gpucast::math::vec4f const& ltr = gpucast::math::vec4f(-1.0f,  1.0f,  1.0f, 1.0f),
+                         gpucast::math::vec4f const& rtr = gpucast::math::vec4f( 1.0f,  1.0f,  1.0f, 1.0f) ); // left/right(l/r) - bottom/top(b/t) - front/rear(f/r)
 
-  void set_texcoords   ( vec4f const& lbf = vec4f( 0.0f,  0.0f,  0.0f, 1.0f),
-                         vec4f const& rbf = vec4f( 1.0f,  0.0f,  0.0f, 1.0f),
-                         vec4f const& ltf = vec4f( 0.0f,  1.0f,  0.0f, 1.0f),
-                         vec4f const& rtf = vec4f( 1.0f,  1.0f,  0.0f, 1.0f),
-                         vec4f const& lbr = vec4f( 0.0f,  0.0f,  1.0f, 1.0f),
-                         vec4f const& rbr = vec4f( 1.0f,  0.0f,  1.0f, 1.0f),
-                         vec4f const& ltr = vec4f( 0.0f,  1.0f,  1.0f, 1.0f),
-                         vec4f const& rtr = vec4f( 1.0f,  1.0f,  1.0f, 1.0f) ); // left/right(l/r) - bottom/top(b/t) - front/rear(f/r)
+  void set_texcoords   ( gpucast::math::vec4f const& lbf = gpucast::math::vec4f( 0.0f,  0.0f,  0.0f, 1.0f),
+                         gpucast::math::vec4f const& rbf = gpucast::math::vec4f( 1.0f,  0.0f,  0.0f, 1.0f),
+                         gpucast::math::vec4f const& ltf = gpucast::math::vec4f( 0.0f,  1.0f,  0.0f, 1.0f),
+                         gpucast::math::vec4f const& rtf = gpucast::math::vec4f( 1.0f,  1.0f,  0.0f, 1.0f),
+                         gpucast::math::vec4f const& lbr = gpucast::math::vec4f( 0.0f,  0.0f,  1.0f, 1.0f),
+                         gpucast::math::vec4f const& rbr = gpucast::math::vec4f( 1.0f,  0.0f,  1.0f, 1.0f),
+                         gpucast::math::vec4f const& ltr = gpucast::math::vec4f( 0.0f,  1.0f,  1.0f, 1.0f),
+                         gpucast::math::vec4f const& rtr = gpucast::math::vec4f( 1.0f,  1.0f,  1.0f, 1.0f) ); // left/right(l/r) - bottom/top(b/t) - front/rear(f/r)
 
-  static std::vector< vec4f> create_triangle_mesh (  vec4f const& lbf,
-                                                     vec4f const& rbf,
-                                                     vec4f const& ltf,
-                                                     vec4f const& rtf,
-                                                     vec4f const& lbr,
-                                                     vec4f const& rbr,
-                                                     vec4f const& ltr,
-                                                     vec4f const& rtr );
+  static std::vector< gpucast::math::vec4f> create_triangle_mesh (  gpucast::math::vec4f const& lbf,
+                                                     gpucast::math::vec4f const& rbf,
+                                                     gpucast::math::vec4f const& ltf,
+                                                     gpucast::math::vec4f const& rtf,
+                                                     gpucast::math::vec4f const& lbr,
+                                                     gpucast::math::vec4f const& rbr,
+                                                     gpucast::math::vec4f const& ltr,
+                                                     gpucast::math::vec4f const& rtr );
   
-  static void create_triangle_mesh ( vec4f const& lbf,
-                                     vec4f const& rbf,
-                                     vec4f const& ltf,
-                                     vec4f const& rtf,
-                                     vec4f const& lbr,
-                                     vec4f const& rbr,
-                                     vec4f const& ltr,
-                                     vec4f const& rtr,
-                                     std::vector< vec4f>& attributes,
+  static void create_triangle_mesh ( gpucast::math::vec4f const& lbf,
+                                     gpucast::math::vec4f const& rbf,
+                                     gpucast::math::vec4f const& ltf,
+                                     gpucast::math::vec4f const& rtf,
+                                     gpucast::math::vec4f const& lbr,
+                                     gpucast::math::vec4f const& rbr,
+                                     gpucast::math::vec4f const& ltr,
+                                     gpucast::math::vec4f const& rtr,
+                                     std::vector< gpucast::math::vec4f>& attributes,
                                      std::vector<int>&    mesh_indices,
                                      std::vector<int>&    line_indices );
     

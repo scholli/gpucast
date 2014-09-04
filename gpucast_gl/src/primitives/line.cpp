@@ -15,22 +15,22 @@
 #include <vector>
 #include <cassert>
 
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 namespace gpucast { namespace gl {
 
 ///////////////////////////////////////////////////////////////////////////////
-line::line(std::vector<vec4f> const& points,
+line::line(std::vector<gpucast::math::vec4f> const& points,
                  GLint vertexattrib_index,  
                  GLint normalattrib_index, 
                  GLint texcoordattrib_index )
   : _count     ( int(points.size()) ),
     _vao       (),
-    _vertices  ( points.size() * sizeof(vec4f) ),
-    _colors    ( points.size() * sizeof(vec4f) ),
-    _texcoords ( points.size() * sizeof(vec4f) )
+    _vertices  ( points.size() * sizeof(gpucast::math::vec4f) ),
+    _colors    ( points.size() * sizeof(gpucast::math::vec4f) ),
+    _texcoords ( points.size() * sizeof(gpucast::math::vec4f) )
 {  
-  _vertices.buffersubdata (0, unsigned( points.size() * sizeof(vec4f)),  &points.front());
+  _vertices.buffersubdata (0, unsigned( points.size() * sizeof(gpucast::math::vec4f)),  &points.front());
   attrib_location (vertexattrib_index, normalattrib_index, texcoordattrib_index);
 }
 
@@ -41,19 +41,19 @@ line::~line()
 
 ///////////////////////////////////////////////////////////////////////////////
 void      
-line::set_color ( std::vector<vec4f> const& color )
+line::set_color ( std::vector<gpucast::math::vec4f> const& color )
 {
   assert ( _count == color.size() ); 
-  _colors.buffersubdata (0, unsigned( color.size() * sizeof(vec4f)),  &color.front());  
+  _colors.buffersubdata (0, unsigned( color.size() * sizeof(gpucast::math::vec4f)),  &color.front());  
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 void      
-line::set_texcoords ( std::vector<vec4f> const& texcoords )
+line::set_texcoords ( std::vector<gpucast::math::vec4f> const& texcoords )
 {
   assert ( _count == texcoords.size() ); 
-  _colors.buffersubdata (0, unsigned( texcoords.size() * sizeof(vec4f)),  &texcoords.front());  
+  _colors.buffersubdata (0, unsigned( texcoords.size() * sizeof(gpucast::math::vec4f)),  &texcoords.front());  
 }
 
 

@@ -36,7 +36,7 @@
 #include <gpucast/gl/sampler.hpp>
 #include <gpucast/gl/program.hpp>
 
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 // type fwd 
 struct cudaGraphicsResource;
@@ -79,7 +79,7 @@ public : // methods
 
   /* virtual */ void              draw                      ();
   
-  /* virtual */ void              transform                 ( gpucast::gl::matrix4f const& m );
+  /* virtual */ void              transform                 ( gpucast::math::matrix4f const& m );
 
   /* virtual */ void              compute_nearfar           ();
 
@@ -129,7 +129,7 @@ protected : // auxilliary methods
 
 protected : // attributes
 
-  gpucast::gl::matrix4f                              _modelmatrix;
+  gpucast::math::matrix4f                              _modelmatrix;
 
   gpucast::math::bbox3f                                 _bbox;
   bool                                        _gl_initialized;
@@ -137,9 +137,9 @@ protected : // attributes
 
   static unsigned const                       _empty_slots = 1;
 
-  std::vector<gpucast::gl::vec4f>      _corners;
+  std::vector<gpucast::math::vec4f>      _corners;
 
-  std::vector<gpucast::gl::vec4u>      _surface_data;  
+  std::vector<gpucast::math::vec4u>      _surface_data;  
   //-----------------------------------------------------------------------------   
   // [attrib_min]          [bezierobject_id]           [inner/outer]  [uid]         
   // [attrib_max]          [surface_mesh_base_id]      [order_u]      [vid]         
@@ -147,7 +147,7 @@ protected : // attributes
   // [attribute_data_id]   [adjacent_attribute_id]     [surface_type] [fixed_param] 
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _surface_points;
+  std::vector<gpucast::math::vec4f>      _surface_points;
   //-----------------------------------------------------------------------------
   // [wx_00] [wx_01] ...
   // [wy_00] [wy_01] ...
@@ -155,7 +155,7 @@ protected : // attributes
   // [ w_00] [ w_01] ...
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _volume_data; 
+  std::vector<gpucast::math::vec4f>      _volume_data; 
   //-----------------------------------------------------------------------------
   // [ volume_points_id  ] [ order_u ]      [ umin_local ] [ umax_local ] [ umin_global ] [ umax_global ] [ bbox_min ] [ bbox_max ]
   // [ uid               ] [ order_v ]      [ vmin_local ] [ vmax_local ] [ vmin_global ] [ vmax_global ] [ bbox_min ] [ bbox_max ] 
@@ -163,7 +163,7 @@ protected : // attributes
   // [ bbox_diameter     ] [ 0 ]            [ 0 ]          [ 0 ]          [ 0 ]           [ 0 ]           [ bbox_min ] [ bbox_max ]
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _volume_points;
+  std::vector<gpucast::math::vec4f>      _volume_points;
   //-----------------------------------------------------------------------------
   // volume_points_id
   // [ wx_000 ]      [ wx_001 ] ...
@@ -172,7 +172,7 @@ protected : // attributes
   // [  w_000 ]      [  w_001 ] ...
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _attribute_data; // attribute data buffers
+  std::vector<gpucast::math::vec4f>      _attribute_data; // attribute data buffers
   // attribute_data_id
   //-----------------------------------------------------------------------------
   // [ min ]       
@@ -181,7 +181,7 @@ protected : // attributes
   // [ empty ]
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec2f>      _attribute_points; // attribute buffers
+  std::vector<gpucast::math::vec2f>      _attribute_points; // attribute buffers
   // attribute_point_id
   //-----------------------------------------------------------------------------
   // [attrib0_000] ...

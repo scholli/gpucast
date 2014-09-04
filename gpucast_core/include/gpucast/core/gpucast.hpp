@@ -37,6 +37,4 @@
   #define GPUCAST_CORE_EXTERN
 #endif
 
-#include <GL/glew.h>
-
 #endif // GPUCAST_CORE_HPP

@@ -17,7 +17,7 @@
 // header, project
 #include <gpucast/gl/glpp.hpp>
 #include <gpucast/gl/util/eventhandler.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 
 
@@ -37,7 +37,7 @@ public :
 
 public :
 
-  matrix4x4<float>        rotation  ( ) const;
+  gpucast::math::matrix4f rotation  ( ) const;
 
   float                   distance  ( ) const;
   float                   shiftx    ( ) const;
@@ -65,7 +65,7 @@ private :
   int                     mousepos_y_;
 
   // current rotation
-  matrix4x4<float>        rotation_euler_;
+  gpucast::math::matrix4f        rotation_euler_;
 
   // current distance
   float                   distance_;

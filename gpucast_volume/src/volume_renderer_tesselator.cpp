@@ -45,7 +45,7 @@ struct volume_renderer_tesselator::drawable_ressource_impl
   unsigned                    index;
   unsigned                    count;
 
-  gpucast::gl::matrix4f              modelmatrix;
+  gpucast::math::matrix4f              modelmatrix;
 };
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -117,8 +117,8 @@ struct volume_renderer_tesselator::drawable_ressource_impl
     _render_pass->set_uniform1f         ("farplane",          _farplane);
     _render_pass->set_texture2d         ( "transfertexture", *_transfertexture, 0 );
 
-    gpucast::gl::vec4f datamin = _global_attribute_bounds[_current_attribute].min;
-    gpucast::gl::vec4f datamax = _global_attribute_bounds[_current_attribute].max;
+    gpucast::math::vec4f datamin = _global_attribute_bounds[_current_attribute].min;
+    gpucast::math::vec4f datamax = _global_attribute_bounds[_current_attribute].max;
     _render_pass->set_uniform4fv          ("global_attribute_min", 1,  &datamin[0]);
     _render_pass->set_uniform4fv          ("global_attribute_max", 1,  &datamax[0]);
 
@@ -132,10 +132,10 @@ struct volume_renderer_tesselator::drawable_ressource_impl
 
       BOOST_FOREACH(drawable_ressource_pair const& p, _drawables)
       {
-        gpucast::gl::matrix4f modelview        = _modelviewmatrix * p.second->modelmatrix;
-        gpucast::gl::matrix4f modelviewinverse = gpucast::gl::inverse(modelview);
-        gpucast::gl::matrix4f normalmatrix     = modelview.normalmatrix();
-        gpucast::gl::matrix4f mvp              = _projectionmatrix * modelview;
+        gpucast::math::matrix4f modelview        = _modelviewmatrix * p.second->modelmatrix;
+        gpucast::math::matrix4f modelviewinverse = gpucast::math::inverse(modelview);
+        gpucast::math::matrix4f normalmatrix     = modelview.normalmatrix();
+        gpucast::math::matrix4f mvp              = _projectionmatrix * modelview;
   
         _render_pass->set_uniform_matrix4fv ("normalmatrix",              1, false, &normalmatrix[0]);
         _render_pass->set_uniform_matrix4fv ("modelviewmatrix",           1, false, &modelview[0]);
@@ -165,7 +165,7 @@ struct volume_renderer_tesselator::drawable_ressource_impl
 
   /////////////////////////////////////////////////////////////////////////////
   void                      
-  volume_renderer_tesselator::transform ( drawable_ptr const& object, gpucast::gl::matrix4f const& m )
+  volume_renderer_tesselator::transform ( drawable_ptr const& object, gpucast::math::matrix4f const& m )
   {
     if ( _drawables.count ( object ) ) 
     {
@@ -189,15 +189,15 @@ struct volume_renderer_tesselator::drawable_ressource_impl
   volume_renderer_tesselator::_initialize_gl_resources ( )
   {
     /*
-    std::map<std::string, std::vector<gpucast::gl::vec4f>> per_vertex_attribute_map;
-    std::vector<gpucast::gl::vec3f>                        per_vertex_position;
+    std::map<std::string, std::vector<gpucast::math::vec4f>> per_vertex_attribute_map;
+    std::vector<gpucast::math::vec3f>                        per_vertex_position;
     std::vector<int>                                indices;
 
     // allocate arraybuffer for attributes
     BOOST_FOREACH ( auto attribute_name, _attributelist )
     {
       _attributes.insert              ( std::make_pair ( attribute_name, std::shared_ptr<gpucast::gl::arraybuffer>(new gpucast::gl::arraybuffer) ) );
-      per_vertex_attribute_map.insert ( std::make_pair ( attribute_name, std::vector<gpucast::gl::vec4f>() ) );
+      per_vertex_attribute_map.insert ( std::make_pair ( attribute_name, std::vector<gpucast::math::vec4f>() ) );
     }
 
     // copy data to attribute arraybuffer
@@ -207,14 +207,14 @@ struct volume_renderer_tesselator::drawable_ressource_impl
 
       for ( beziervolumeobject::const_iterator i = p.first->begin(); i != p.first->end(); ++i)
       {
-        std::array<gpucast::math::beziersurface<gpucast::gl::vec3d>, 6 > outer;
+        std::array<gpucast::math::beziersurface<gpucast::math::vec3d>, 6 > outer;
 
-        outer[0] = (*i).slice<gpucast::gl::vec3d> (gpucast::math::point3d::x, 0);
-        outer[1] = (*i).slice<gpucast::gl::vec3d> (gpucast::math::point3d::x, (*i).degree_u() );
-        outer[2] = (*i).slice<gpucast::gl::vec3d> (gpucast::math::point3d::y, 0 );
-        outer[3] = (*i).slice<gpucast::gl::vec3d> (gpucast::math::point3d::y, (*i).degree_v() );
-        outer[4] = (*i).slice<gpucast::gl::vec3d> (gpucast::math::point3d::z, 0 );
-        outer[5] = (*i).slice<gpucast::gl::vec3d> (gpucast::math::point3d::z, (*i).degree_w() );
+        outer[0] = (*i).slice<gpucast::math::vec3d> (gpucast::math::point3d::x, 0);
+        outer[1] = (*i).slice<gpucast::math::vec3d> (gpucast::math::point3d::x, (*i).degree_u() );
+        outer[2] = (*i).slice<gpucast::math::vec3d> (gpucast::math::point3d::y, 0 );
+        outer[3] = (*i).slice<gpucast::math::vec3d> (gpucast::math::point3d::y, (*i).degree_v() );
+        outer[4] = (*i).slice<gpucast::math::vec3d> (gpucast::math::point3d::z, 0 );
+        outer[5] = (*i).slice<gpucast::math::vec3d> (gpucast::math::point3d::z, (*i).degree_w() );
 
         outer[0].tesselate(per_vertex_position, indices);
         outer[1].tesselate(per_vertex_position, indices);
@@ -226,14 +226,14 @@ struct volume_renderer_tesselator::drawable_ressource_impl
         std::vector<int> junk; // already have indices from position tesselation
         for ( beziervolume::attribute_volume_map::const_iterator attrib_pair = i->data_begin(); attrib_pair != i->data_end(); ++attrib_pair)
         {
-          std::array<gpucast::math::beziersurface<gpucast::gl::vec4d>, 6 > outer_attrib;
+          std::array<gpucast::math::beziersurface<gpucast::math::vec4d>, 6 > outer_attrib;
 
-          outer_attrib[0] = attrib_pair->second.slice<gpucast::gl::vec4d> (gpucast::math::point3d::x, 0);
-          outer_attrib[1] = attrib_pair->second.slice<gpucast::gl::vec4d> (gpucast::math::point3d::x, (*i).degree_u() );
-          outer_attrib[2] = attrib_pair->second.slice<gpucast::gl::vec4d> (gpucast::math::point3d::y, 0 );
-          outer_attrib[3] = attrib_pair->second.slice<gpucast::gl::vec4d> (gpucast::math::point3d::y, (*i).degree_v() );
-          outer_attrib[4] = attrib_pair->second.slice<gpucast::gl::vec4d> (gpucast::math::point3d::z, 0 );
-          outer_attrib[5] = attrib_pair->second.slice<gpucast::gl::vec4d> (gpucast::math::point3d::z, (*i).degree_w() );
+          outer_attrib[0] = attrib_pair->second.slice<gpucast::math::vec4d> (gpucast::math::point3d::x, 0);
+          outer_attrib[1] = attrib_pair->second.slice<gpucast::math::vec4d> (gpucast::math::point3d::x, (*i).degree_u() );
+          outer_attrib[2] = attrib_pair->second.slice<gpucast::math::vec4d> (gpucast::math::point3d::y, 0 );
+          outer_attrib[3] = attrib_pair->second.slice<gpucast::math::vec4d> (gpucast::math::point3d::y, (*i).degree_v() );
+          outer_attrib[4] = attrib_pair->second.slice<gpucast::math::vec4d> (gpucast::math::point3d::z, 0 );
+          outer_attrib[5] = attrib_pair->second.slice<gpucast::math::vec4d> (gpucast::math::point3d::z, (*i).degree_w() );
 
           outer_attrib[0].tesselate(per_vertex_attribute_map.at(attrib_pair->first), junk);
           outer_attrib[1].tesselate(per_vertex_attribute_map.at(attrib_pair->first), junk);

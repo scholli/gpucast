@@ -27,7 +27,7 @@
 #include <GL/glew.h>
 
 // header project
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec3.hpp>
 
 
 namespace gpucast { namespace gl {

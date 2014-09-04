@@ -20,8 +20,8 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
-#include <gpucast/gl/math/vec3.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec3.hpp>
+#include <gpucast/math/vec4.hpp>
 
 // header, project
 #include <gpucast/volume/gpucast.hpp>

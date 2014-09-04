@@ -27,7 +27,7 @@
 #include <gpucast/gl/primitives/line.hpp>
 #include <gpucast/gl/primitives/plane.hpp>
 #include <gpucast/gl/texture1d.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
@@ -70,8 +70,8 @@ public Q_SLOTS :
   void                    serialize_contour_binary      ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    serialize_contour_map         ( gpucast::beziersurface::trimdomain_ptr const& domain );
 
-  void                    add_gl_curve                  ( gpucast::beziersurface::curve_type const& curve, gpucast::gl::vec4f const& color  );
-  void                    add_gl_bbox                   ( gpucast::math::bbox2d const& bbox, gpucast::gl::vec4f const& color  );
+  void                    add_gl_curve                  ( gpucast::beziersurface::curve_type const& curve, gpucast::math::vec4f const& color  );
+  void                    add_gl_bbox                   ( gpucast::math::bbox2d const& bbox, gpucast::math::vec4f const& color  );
 
   trimdomain_ptr          get_domain                    ( std::string const& name, std::size_t const index ) const;
   std::size_t             get_objects                   () const;
@@ -107,15 +107,15 @@ private : // attributes
   std::size_t                             _current_surface;
 
   // simple partition views
-  gpucast::gl::matrix4f                          _projection;
+  gpucast::math::matrix4f                          _projection;
   gpucast::gl::program*                          _partition_program;
   std::vector<gpucast::gl::line*>                _curve_geometry;
 
   // commonly used resources
   gpucast::gl::texture1d*                        _transfertexture;
   unsigned                                _trimid;
-  gpucast::gl::vec2f                             _domain_size;
-  gpucast::gl::vec2f                             _domain_min;
+  gpucast::math::vec2f                             _domain_size;
+  gpucast::math::vec2f                             _domain_min;
   gpucast::gl::plane*                            _quad;
 
   // double binary resources

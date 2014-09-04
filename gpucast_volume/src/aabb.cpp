@@ -14,7 +14,7 @@
 #include "gpucast/volume/aabb.hpp"
 
 // header, system
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec3.hpp>
 
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/vertexshader.hpp>
@@ -56,7 +56,7 @@ aabb::~aabb ()
 
 ////////////////////////////////////////////////////////////////////////////////
 void 
-aabb::draw ( gpucast::gl::matrix4x4<float> const& mvp  )
+aabb::draw ( gpucast::math::matrix4x4<float> const& mvp  )
 {
   _init ();
 
@@ -75,7 +75,7 @@ aabb::draw ( gpucast::gl::matrix4x4<float> const& mvp  )
 
 ////////////////////////////////////////////////////////////////////////////////
 void                      
-aabb::color ( gpucast::gl::vec4f const& color )
+aabb::color ( gpucast::math::vec4f const& color )
 {
   if ( color != _color ) 
   {
@@ -84,8 +84,8 @@ aabb::color ( gpucast::gl::vec4f const& color )
     // if already uploaded to GPU -> update color buffer
     if ( _initialized ) 
     {
-      std::vector<gpucast::gl::vec4f> colors (8);
-      std::fill ( colors.begin(), colors.end(), gpucast::gl::vec4f(_color) ); 
+      std::vector<gpucast::math::vec4f> colors (8);
+      std::fill ( colors.begin(), colors.end(), gpucast::math::vec4f(_color) ); 
       _colorarray->update ( colors.begin(), colors.end() );
     }
   }
@@ -130,10 +130,10 @@ void aabb::_init ( )
   _program->link ();
 
   // generate data and copy to GPU
-  std::vector<gpucast::gl::vec3f> corners;
+  std::vector<gpucast::math::vec3f> corners;
   generate_corners ( std::back_inserter( corners ) );
 
-  std::vector<gpucast::gl::vec3f> vertices;
+  std::vector<gpucast::math::vec3f> vertices;
 
   // points whose index differ one bit form one edge
   for (unsigned i = 0; i != corners.size(); ++i)
@@ -157,7 +157,7 @@ void aabb::_init ( )
     }
   }
 
-  std::vector<gpucast::gl::vec4f> colors ( vertices.size() );
+  std::vector<gpucast::math::vec4f> colors ( vertices.size() );
   std::fill(colors.begin(), colors.end(), _color);
 
   _vertexarray->update ( vertices.begin(),  vertices.end() );

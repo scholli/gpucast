@@ -22,8 +22,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/noncopyable.hpp>
 
-#include <gpucast/gl/math/vec4.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/vec4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 #include <gpucast/gl/texture2d.hpp>
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/primitives/coordinate_system.hpp>
@@ -118,7 +118,7 @@ public : // pure virtual methods
                                                          
   virtual void                  draw                     () = 0;
                                                          
-  virtual void                  transform                ( gpucast::gl::matrix4f const& m ) = 0;
+  virtual void                  transform                ( gpucast::math::matrix4f const& m ) = 0;
                                                          
 public : // methods                                      
                                                                                                                
@@ -176,6 +176,10 @@ public : // methods
   bool                          detect_implicit_extremum   () const;
   virtual void                  detect_implicit_extremum   ( bool enable );
 
+  void                          init_program             ( std::shared_ptr<gpucast::gl::program>&  p,
+                                                           std::string const& vertexshader_filename,
+                                                           std::string const& fragmentshader_filename,
+                                                           std::string const& geometryshader_filename = "");
                                                          
   visualization_properties const& visualization_props    () const;
   virtual void                    visualization_props    ( visualization_properties const& props );

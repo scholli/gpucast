@@ -30,7 +30,7 @@ namespace gpucast { namespace gl {
 
 
   ///////////////////////////////////////////////////////////////////////////////
-  /* virtual */ matrix4f    
+  /* virtual */ gpucast::math::matrix4f    
   dynamic_rotation::current_transform()
   {
     assert ( _rotation_axis <= 2 );
@@ -40,11 +40,11 @@ namespace gpucast { namespace gl {
     switch ( _rotation_axis )
     {
     case 0 : 
-      return make_rotation_x ( rotation_angle );
+      return  gpucast::math::make_rotation_x ( rotation_angle );
     case 1 : 
-      return make_rotation_y ( rotation_angle );
+      return  gpucast::math::make_rotation_y ( rotation_angle );
     case 2 :
-      return make_rotation_z ( rotation_angle );
+      return  gpucast::math::make_rotation_z ( rotation_angle );
     default :
       throw std::runtime_error("dynamic_rotation::step(): Invalid rotation axis.\n");
     };

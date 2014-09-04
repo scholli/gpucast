@@ -37,8 +37,8 @@
 #include <gpucast/gl/primitives/plane.hpp>
 #include <gpucast/gl/primitives/bezierobject.hpp>
     
-#include <gpucast/gl/math/matrix4x4.hpp>
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/matrix4x4.hpp>
+#include <gpucast/math/vec3.hpp>
 
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
@@ -94,7 +94,7 @@ private : // helper methods
   void                    _openfile                     ( std::string const& file, gpucast::math::axis_aligned_boundingbox<gpucast::math::point3d>& bbox );
   void                    _parse_material_conf          ( std::istringstream& sstr, gpucast::gl::material& mat) const;
   bool                    _parse_float                  ( std::istringstream& sstr, float& result) const;
-  void                    _parse_background             ( std::istringstream& sstr, gpucast::gl::vec3f&) const;
+  void                    _parse_background             ( std::istringstream& sstr, gpucast::math::vec3f&) const;
 
 private : // attributes                     
 
@@ -109,7 +109,7 @@ private : // attributes
   std::shared_ptr<gpucast::gl::trackball>                                     _trackball;
 
   gpucast::math::axis_aligned_boundingbox<gpucast::math::point3d>             _boundingbox;
-  gpucast::gl::vec3f                                                          _background;
+  gpucast::math::vec3f                                                          _background;
   
   bool                                                                        _ambient_occlusion;
   bool                                                                        _fxaa;

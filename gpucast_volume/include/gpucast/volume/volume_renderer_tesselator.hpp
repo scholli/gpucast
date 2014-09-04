@@ -63,7 +63,7 @@ public : // methods
 
   virtual void                            draw                    ( drawable_ptr const& object );
 
-  /* virtual */ void                      transform               ( drawable_ptr const& object, gpucast::gl::matrix4f const& m );
+  /* virtual */ void                      transform               ( drawable_ptr const& object, gpucast::math::matrix4f const& m );
 
   virtual void                            recompile               ();
 

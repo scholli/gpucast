@@ -26,6 +26,8 @@
 
 #include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/vertexshader.hpp>
+#include <gpucast/gl/geometryshader.hpp>
+
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/transferfunction.hpp>
 
@@ -89,7 +91,7 @@ namespace gpucast {
       _external_color_depth_texture (),
       _visualization_props      ()
   {
-    projectionmatrix(gpucast::gl::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
+    projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
 
     _init();
   }
@@ -435,15 +437,15 @@ namespace gpucast {
   volume_renderer::_init()
   {
     // init transfertexture
-    gpucast::gl::transferfunction<gpucast::gl::vec4f> tf;
+    gpucast::gl::transferfunction<gpucast::math::vec4f> tf;
 
-    tf.set(0,   gpucast::gl::vec4f(0.0, 0.0, 1.0, 1.0));
-    tf.set(70,  gpucast::gl::vec4f(0.0, 1.0, 1.0, 1.0));
-    tf.set(120, gpucast::gl::vec4f(0.0, 1.0, 0.0, 1.0));
-    tf.set(190, gpucast::gl::vec4f(1.0, 1.0, 0.0, 1.0));
-    tf.set(255, gpucast::gl::vec4f(1.0, 0.0, 0.0, 1.0));
+    tf.set(0,   gpucast::math::vec4f(0.0, 0.0, 1.0, 1.0));
+    tf.set(70,  gpucast::math::vec4f(0.0, 1.0, 1.0, 1.0));
+    tf.set(120, gpucast::math::vec4f(0.0, 1.0, 0.0, 1.0));
+    tf.set(190, gpucast::math::vec4f(1.0, 1.0, 0.0, 1.0));
+    tf.set(255, gpucast::math::vec4f(1.0, 0.0, 0.0, 1.0));
 
-    std::vector<gpucast::gl::vec4f> samples;
+    std::vector<gpucast::math::vec4f> samples;
     tf.evaluate(256, samples, gpucast::gl::piecewise_linear());
 
     _transfertexture.reset     ( new gpucast::gl::texture2d );
@@ -575,5 +577,82 @@ namespace gpucast {
       return max_perf_device;
     }
 
+  /////////////////////////////////////////////////////////////////////////////
+  void
+    volume_renderer::init_program(std::shared_ptr<gpucast::gl::program>&  p,
+    std::string const&                 vertexshader_filename,
+    std::string const&                 fragmentshader_filename,
+    std::string const&                 geometryshader_filename)
+  {
+      try {
+        gpucast::gl::vertexshader     vs;
+        gpucast::gl::fragmentshader   fs;
+        gpucast::gl::geometryshader   gs;
+
+        p.reset(new gpucast::gl::program);
+
+        std::pair<bool, std::string> vspath = _path_to_file(vertexshader_filename);
+        std::pair<bool, std::string> fspath = _path_to_file(fragmentshader_filename);
+        std::pair<bool, std::string> gspath = _path_to_file(geometryshader_filename);
+
+        if (vspath.first)
+        {
+          vs.set_source(vspath.second.c_str());
+          vs.compile();
+          if (!vs.log().empty()) {
+            std::fstream ostr(boost::filesystem::basename(vertexshader_filename) + ".vert.log", std::ios::out);
+            ostr << vs.log() << std::endl;
+            ostr.close();
+          }
+          p->add(&vs);
+        }
+        else {
+          throw std::runtime_error("renderer::_init_shader (): Couldn't open file " + vertexshader_filename);
+        }
+
+        if (fspath.first)
+        {
+          fs.set_source(fspath.second.c_str());
+          fs.compile();
+
+          if (!fs.log().empty()) {
+            std::fstream ostr(boost::filesystem::basename(fragmentshader_filename) + ".frag.log", std::ios::out);
+            ostr << vs.log() << std::endl;
+            ostr.close();
+          }
+          p->add(&fs);
+        }
+        else {
+          throw std::runtime_error("renderer::_init_shader (): Couldn't open file " + fragmentshader_filename);
+        }
+
+        if (!gspath.first || geometryshader_filename.empty())
+        {
+          // do nothing 
+        }
+        else {
+          gs.set_source(gspath.second.c_str());
+          gs.compile();
+          if (!gs.log().empty()) {
+            std::fstream ostr(boost::filesystem::basename(geometryshader_filename) + ".geom.log", std::ios::out);
+            ostr << vs.log() << std::endl;
+            ostr.close();
+          }
+          p->add(&gs);
+        }
+
+        // link all shaders
+        p->link();
+
+        if (!p->log().empty())
+        {
+          // stream log to std output
+          std::cout << " program log : " << p->log() << std::endl;
+        }
+      }
+      catch (std::exception& e) {
+        std::cerr << "renderer::init_program(): failed to init program : " << vertexshader_filename << ", " << fragmentshader_filename << "( " << e.what() << ")\n";
+      }
+    }
 
 } // namespace gpucast

@@ -12,7 +12,6 @@
 #ifndef GPUCAST_GL_HPP
 #define GPUCAST_GL_HPP
 
-// include glew before any other GL header
 #include <GL/glew.h>
 
 // disable glut/STL warnings

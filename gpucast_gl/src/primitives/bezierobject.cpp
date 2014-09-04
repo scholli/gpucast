@@ -262,7 +262,7 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject_renderer::modelviewmatrix(gpucast::gl::matrix4f const& m)
+    void bezierobject_renderer::modelviewmatrix(gpucast::math::matrix4f const& m)
     {
       _modelviewmatrix = m;
 
@@ -275,12 +275,12 @@ namespace gpucast {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject_renderer::projectionmatrix(gpucast::gl::matrix4f const& m)
+    void bezierobject_renderer::projectionmatrix(gpucast::math::matrix4f const& m)
     {
       _projectionmatrix = m;
 
       _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
-      _modelviewprojectionmatrixinverse = gpucast::gl::inverse(_modelviewprojectionmatrix);
+      _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
     }
 
 
@@ -289,11 +289,11 @@ namespace gpucast {
     {
       _nearplane = near;
       _farplane = far;
-      projectionmatrix(gpucast::gl::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
+      projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject_renderer::set_background(gpucast::gl::vec3f const& color)
+    void bezierobject_renderer::set_background(gpucast::math::vec3f const& color)
     {
       _background = color;
     }

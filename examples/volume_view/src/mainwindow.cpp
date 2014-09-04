@@ -244,9 +244,9 @@ mainwindow::open_surface_file()
         //gpucast::surface_converter converter;
         //converter.convert(surfobj, surface); 
 
-        //gpucast::gl::material random_material ( gpucast::gl::vec4f(0.01f, 0.01f, 0.01f, 1.0f),
-        //                                 gpucast::gl::vec4f(0.5f, 0.5f, 0.5f, 1.0f),
-        //                                 gpucast::gl::vec4f(0.1f, 0.1f, 0.1f, 1.0f), 0.02f, 1.0f );
+        //gpucast::gl::material random_material ( gpucast::math::vec4f(0.01f, 0.01f, 0.01f, 1.0f),
+        //                                 gpucast::math::vec4f(0.5f, 0.5f, 0.5f, 1.0f),
+        //                                 gpucast::math::vec4f(0.1f, 0.1f, 0.1f, 1.0f), 0.02f, 1.0f );
         //surface->material(random_material);
         //
         //_glwindow->boundingbox ( glwidget::boundingbox_t ( gpucast::math::point3f(surface->bbox().min), gpucast::math::point3f(surface->bbox().max) ) );

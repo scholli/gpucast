@@ -14,8 +14,6 @@
 #include "gpucast/core/surface_renderer.hpp"
 
 // header, system
-#include <gpucast/gl/fragmentshader.hpp>
-#include <gpucast/gl/vertexshader.hpp>
 
 // header, project
 #include <gpucast/core/beziersurfaceobject.hpp>

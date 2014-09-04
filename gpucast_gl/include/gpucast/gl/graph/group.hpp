@@ -17,7 +17,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <gpucast/gl/glpp.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 #include <gpucast/gl/graph/node.hpp>
 
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
@@ -28,7 +28,7 @@ namespace gpucast { namespace gl {
   {
     public : 
 
-      typedef gpucast::math::axis_aligned_boundingbox<vec3f>       bbox_t;
+      typedef gpucast::math::axis_aligned_boundingbox<gpucast::math::vec3f>       bbox_t;
       typedef std::shared_ptr<node>         node_ptr_t;
       typedef std::set<node_ptr_t>          container_t;
 
@@ -57,18 +57,18 @@ namespace gpucast { namespace gl {
       const_iterator          end           () const;
 
       // transform methods
-      void                    set_transform ( matrix4f const&   matrix );
+      void                    set_transform ( gpucast::math::matrix4f const&   matrix );
 
-      void                    translate     ( vec3f const& translation);
+      void                    translate     ( gpucast::math::vec3f const& translation);
 
       void                    rotate        ( float        alpha, 
-                                              vec3f const& axis);
+                                              gpucast::math::vec3f const& axis);
 
-      void                    scale         ( vec3f const& scale );
+      void                    scale         ( gpucast::math::vec3f const& scale );
 
     private :
       
-      matrix4f                _matrix;
+      gpucast::math::matrix4f                _matrix;
       container_t             _children;
   };
 

@@ -257,9 +257,9 @@ extern "C" void invoke_octree_raycasting_kernel  ( renderconfig const&          
     _octree_bbox_arraybuffer->update  ( _bboxbuffer.begin(),  _bboxbuffer.end());
     _octree_limit_arraybuffer->update ( _limitbuffer.begin(), _limitbuffer.end());
 
-    std::size_t nodebufsize  = _nodebuffer.size() * sizeof(gpucast::gl::vec4u);
-    std::size_t facebufsize  = _facebuffer.size() * sizeof(gpucast::gl::vec4u);
-    std::size_t bboxbufsize  = _bboxbuffer.size() * sizeof(gpucast::gl::vec4f);
+    std::size_t nodebufsize  = _nodebuffer.size() * sizeof(gpucast::math::vec4u);
+    std::size_t facebufsize  = _facebuffer.size() * sizeof(gpucast::math::vec4u);
+    std::size_t bboxbufsize  = _bboxbuffer.size() * sizeof(gpucast::math::vec4f);
     std::size_t limitbufsize = _limitbuffer.size() * sizeof(float);
 
     std::cout << "Allocating : " << nodebufsize  << " Bytes" << std::endl;

@@ -26,7 +26,7 @@
 namespace gpucast {
 
 ///////////////////////////////////////////////////////////////////////////////
-draw_traversal::draw_traversal(gpucast::gl::matrix4x4<float> const& mvp)
+draw_traversal::draw_traversal(gpucast::math::matrix4x4<float> const& mvp)
   : _mvp(mvp)
 {}
 

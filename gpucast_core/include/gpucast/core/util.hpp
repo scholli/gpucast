@@ -12,6 +12,8 @@
 #ifndef GPUCAST_CORE_UTIL_HPP
 #define GPUCAST_CORE_UTIL_HPP
 
+#include <gpucast/core/conversion.hpp>
+
 // header, system
 #include <algorithm>
 #include <iterator>
@@ -156,14 +158,6 @@ private:
   std::map<std::size_t, std::size_t>& id_map_;
   std::size_t index_;
 };
-
-template <typename source_t, typename target_t>
-target_t const bit_cast ( source_t const& s ) 
-{
-  assert ( sizeof (source_t) == sizeof(target_t) );
-
-  return *reinterpret_cast<target_t const*>(&s);
-}
 
 inline unsigned 
 uint4ToUInt ( unsigned char input0, unsigned char input1, unsigned char input2, unsigned char input3 )

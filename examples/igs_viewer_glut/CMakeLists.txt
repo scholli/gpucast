@@ -11,6 +11,7 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
+                     ${CMAKE_SOURCE_DIR}/gpucast_glut/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
                      ${FREEGLUT_INCLUDE_DIR}
                      ${GLEW_INCLUDE_DIR}
@@ -35,11 +36,12 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ###############################################################################
 # dependencies
 ###############################################################################
-ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
+ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_glut gpucast_core)
 
 IF (MSVC)
   TARGET_LINK_LIBRARIES(${_EXE_NAME}  
 		        gpucast_gl 
+            gpucast_glut
 		        gpucast_core   
             debug ${FREEGLUT_LIBRARY_DEBUG}       optimized ${FREEGLUT_LIBRARY_RELEASE}         
             debug ${GLEW_LIBRARY_DEBUG}           optimized ${GLEW_LIBRARY_RELEASE}         
@@ -51,6 +53,7 @@ IF (MSVC)
 ELSE (MSVC)
 TARGET_LINK_LIBRARIES(${_EXE_NAME} 
 		      gpucast_gl 
+          gpucast_glut
 	        gpucast_core
 		      ${FREEGLUT_LIBRARY}
 		      ${FREEIMAGE_LIBRARY}

@@ -14,7 +14,10 @@
 
 #include <gpucast/core/beziersurfaceobject.hpp>
 
+#include <gpucast/gl/util/material.hpp>
+
 #include <gpucast/gl/glpp.hpp>
+#include <gpucast/gl/program.hpp>
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
@@ -125,7 +128,7 @@ public: // methods
   program const& get_program() const;
 
   void           set_nearfar(float near, float far);
-  void           set_background(gpucast::gl::vec3f const& color);
+  void           set_background(gpucast::math::vec3f const& color);
   void           add_search_path(std::string const& path);
 
   void           spheremap(std::string const& filepath);
@@ -139,8 +142,8 @@ public: // methods
                          std::string const& positive_z,
                          std::string const& negative_z);
 
-  void           modelviewmatrix(gpucast::gl::matrix4f const& mv);
-  void           projectionmatrix(gpucast::gl::matrix4f const& projection);
+  void           modelviewmatrix(gpucast::math::matrix4f const& mv);
+  void           projectionmatrix(gpucast::math::matrix4f const& projection);
 
   void           recompile();
                  
@@ -166,15 +169,15 @@ private: // attributes
   float                       _nearplane;
   float                       _farplane;
                               
-  gpucast::gl::matrix4f       _modelviewmatrix;
-  gpucast::gl::matrix4f       _modelviewmatrixinverse;
-  gpucast::gl::matrix4f       _projectionmatrix;
-  gpucast::gl::matrix4f       _normalmatrix;
-  gpucast::gl::matrix4f       _modelviewprojectionmatrix;
-  gpucast::gl::matrix4f       _modelviewprojectionmatrixinverse;
+  gpucast::math::matrix4f       _modelviewmatrix;
+  gpucast::math::matrix4f       _modelviewmatrixinverse;
+  gpucast::math::matrix4f       _projectionmatrix;
+  gpucast::math::matrix4f       _normalmatrix;
+  gpucast::math::matrix4f       _modelviewprojectionmatrix;
+  gpucast::math::matrix4f       _modelviewprojectionmatrixinverse;
                               
   std::set<std::string>       _pathlist;
-  gpucast::gl::vec3f          _background;
+  gpucast::math::vec3f          _background;
 
   int                         _texunit = 0;
 

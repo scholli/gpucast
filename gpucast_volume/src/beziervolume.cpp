@@ -14,7 +14,7 @@
 #include "gpucast/volume/beziervolume.hpp"
 
 // header, system
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec3.hpp>
 
 // header, project
 #include <gpucast/core/convex_hull_impl.hpp>
@@ -159,13 +159,13 @@ beziervolume::convexhull ( )
 void
 beziervolume::_generate_convexhull ( )
 {  
-  std::vector<gpucast::gl::vec3d> input ( begin(), end() );
-  std::vector<gpucast::gl::vec3d> output;
+  std::vector<gpucast::math::vec3d> input ( begin(), end() );
+  std::vector<gpucast::math::vec3d> output;
 
   std::vector<point_type> vertices;
   std::vector<int>        indices;
 
-  convex_hull_compute<3, gpucast::gl::vec3d>(&(*(input.begin()))[0],
+  convex_hull_compute<3, gpucast::math::vec3d>(&(*(input.begin()))[0],
                                       size(),
                                       std::back_inserter(output),
                                       std::back_inserter(indices),

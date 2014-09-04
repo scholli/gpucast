@@ -14,7 +14,7 @@
 
 #include <gpucast/gl/glpp.hpp>
 #include <gpucast/gl/test/dynamic_transform.hpp>
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec3.hpp>
 
 
 namespace gpucast { namespace gl {
@@ -24,19 +24,19 @@ namespace gpucast { namespace gl {
   public :
 
     dynamic_translation         ( unsigned     discrete_steps,
-                                  vec3f const& source_position,
-                                  vec3f const& target_position );
+                                  gpucast::math::vec3f const& source_position,
+                                  gpucast::math::vec3f const& target_position );
 
     ~dynamic_translation        ();
 
   public :
 
-    /* virtual */ matrix4f current_transform ();
+    /* virtual */ gpucast::math::matrix4f current_transform ();
 
   private :
 
-    vec3f                   _source;
-    vec3f                   _target;
+    gpucast::math::vec3f                   _source;
+    gpucast::math::vec3f                   _target;
 
   };
 

@@ -199,7 +199,7 @@ SUITE (obb)
 
   TEST(bbox_intersect)
   {
-    gpucast::math::matrix3f M = gpucast::math::make_rotation_x ( 0.0f ) * gpucast::math::make_rotation_y(0.0f) * gpucast::math::make_rotation_z(0.2f);
+    gpucast::math::matrix3f M = gpucast::math::mat3::make_rotation_x(0.0f) * gpucast::math::mat3::make_rotation_y(0.0f) * gpucast::math::mat3::make_rotation_z(0.2f);
     gpucast::math::matrix3f Minv = M.inverse();
    
     gpucast::math::point3f orientation[4] = { M[0], M[1], M[2], gpucast::math::point3f(0.0f, 0.0f, 0.0f, 1.0f) };

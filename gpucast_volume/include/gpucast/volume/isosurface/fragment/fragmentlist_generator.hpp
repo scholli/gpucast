@@ -17,7 +17,7 @@
 // header, external
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/texture2d.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 #include <gpucast/gl/primitives/plane.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
@@ -88,7 +88,7 @@ public : // methods
 
   virtual void                            draw                    ();
 
-  virtual void                            transform               ( gpucast::gl::matrix4f const& m );
+  virtual void                            transform               ( gpucast::math::matrix4f const& m );
 
   virtual void                            compute_nearfar         ();
 
@@ -136,7 +136,7 @@ private :  // auxilliary methods
   
 protected : // attributes
                         
-  std::vector<gpucast::gl::vec4u>      _surface_data;  
+  std::vector<gpucast::math::vec4u>      _surface_data;  
   //-----------------------------------------------------------------------------   
   // [unique_surface_id] [volume_outer_cell]           [inner/outer]  [uid]         
   // [unique_volume_id]  [surface_mesh_base_id]        [order_u]      [vid]         
@@ -144,7 +144,7 @@ protected : // attributes
   // [attribute_data_id] [adjacent_attribute_data_id]  [surface_type] [fixed_param] 
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _surface_points;
+  std::vector<gpucast::math::vec4f>      _surface_points;
   //-----------------------------------------------------------------------------
   // [wx_00] [wx_01] ...
   // [wy_00] [wy_01] ...
@@ -152,7 +152,7 @@ protected : // attributes
   // [ w_00] [ w_01] ...
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _volume_data; 
+  std::vector<gpucast::math::vec4f>      _volume_data; 
   //-----------------------------------------------------------------------------
   // [ volume_points_id  ] [ order_u ]        [ umin_local ] [ umax_local ] [ umin_global ] [ umax_global ] [ surface_id_umin ] [ surface_id_wmax ]
   // [ uid               ] [ order_v ]        [ vmin_local ] [ vmax_local ] [ vmin_global ] [ vmax_global ] [ surface_id_umax ] [ surface_id_wmax ] 
@@ -160,7 +160,7 @@ protected : // attributes
   // [ bbox_diameter     ] [ has_outer_face ] [ 0 ]          [ 0 ]          [ 0 ]           [ 0 ]           [ surface_id_vmax ] [ 0 ]
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _volume_points;
+  std::vector<gpucast::math::vec4f>      _volume_points;
   //-----------------------------------------------------------------------------
   // volume_points_id
   // [ wx_000 ]      [ wx_001 ] ...
@@ -169,7 +169,7 @@ protected : // attributes
   // [  w_000 ]      [  w_001 ] ...
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec4f>      _attribute_data; // attribute data buffers
+  std::vector<gpucast::math::vec4f>      _attribute_data; // attribute data buffers
   // attribute_data_id
   //-----------------------------------------------------------------------------
   // [ min ]       
@@ -178,7 +178,7 @@ protected : // attributes
   // [ empty ]
   //-----------------------------------------------------------------------------
 
-  std::vector<gpucast::gl::vec2f>      _attribute_points; // attribute buffers
+  std::vector<gpucast::math::vec2f>      _attribute_points; // attribute buffers
   // attribute_point_id
   //-----------------------------------------------------------------------------
   // [attrib0_000] ...
@@ -191,10 +191,10 @@ protected : // attributes
   bool                                            _object_initialized;
   bool                                            _gl_initialized;
 
-  gpucast::gl::matrix4f                                  _modelmatrix;
+  gpucast::math::matrix4f                                  _modelmatrix;
 
-  std::vector<gpucast::gl::vec3f>                        _vertices;          // vertices of convex hull
-  std::vector<gpucast::gl::vec4f>                        _vertexparameter;   // [u, v, 0, surface_id]
+  std::vector<gpucast::math::vec3f>                        _vertices;          // vertices of convex hull
+  std::vector<gpucast::math::vec4f>                        _vertexparameter;   // [u, v, 0, surface_id]
   renderinfo                                      _renderinfo;        // binning for attribute
 
   //-----------------------------------------------------------------------------

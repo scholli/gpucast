@@ -9,15 +9,15 @@
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_GL_MATRIX4X4_HPP
-#define GPUCAST_GL_MATRIX4X4_HPP
+#ifndef GPUCAST_MATH_MATRIX4X4_HPP
+#define GPUCAST_MATH_MATRIX4X4_HPP
 
 // includes, system
 #include <iosfwd> // fwd. decl: std::ostream
 
 // includes, project
 
-namespace gpucast { namespace gl {
+namespace gpucast { namespace math {
 
 template<typename value_t>
 class matrix4x4
@@ -138,8 +138,8 @@ lookat      ( value_t eyeX,     value_t eyeY,     value_t eyeZ,
 typedef matrix4x4<float>          matrix4f;
 typedef matrix4x4<double>         matrix4d;
 
-} } // namespace gpucast / namespace gl
+} } // namespace gpucast / namespace math
 
-#include <gpucast/gl/math/matrix4x4_impl.hpp>
+#include <gpucast/math/matrix4x4_impl.hpp>
 
-#endif // GPUCAST_GL_MATRIX4X4_HPP
+#endif // GPUCAST_MATH_MATRIX4X4_HPP

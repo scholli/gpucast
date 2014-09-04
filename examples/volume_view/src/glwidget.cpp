@@ -114,7 +114,7 @@ void
 glwidget::boundingbox ( glwidget::boundingbox_t const& b )
 {
   _boundingbox = b;
-  _coordinate_system->set( gpucast::gl::vec4f(_boundingbox.min[0], _boundingbox.min[1], _boundingbox.min[2], 1.0f), float(0.1f * _boundingbox.size().abs()));
+  _coordinate_system->set( gpucast::math::vec4f(_boundingbox.min[0], _boundingbox.min[1], _boundingbox.min[2], 1.0f), float(0.1f * _boundingbox.size().abs()));
 }
 
 
@@ -355,17 +355,17 @@ glwidget::paintGL()
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-  gpucast::gl::vec3f translation = _boundingbox.center();
-  gpucast::gl::matrix4f view = gpucast::gl::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
+  gpucast::math::vec3f translation = _boundingbox.center();
+  gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
                                      0.0f, 0.0f, 0.0f, 
                                      0.0f, 1.0f, 0.0f);
 
-  gpucast::gl::matrix4f cam  = gpucast::gl::make_translation( _trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
-                                                 gpucast::gl::make_translation(-translation[0], -translation[1], -translation[2]);
+  gpucast::math::matrix4f cam  = gpucast::math::make_translation( _trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
+                                                 gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
 
-  gpucast::gl::matrix4f proj = gpucast::gl::frustum(-float(_width) / _height, float(_width) / _height, -1.0f, 1.0f, _isosurface_renderer->nearplane(), _isosurface_renderer->farplane());
-  gpucast::gl::matrix4f mv   = view * cam;
-  gpucast::gl::matrix4f mvp  = mv * proj;
+  gpucast::math::matrix4f proj = gpucast::math::frustum(-float(_width) / _height, float(_width) / _height, -1.0f, 1.0f, _isosurface_renderer->nearplane(), _isosurface_renderer->farplane());
+  gpucast::math::matrix4f mv   = view * cam;
+  gpucast::math::matrix4f mvp  = mv * proj;
 
   /////////////////////////////////////////
   // performance tests 
@@ -512,21 +512,21 @@ glwidget::mouseMoveEvent(QMouseEvent *event)
 {
   _trackball->motion(event->x(), event->y());
 
-  gpucast::gl::vec3f translation = _boundingbox.center();
-  gpucast::gl::matrix4f view = gpucast::gl::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
+  gpucast::math::vec3f translation = _boundingbox.center();
+  gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
                                      0.0f, 0.0f, 0.0f, 
                                      0.0f, 1.0f, 0.0f);
 
-  gpucast::gl::matrix4f cam  = gpucast::gl::make_translation( _trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
-                                                 gpucast::gl::make_translation(-translation[0], -translation[1], -translation[2]);
+  gpucast::math::matrix4f cam  = gpucast::math::make_translation( _trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
+                                                 gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
 
-  gpucast::gl::matrix4f proj = gpucast::gl::frustum ( -float(_width)/_height, float(_width)/_height, -1.0f, 1.0f, _isosurface_renderer->nearplane(), _isosurface_renderer->farplane());
-  gpucast::gl::matrix4f mv   = view * cam;
-  gpucast::gl::matrix4f mvp  = mv * proj;
+  gpucast::math::matrix4f proj = gpucast::math::frustum(-float(_width) / _height, float(_width) / _height, -1.0f, 1.0f, _isosurface_renderer->nearplane(), _isosurface_renderer->farplane());
+  gpucast::math::matrix4f mv   = view * cam;
+  gpucast::math::matrix4f mvp  = mv * proj;
 
   if ( _record_sequence )
   {
-    _test_sequence.add ( mv, gpucast::gl::inverse(mv), mvp, gpucast::gl::inverse(mvp), mv.normalmatrix() );
+    _test_sequence.add ( mv, gpucast::math::inverse(mv), mvp, gpucast::math::inverse(mvp), mv.normalmatrix() );
   }
 }
 

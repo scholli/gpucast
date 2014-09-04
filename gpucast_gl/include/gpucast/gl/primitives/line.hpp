@@ -17,7 +17,7 @@
 
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 
 namespace gpucast { namespace gl {
@@ -26,7 +26,7 @@ namespace gpucast { namespace gl {
 {
 public :
 
-  line                      ( std::vector<vec4f> const& points, 
+  line                      ( std::vector<gpucast::math::vec4f> const& points, 
                               GLint vertexattrib_index = 0, 
                               GLint colorattrib_index = 1, 
                               GLint texcoordattrib_index = 2 );
@@ -37,8 +37,8 @@ public :
 
 public :
 
-  void      set_color       ( std::vector<vec4f> const& color );
-  void      set_texcoords   ( std::vector<vec4f> const& texcoords );
+  void      set_color       ( std::vector<gpucast::math::vec4f> const& color );
+  void      set_texcoords   ( std::vector<gpucast::math::vec4f> const& texcoords );
 
   void      attrib_location ( GLint vertexattrib_index, 
                               GLint colorattrib_index, 

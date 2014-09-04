@@ -17,11 +17,7 @@
 #include <set>
 
 // header, external
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
-
-#include <gpucast/gl/math/matrix4x4.hpp>
-#include <gpucast/gl/program.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
@@ -41,7 +37,7 @@ public : // enums, typedefs
                            contourmap_binary       = 1,
                            contourmap_kdtree       = 2 };
 
-  typedef beziersurfaceobject               drawable_type;
+  typedef beziersurfaceobject             drawable_type;
   typedef std::shared_ptr<drawable_type>  drawable_ptr;
 
 public : // c'tor / d'tor

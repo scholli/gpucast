@@ -56,13 +56,13 @@ namespace gpucast { namespace gl { namespace obj {
 
         std::string               parent_path;
 
-        std::vector<vec4f>        vertex;
-        std::vector<vec4f>        texcoord;
-        std::vector<vec4f>        normal;
+        std::vector<gpucast::math::vec4f>        vertex;
+        std::vector<gpucast::math::vec4f>        texcoord;
+        std::vector<gpucast::math::vec4f>        normal;
 
-        std::vector<vec4f>        vertexbuffer;
-        std::vector<vec4f>        normalbuffer;
-        std::vector<vec4f>        texcoordbuffer;
+        std::vector<gpucast::math::vec4f>        vertexbuffer;
+        std::vector<gpucast::math::vec4f>        normalbuffer;
+        std::vector<gpucast::math::vec4f>        texcoordbuffer;
         std::vector<int>          indices;
 
         std::vector<std::string>  current_group;
@@ -196,7 +196,7 @@ namespace gpucast { namespace gl {
     void  _apply_geometry_to_geode        ();
     void  _create_geode                   ();
     void  _clear_buffers                  ();
-    vec3f _compute_normal                 ( vec3f const& v1, vec3f const& v2, vec3f const& v3) const;
+    gpucast::math::vec3f _compute_normal                 ( gpucast::math::vec3f const& v1, gpucast::math::vec3f const& v2, gpucast::math::vec3f const& v3) const;
 
   private : // handler
 

@@ -84,10 +84,10 @@ geode::compute_bbox ()
     if (node.type == vertex) 
     {
       // use vertices to compute axis aligned bounding box
-      vec4f mx = vec4f::minimum();
-      vec4f mn = vec4f::maximum();
+      gpucast::math::vec4f mx = gpucast::math::vec4f::minimum();
+      gpucast::math::vec4f mn = gpucast::math::vec4f::maximum();
 
-      BOOST_FOREACH(vec4f const& v, node.clientbuffer) 
+      BOOST_FOREACH(gpucast::math::vec4f const& v, node.clientbuffer) 
       {
         mx = elementwise_max(mx, v);
         mn = elementwise_min(mn, v);
@@ -103,7 +103,7 @@ geode::compute_bbox ()
 ///////////////////////////////////////////////////////////////////////////////
 void 
 geode::add_attribute_buffer (std::size_t                location,
-                             std::vector<vec4f> const&  buf, 
+                             std::vector<gpucast::math::vec4f> const&  buf, 
                              attribute_type             type)
 {
   // create attribute buffer
@@ -116,7 +116,7 @@ geode::add_attribute_buffer (std::size_t                location,
 
   // create new arraybuffer in server memory and copy data
   attrib_buffer.buffer        = std::shared_ptr<arraybuffer>(new arraybuffer);
-  attrib_buffer.buffer->bufferdata(sizeof(vec4f) * buf.size(), &buf.front());
+  attrib_buffer.buffer->bufferdata(sizeof(gpucast::math::vec4f) * buf.size(), &buf.front());
 
   // store attribute buffer
   _attributes.push_back(attrib_buffer);

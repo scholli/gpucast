@@ -20,7 +20,7 @@
 #include <GL/glew.h>
 
 // header project
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 #include <gpucast/gl/error.hpp>
 
 namespace gpucast { namespace gl {

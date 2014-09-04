@@ -16,7 +16,7 @@
 
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 
 namespace gpucast { namespace gl {
@@ -35,12 +35,12 @@ public :
 
   void      size            ( float width, float height );
 
-  void      texcoords       ( vec4f const& a, 
-                              vec4f const& b, 
-                              vec4f const& c, 
-                              vec4f const& d);
+  void      texcoords       ( gpucast::math::vec4f const& a, 
+                              gpucast::math::vec4f const& b, 
+                              gpucast::math::vec4f const& c, 
+                              gpucast::math::vec4f const& d);
 
-  void      normal          ( vec4f const& n );
+  void      normal          ( gpucast::math::vec4f const& n );
 
   void      attrib_location ( GLint vertexattrib_index, 
                               GLint normalattrib_index, 

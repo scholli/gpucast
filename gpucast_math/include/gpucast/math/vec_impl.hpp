@@ -9,11 +9,11 @@
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_GL_VEC_IMPL_HPP
-#define GPUCAST_GL_VEC_IMPL_HPP
+#ifndef GPUCAST_MATH_VEC_IMPL_HPP
+#define GPUCAST_MATH_VEC_IMPL_HPP
 
-namespace gpucast { namespace gl {
+namespace gpucast { namespace math {
 
-} } // namespace gpucast / namespace gl
+} } // namespace gpucast / namespace math
 
 #endif

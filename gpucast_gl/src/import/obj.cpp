@@ -152,7 +152,7 @@ namespace gpucast { namespace gl {
     std::string::const_iterator b = s.begin();
     if (boost::spirit::qi::phrase_parse(b, s.end(), _grammar.vertex_r, boost::spirit::ascii::space, vertex))
     {
-      _stack.vertex.push_back(vec4f(vertex.x, vertex.y, vertex.z, vertex.w));
+      _stack.vertex.push_back(gpucast::math::vec4f(vertex.x, vertex.y, vertex.z, vertex.w));
     } else {
      std::cerr << "Wrong syntax for vertex. Ignoring line.\n"; 
     }
@@ -167,7 +167,7 @@ namespace gpucast { namespace gl {
     std::string::const_iterator b = s.begin();
     if (boost::spirit::qi::phrase_parse(b, s.end(), _grammar.texcoord_r, boost::spirit::ascii::space, texcoord))
     {
-      _stack.texcoord.push_back(vec4f(texcoord.x, texcoord.y, texcoord.z, texcoord.w));
+      _stack.texcoord.push_back(gpucast::math::vec4f(texcoord.x, texcoord.y, texcoord.z, texcoord.w));
     } else {
       std::cerr << "Wrong syntax for texcoord. Ignoring line.\n"; 
     }
@@ -182,7 +182,7 @@ namespace gpucast { namespace gl {
     std::string::const_iterator b = s.begin();
     if (boost::spirit::qi::phrase_parse(b, s.end(), _grammar.normal_r, boost::spirit::ascii::space, normal))
     {
-      _stack.normal.push_back(vec4f(normal.x, normal.y, normal.z, normal.w) );
+      _stack.normal.push_back(gpucast::math::vec4f(normal.x, normal.y, normal.z, normal.w) );
     } else {
       std::cerr << "Wrong syntax for normal. Ignoring line.\n"; 
     }
@@ -283,7 +283,7 @@ namespace gpucast { namespace gl {
         last = i;
       }
 
-      std::vector<vec4f> vertexlist(nvertices_in_face);
+      std::vector<gpucast::math::vec4f> vertexlist(nvertices_in_face);
 
       // process all vertex information
       for (unsigned int i = 0; i < nvertices_in_face; ++i)
@@ -329,11 +329,11 @@ namespace gpucast { namespace gl {
       // add normal and texture coordinates if not set
       if (!has_normal)
       {
-        vec3f cw_normal = _compute_normal(vertexlist[0].xyz(),
+        gpucast::math::vec3f cw_normal = _compute_normal(vertexlist[0].xyz(),
                                           vertexlist[1].xyz(),
                                           vertexlist[2].xyz());
 
-        std::fill_n(std::back_inserter(_stack.normalbuffer), nvertices_in_face, vec4f(cw_normal[0], cw_normal[1], cw_normal[2], 0.0f));
+        std::fill_n(std::back_inserter(_stack.normalbuffer), nvertices_in_face, gpucast::math::vec4f(cw_normal[0], cw_normal[1], cw_normal[2], 0.0f));
       }
      
     } else {
@@ -631,8 +631,8 @@ namespace gpucast { namespace gl {
   }
 
   ///////////////////////////////////////////////////////////////////////////
-  vec3f                                   
-  fileparser_obj::_compute_normal( vec3f const& v1, vec3f const& v2, vec3f const& v3) const
+  gpucast::math::vec3f                                   
+  fileparser_obj::_compute_normal( gpucast::math::vec3f const& v1, gpucast::math::vec3f const& v2, gpucast::math::vec3f const& v3) const
   {
     return cross(v2-v1, v3-v1);    
   }

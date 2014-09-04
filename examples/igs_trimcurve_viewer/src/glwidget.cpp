@@ -35,7 +35,7 @@
 #include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/arraybuffer.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 #include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/transferfunction.hpp>
@@ -131,32 +131,32 @@ glwidget::open ( std::list<std::string> const& files )
   struct {
     std::unordered_map<gpucast::trimdomain::curve_ptr, gpucast::trimdomain_serializer::address_type>          curve_map;
     std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>  domain_map;
-    std::vector<gpucast::gl::vec4f> part;
-    std::vector<gpucast::gl::vec4f> cells;
-    std::vector<gpucast::gl::vec4f> curvelist;
-    std::vector<gpucast::gl::vec3f> curvedata;
+    std::vector<gpucast::math::vec4f> part;
+    std::vector<gpucast::math::vec4f> cells;
+    std::vector<gpucast::math::vec4f> curvelist;
+    std::vector<gpucast::math::vec3f> curvedata;
   } classic_partition;
 
   struct {
     std::unordered_map<gpucast::trimdomain::curve_ptr, gpucast::trimdomain_serializer::address_type>           curve_map;
     std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>   domain_map;
     std::unordered_map<gpucast::trimdomain::contour_segment_ptr, gpucast::trimdomain_serializer::address_type> segment_map;
-    std::vector<gpucast::gl::vec4f> part;
-    std::vector<gpucast::gl::vec2f> contourlist;
-    std::vector<gpucast::gl::vec4f> curvelist;
+    std::vector<gpucast::math::vec4f> part;
+    std::vector<gpucast::math::vec2f> contourlist;
+    std::vector<gpucast::math::vec4f> curvelist;
     std::vector<float>       curvedata;
-    std::vector<gpucast::gl::vec3f> pointdata;
+    std::vector<gpucast::math::vec3f> pointdata;
   } contour_partition;
 
   struct {
     std::unordered_map<gpucast::trimdomain::curve_ptr, gpucast::trimdomain_serializer::address_type>           curve_map;
     std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>   domain_map;
     std::unordered_map<gpucast::trimdomain::contour_segment_ptr, gpucast::trimdomain_serializer::address_type> segment_map;
-    std::vector<gpucast::gl::vec4f> part;
-    std::vector<gpucast::gl::vec2f> contourlist;
-    std::vector<gpucast::gl::vec4f> curvelist;
+    std::vector<gpucast::math::vec4f> part;
+    std::vector<gpucast::math::vec2f> contourlist;
+    std::vector<gpucast::math::vec4f> curvelist;
     std::vector<float>       curvedata;
-    std::vector<gpucast::gl::vec3f> pointdata;
+    std::vector<gpucast::math::vec3f> pointdata;
   } contour_kd_partition;
 
   gpucast::trimdomain_serializer_double_binary      db_serializer;
@@ -209,40 +209,40 @@ glwidget::open ( std::list<std::string> const& files )
   }
 
   std::cout << "classic :" << std::endl;
-  std::cout << " vpartition  : " << classic_partition.part.size() *      sizeof(gpucast::gl::vec4f) << " Bytes " << std::endl;
-  std::cout << " cell data   : " << classic_partition.cells.size() *     sizeof(gpucast::gl::vec4f) << " Bytes " << std::endl;
-  std::cout << " curve lists : " << classic_partition.curvelist.size() * sizeof(gpucast::gl::vec4f) << " Bytes " << std::endl;
-  std::cout << " curve data  : " << classic_partition.curvedata.size() * sizeof(gpucast::gl::vec3f) << " Bytes " << std::endl;
-  std::cout << " total       : " << classic_partition.part.size() *      sizeof(gpucast::gl::vec4f) +
-                                    classic_partition.cells.size() *     sizeof(gpucast::gl::vec4f) + 
-                                    classic_partition.curvelist.size() * sizeof(gpucast::gl::vec4f) + 
-                                    classic_partition.curvedata.size() * sizeof(gpucast::gl::vec3f)
+  std::cout << " vpartition  : " << classic_partition.part.size() *      sizeof(gpucast::math::vec4f) << " Bytes " << std::endl;
+  std::cout << " cell data   : " << classic_partition.cells.size() *     sizeof(gpucast::math::vec4f) << " Bytes " << std::endl;
+  std::cout << " curve lists : " << classic_partition.curvelist.size() * sizeof(gpucast::math::vec4f) << " Bytes " << std::endl;
+  std::cout << " curve data  : " << classic_partition.curvedata.size() * sizeof(gpucast::math::vec3f) << " Bytes " << std::endl;
+  std::cout << " total       : " << classic_partition.part.size() *      sizeof(gpucast::math::vec4f) +
+                                    classic_partition.cells.size() *     sizeof(gpucast::math::vec4f) + 
+                                    classic_partition.curvelist.size() * sizeof(gpucast::math::vec4f) + 
+                                    classic_partition.curvedata.size() * sizeof(gpucast::math::vec3f)
                                     << " Bytes " << std::endl;
 
   std::cout << "contour map :" << std::endl;
-  std::cout << " part         : " << contour_partition.part.size() *         sizeof(gpucast::gl::vec4f) << " Bytes " << std::endl;
-  std::cout << " contour lists : " << contour_partition.contourlist.size() * sizeof(gpucast::gl::vec2f) << " Bytes " << std::endl;
-  std::cout << " curve lists   : " << contour_partition.curvelist.size() *   sizeof(gpucast::gl::vec4f) << " Bytes " << std::endl;
-  std::cout << " curve data    : " << contour_partition.curvedata.size() *   sizeof(gpucast::gl::vec2f) << " Bytes " << std::endl;
-  std::cout << " point data    : " << contour_partition.pointdata.size() *   sizeof(gpucast::gl::vec3f) << " Bytes " << std::endl;
-  std::cout << " total       : "   << contour_partition.part.size() *        sizeof(gpucast::gl::vec4f) +
-                                      contour_partition.contourlist.size() * sizeof(gpucast::gl::vec2f) + 
-                                      contour_partition.curvelist.size() *   sizeof(gpucast::gl::vec4f) + 
+  std::cout << " part         : " << contour_partition.part.size() *         sizeof(gpucast::math::vec4f) << " Bytes " << std::endl;
+  std::cout << " contour lists : " << contour_partition.contourlist.size() * sizeof(gpucast::math::vec2f) << " Bytes " << std::endl;
+  std::cout << " curve lists   : " << contour_partition.curvelist.size() *   sizeof(gpucast::math::vec4f) << " Bytes " << std::endl;
+  std::cout << " curve data    : " << contour_partition.curvedata.size() *   sizeof(gpucast::math::vec2f) << " Bytes " << std::endl;
+  std::cout << " point data    : " << contour_partition.pointdata.size() *   sizeof(gpucast::math::vec3f) << " Bytes " << std::endl;
+  std::cout << " total       : "   << contour_partition.part.size() *        sizeof(gpucast::math::vec4f) +
+                                      contour_partition.contourlist.size() * sizeof(gpucast::math::vec2f) + 
+                                      contour_partition.curvelist.size() *   sizeof(gpucast::math::vec4f) + 
                                       contour_partition.curvedata.size() *   sizeof(float) + 
-                                      contour_partition.pointdata.size() *   sizeof(gpucast::gl::vec3f)
+                                      contour_partition.pointdata.size() *   sizeof(gpucast::math::vec3f)
                                     << " Bytes " << std::endl;
 
   std::cout << "contour map kd :" << std::endl;
-  std::cout << " part          : " << contour_kd_partition.part.size() *        sizeof(gpucast::gl::vec4f) << " Bytes " << std::endl;
-  std::cout << " contour lists : " << contour_kd_partition.contourlist.size() * sizeof(gpucast::gl::vec2f) << " Bytes " << std::endl;
-  std::cout << " curve lists   : " << contour_kd_partition.curvelist.size() *   sizeof(gpucast::gl::vec4f) << " Bytes " << std::endl;
-  std::cout << " curve data    : " << contour_kd_partition.curvedata.size() *   sizeof(gpucast::gl::vec2f) << " Bytes " << std::endl;
-  std::cout << " point data    : " << contour_kd_partition.pointdata.size() *   sizeof(gpucast::gl::vec3f) << " Bytes " << std::endl;
-  std::cout << " total       : "   << contour_kd_partition.part.size() *        sizeof(gpucast::gl::vec4f) +
-                                      contour_kd_partition.contourlist.size() * sizeof(gpucast::gl::vec2f) + 
-                                      contour_kd_partition.curvelist.size() *   sizeof(gpucast::gl::vec4f) + 
+  std::cout << " part          : " << contour_kd_partition.part.size() *        sizeof(gpucast::math::vec4f) << " Bytes " << std::endl;
+  std::cout << " contour lists : " << contour_kd_partition.contourlist.size() * sizeof(gpucast::math::vec2f) << " Bytes " << std::endl;
+  std::cout << " curve lists   : " << contour_kd_partition.curvelist.size() *   sizeof(gpucast::math::vec4f) << " Bytes " << std::endl;
+  std::cout << " curve data    : " << contour_kd_partition.curvedata.size() *   sizeof(gpucast::math::vec2f) << " Bytes " << std::endl;
+  std::cout << " point data    : " << contour_kd_partition.pointdata.size() *   sizeof(gpucast::math::vec3f) << " Bytes " << std::endl;
+  std::cout << " total       : "   << contour_kd_partition.part.size() *        sizeof(gpucast::math::vec4f) +
+                                      contour_kd_partition.contourlist.size() * sizeof(gpucast::math::vec2f) + 
+                                      contour_kd_partition.curvelist.size() *   sizeof(gpucast::math::vec4f) + 
                                       contour_kd_partition.curvedata.size() *   sizeof(float) + 
-                                      contour_kd_partition.pointdata.size() *   sizeof(gpucast::gl::vec3f)
+                                      contour_kd_partition.pointdata.size() *   sizeof(gpucast::math::vec3f)
                                     << " Bytes " << std::endl;
 }
 
@@ -312,7 +312,7 @@ glwidget::update_view ( std::string const& name, std::size_t const index, view c
           break;
       };
 
-      _projection = gpucast::gl::ortho(float(domain->nurbsdomain().min[gpucast::trimdomain::point_type::u] ), 
+      _projection = gpucast::math::ortho(float(domain->nurbsdomain().min[gpucast::trimdomain::point_type::u] ), 
                                 float(domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] ), 
                                 float(domain->nurbsdomain().min[gpucast::trimdomain::point_type::v] ), 
                                 float(domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] ), 
@@ -330,14 +330,14 @@ glwidget::generate_original_view ( gpucast::beziersurface::trimdomain_ptr const&
   gpucast::trimdomain::curve_container curves = domain->curves();
   for ( auto curve = curves.begin(); curve != curves.end(); ++curve )
   {
-    gpucast::gl::vec4f cpolygon_color ( 1.0f, 1.0f, 1.0f, 1.0f );
+    gpucast::math::vec4f cpolygon_color ( 1.0f, 1.0f, 1.0f, 1.0f );
     add_gl_curve ( **curve, cpolygon_color );
 
     // generate bbox to draw
     gpucast::math::bbox2d bbox;
     (**curve).bbox_simple(bbox);
 
-    gpucast::gl::vec4f bbox_color ( 1.0f, 0.0f, 0.0f, 1.0f );
+    gpucast::math::vec4f bbox_color ( 1.0f, 0.0f, 0.0f, 1.0f );
     add_gl_bbox ( bbox, bbox_color );
   }
 }
@@ -350,7 +350,7 @@ glwidget::generate_double_binary_view ( gpucast::beziersurface::trimdomain_ptr c
   gpucast::trimdomain::curve_container curves = domain->curves();
   for ( auto curve = curves.begin(); curve != curves.end(); ++curve )
   {
-    gpucast::gl::vec4f cpolygon_color ( 1.0f, 1.0f, 1.0f, 1.0f );
+    gpucast::math::vec4f cpolygon_color ( 1.0f, 1.0f, 1.0f, 1.0f );
     add_gl_curve ( **curve, cpolygon_color );
   }
 
@@ -361,13 +361,13 @@ glwidget::generate_double_binary_view ( gpucast::beziersurface::trimdomain_ptr c
   {
     gpucast::math::bbox2d bbox ( gpucast::math::point2d ( (**v).get_horizontal_interval().minimum(), (**v).get_vertical_interval().minimum() ),
                        gpucast::math::point2d ( (**v).get_horizontal_interval().maximum(), (**v).get_vertical_interval().maximum() ) );
-      gpucast::gl::vec4f cell_color ( 1.0f, 1.0f, 0.0f, 1.0f );
+      gpucast::math::vec4f cell_color ( 1.0f, 1.0f, 0.0f, 1.0f );
       add_gl_bbox ( bbox, cell_color ); 
     for ( auto c = (**v).begin(); c != (**v).end(); ++c )
     {
       gpucast::math::bbox2d bbox ( gpucast::math::point2d ( (**c).get_horizontal_interval().minimum(), (**c).get_vertical_interval().minimum() ),
                          gpucast::math::point2d ( (**c).get_horizontal_interval().maximum(), (**c).get_vertical_interval().maximum() ) );
-      gpucast::gl::vec4f cell_color ( 0.0f, 1.0f, 0.0f, 1.0f );
+      gpucast::math::vec4f cell_color ( 0.0f, 1.0f, 0.0f, 1.0f );
       add_gl_bbox ( bbox, cell_color ); 
     }
   }
@@ -388,17 +388,17 @@ glwidget::generate_bboxmap_view ( gpucast::beziersurface::trimdomain_ptr const& 
 
   for ( gpucast::math::contour_map_binary<double>::contour_segment_ptr const& segment : cmap.monotonic_segments() )
   {
-    gpucast::gl::vec4f segment_color ( 0.0f, 1.0f, 1.0f, 1.0f );
+    gpucast::math::vec4f segment_color ( 0.0f, 1.0f, 1.0f, 1.0f );
     add_gl_bbox ( segment->bbox(), segment_color );
 
     for ( auto c = segment->begin(); c != segment->end(); ++c ) 
     {
-      gpucast::gl::vec4f curve_bbox_color ( 1.0f, 0.0f, 0.0f, 1.0f );
+      gpucast::math::vec4f curve_bbox_color ( 1.0f, 0.0f, 0.0f, 1.0f );
       gpucast::math::bbox2d bbox;
       (**c).bbox_simple(bbox);
       add_gl_bbox ( bbox, curve_bbox_color );
 
-      gpucast::gl::vec4f cpolygon_color ( 1.0f, 1.0f, 1.0f, 1.0f );
+      gpucast::math::vec4f cpolygon_color ( 1.0f, 1.0f, 1.0f, 1.0f );
       add_gl_curve ( **c, cpolygon_color );
     }
   }
@@ -407,12 +407,12 @@ glwidget::generate_bboxmap_view ( gpucast::beziersurface::trimdomain_ptr const& 
   {
     for ( gpucast::math::contour_map_binary<double>::contour_cell const& cell : vslab.cells )
     {
-      gpucast::gl::vec4f vslab_color ( 0.0f, 1.0f, 0.0f, 1.0f );
+      gpucast::math::vec4f vslab_color ( 0.0f, 1.0f, 0.0f, 1.0f );
       gpucast::math::bbox2d vbox ( gpucast::math::point2d ( cell.interval_u.minimum(), cell.interval_v.minimum()), gpucast::math::point2d ( cell.interval_u.maximum(), cell.interval_v.maximum()));
        add_gl_bbox ( vbox, vslab_color );
       for ( gpucast::math::contour_map_binary<double>::contour_segment_ptr const& contour : cell.overlapping_segments )
       {
-        gpucast::gl::vec4f cell_color ( 0.0f, 1.0f, 0.0f, 1.0f );
+        gpucast::math::vec4f cell_color ( 0.0f, 1.0f, 0.0f, 1.0f );
         gpucast::math::bbox2d ubox = contour->bbox();
         add_gl_bbox ( ubox, cell_color );
       }
@@ -433,18 +433,18 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
   std::unordered_map<gpucast::trimdomain::curve_ptr, gpucast::trimdomain_serializer::address_type>          referenced_curves;
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>  referenced_domains;
 
-  std::vector<gpucast::gl::vec4f> trimdata(1);
-  std::vector<gpucast::gl::vec4f> celldata(1);
-  std::vector<gpucast::gl::vec4f> curvelists(1);
-  std::vector<gpucast::gl::vec3f> curvedata(1);
+  std::vector<gpucast::math::vec4f> trimdata(1);
+  std::vector<gpucast::math::vec4f> celldata(1);
+  std::vector<gpucast::math::vec4f> curvelists(1);
+  std::vector<gpucast::math::vec3f> curvedata(1);
 
   gpucast::trimdomain_serializer_double_binary serializer;
   _trimid = serializer.serialize ( domain, referenced_domains, referenced_curves, trimdata, celldata, curvelists, curvedata ) ;
 
-  std::size_t size_bytes = ( ( trimdata.size() - 1 )   * sizeof(gpucast::gl::vec4f) +
-                             ( celldata.size() - 1 )   * sizeof(gpucast::gl::vec4f) + 
-                             ( curvelists.size() - 1 ) * sizeof(gpucast::gl::vec4f) + 
-                             ( curvedata.size() - 1 )  * sizeof(gpucast::gl::vec3f) );
+  std::size_t size_bytes = ( ( trimdata.size() - 1 )   * sizeof(gpucast::math::vec4f) +
+                             ( celldata.size() - 1 )   * sizeof(gpucast::math::vec4f) + 
+                             ( curvelists.size() - 1 ) * sizeof(gpucast::math::vec4f) + 
+                             ( curvedata.size() - 1 )  * sizeof(gpucast::math::vec3f) );
 
   mainwindow* win = dynamic_cast<mainwindow*>(parent());
   if ( win )
@@ -462,8 +462,8 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
   _db_curvelist->format ( GL_RGBA32F );
   _db_curvedata->format ( GL_RGB32F );
 
-  _domain_size = gpucast::gl::vec2f ( domain->nurbsdomain().size() );
-  _domain_min  = gpucast::gl::vec2f ( domain->nurbsdomain().min );
+  _domain_size = gpucast::math::vec2f ( domain->nurbsdomain().size() );
+  _domain_min  = gpucast::math::vec2f ( domain->nurbsdomain().min );
 }
 
 
@@ -480,11 +480,11 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>                                  referenced_domains;
   std::unordered_map<gpucast::trimdomain_serializer_contour_map_binary::contour_segment_ptr, gpucast::trimdomain_serializer::address_type>  referenced_contours;
 
-  std::vector<gpucast::gl::vec4f> partition(1);
-  std::vector<gpucast::gl::vec2f> contourlist(1);
-  std::vector<gpucast::gl::vec4f> curvelist(1);
+  std::vector<gpucast::math::vec4f> partition(1);
+  std::vector<gpucast::math::vec2f> contourlist(1);
+  std::vector<gpucast::math::vec4f> curvelist(1);
   std::vector<float> curvedata(1);
-  std::vector<gpucast::gl::vec3f> pointdata(1);
+  std::vector<gpucast::math::vec3f> pointdata(1);
 
   gpucast::trimdomain_serializer_contour_map_binary serializer;
   _trimid = serializer.serialize ( domain, 
@@ -497,11 +497,11 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
                                    curvedata,
                                    pointdata );
 
-  std::size_t size_bytes = ( (partition.size()  - 1) * sizeof(gpucast::gl::vec4f) + 
-                             (contourlist.size()- 1) * sizeof(gpucast::gl::vec2f) + 
-                             (curvelist.size()  - 1) * sizeof(gpucast::gl::vec4f) + 
+  std::size_t size_bytes = ( (partition.size()  - 1) * sizeof(gpucast::math::vec4f) + 
+                             (contourlist.size()- 1) * sizeof(gpucast::math::vec2f) + 
+                             (curvelist.size()  - 1) * sizeof(gpucast::math::vec4f) + 
                              (curvedata.size()  - 1) * sizeof(float) + 
-                             (pointdata.size()  - 1) * sizeof(gpucast::gl::vec3f) );
+                             (pointdata.size()  - 1) * sizeof(gpucast::math::vec3f) );
 
   mainwindow* win = dynamic_cast<mainwindow*>(parent());
   if ( win )
@@ -521,8 +521,8 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
   _cmb_curvedata->format   ( GL_R32F );
   _cmb_pointdata->format   ( GL_RGB32F );
 
-  _domain_size = gpucast::gl::vec2f ( domain->nurbsdomain().size() );
-  _domain_min  = gpucast::gl::vec2f ( domain->nurbsdomain().min );
+  _domain_size = gpucast::math::vec2f ( domain->nurbsdomain().size() );
+  _domain_min  = gpucast::math::vec2f ( domain->nurbsdomain().min );
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -532,19 +532,19 @@ glwidget::serialize_contour_map ( gpucast::beziersurface::trimdomain_ptr const& 
 
 ///////////////////////////////////////////////////////////////////////
 void                    
-glwidget::add_gl_curve ( gpucast::beziersurface::curve_type const& curve, gpucast::gl::vec4f const& color )
+glwidget::add_gl_curve ( gpucast::beziersurface::curve_type const& curve, gpucast::math::vec4f const& color )
 {
   // draw curve using a fixed number of sample points
   unsigned const samples = 50;
-  std::vector<gpucast::gl::vec4f> curve_points;
+  std::vector<gpucast::math::vec4f> curve_points;
   for ( unsigned sample = 0; sample <= samples; ++sample ) 
   {
     gpucast::math::point2d p;
     curve.evaluate(float(sample)/samples, p);
-    curve_points.push_back( gpucast::gl::vec4f ( p[0], p[1], -1.0f, 1.0f ) );
+    curve_points.push_back( gpucast::math::vec4f ( p[0], p[1], -1.0f, 1.0f ) );
   }
 
-  std::vector<gpucast::gl::vec4f> curve_colors ( curve_points.size(), color );
+  std::vector<gpucast::math::vec4f> curve_colors ( curve_points.size(), color );
   gpucast::gl::line* gl_curve = new gpucast::gl::line ( curve_points, 0, 1, 2);
   gl_curve->set_color ( curve_colors );
   _curve_geometry.push_back ( gl_curve ); 
@@ -554,20 +554,20 @@ glwidget::add_gl_curve ( gpucast::beziersurface::curve_type const& curve, gpucas
 
 ///////////////////////////////////////////////////////////////////////
 void                    
-glwidget::add_gl_bbox (  gpucast::math::bbox2d const& bbox, gpucast::gl::vec4f const& color )
+glwidget::add_gl_bbox (  gpucast::math::bbox2d const& bbox, gpucast::math::vec4f const& color )
 {
-  std::vector<gpucast::gl::vec4f> bbox_points;
+  std::vector<gpucast::math::vec4f> bbox_points;
 
-  bbox_points.push_back ( gpucast::gl::vec4f ( float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::gl::vec4f ( float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::gl::vec4f ( float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::gl::vec4f ( float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::gl::vec4f ( float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::gl::vec4f ( float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::gl::vec4f ( float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::gl::vec4f ( float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
+  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
+  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
+  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
+  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
+  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
+  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
+  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
+  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
 
-  std::vector<gpucast::gl::vec4f> bbox_colors ( bbox_points.size(), color );
+  std::vector<gpucast::math::vec4f> bbox_colors ( bbox_points.size(), color );
 
   gpucast::gl::line* gl_bbox = new gpucast::gl::line ( bbox_points, 0, 1, 2);
   gl_bbox->set_color ( bbox_colors );
@@ -798,14 +798,14 @@ glwidget::_init()
   if ( !_transfertexture )
   {
     _transfertexture = new gpucast::gl::texture1d;
-    gpucast::gl::transferfunction<gpucast::gl::vec4f> tf;
-    tf.set ( 0, gpucast::gl::vec4f(0.0f, 0.0f, 0.5f, 1.0f) );
-    tf.set ( 60, gpucast::gl::vec4f(0.0f, 0.7f, 0.5f, 1.0f) );
-    tf.set ( 120, gpucast::gl::vec4f(0.0f, 0.9f, 0.0f, 1.0f) );
-    tf.set ( 180, gpucast::gl::vec4f(0.9f, 0.9f, 0.0f, 1.0f) );
-    tf.set ( 255, gpucast::gl::vec4f(0.9f, 0.0f, 0.0f, 1.0f) );
+    gpucast::gl::transferfunction<gpucast::math::vec4f> tf;
+    tf.set ( 0, gpucast::math::vec4f(0.0f, 0.0f, 0.5f, 1.0f) );
+    tf.set ( 60, gpucast::math::vec4f(0.0f, 0.7f, 0.5f, 1.0f) );
+    tf.set ( 120, gpucast::math::vec4f(0.0f, 0.9f, 0.0f, 1.0f) );
+    tf.set ( 180, gpucast::math::vec4f(0.9f, 0.9f, 0.0f, 1.0f) );
+    tf.set ( 255, gpucast::math::vec4f(0.9f, 0.0f, 0.0f, 1.0f) );
 
-    std::vector<gpucast::gl::vec4f> samples;
+    std::vector<gpucast::math::vec4f> samples;
     tf.evaluate(256, samples, gpucast::gl::piecewise_linear());
     _transfertexture->teximage(0, GL_RGBA, 256, 0, GL_RGBA, GL_FLOAT, &samples.front()[0] );
     _transfertexture->set_parameteri ( GL_TEXTURE_MAG_FILTER, GL_LINEAR );

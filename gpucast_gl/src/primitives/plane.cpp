@@ -14,7 +14,7 @@
 #include <iostream>
 #include <vector>
 
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 #include <gpucast/gl/error.hpp>
 
 namespace gpucast { namespace gl {
@@ -22,18 +22,18 @@ namespace gpucast { namespace gl {
 ///////////////////////////////////////////////////////////////////////////////
 plane::plane(GLint vertexattrib_index, GLint normalattrib_index, GLint texcoordattrib_index)
   : _vao      (),
-    _vertices ( 4 * sizeof(vec4f) ),
-    _normals  ( 4 * sizeof(vec4f) ),
-    _texcoords( 4 * sizeof(vec4f) )
+    _vertices ( 4 * sizeof(gpucast::math::vec4f) ),
+    _normals  ( 4 * sizeof(gpucast::math::vec4f) ),
+    _texcoords( 4 * sizeof(gpucast::math::vec4f) )
 {  
   size      ( 2.0f, 2.0f );
 
-  texcoords ( vec4f(0.0, 0.0, 0.0, 0.0),
-              vec4f(1.0, 0.0, 0.0, 0.0),
-              vec4f(1.0, 1.0, 0.0, 0.0),
-              vec4f(0.0, 1.0, 0.0, 0.0));
+  texcoords ( gpucast::math::vec4f(0.0, 0.0, 0.0, 0.0),
+              gpucast::math::vec4f(1.0, 0.0, 0.0, 0.0),
+              gpucast::math::vec4f(1.0, 1.0, 0.0, 0.0),
+              gpucast::math::vec4f(0.0, 1.0, 0.0, 0.0));
 
-  normal ( vec4f(0.0, 0.0, 1.0, 0.0));
+  normal ( gpucast::math::vec4f(0.0, 0.0, 1.0, 0.0));
   attrib_location (vertexattrib_index, normalattrib_index, texcoordattrib_index);
 }
 
@@ -46,40 +46,40 @@ void
 plane::size ( float width, float height )
 {
   // xy-plane
-  std::vector<vec4f> vertices;
-  vertices.push_back(vec4f( -width/2.0f, -height/2.0f,  0.0, 1.0));
-  vertices.push_back(vec4f(  width/2.0f, -height/2.0f,  0.0, 1.0));
-  vertices.push_back(vec4f(  width/2.0f,  height/2.0f,  0.0, 1.0));
-  vertices.push_back(vec4f( -width/2.0f,  height/2.0f,  0.0, 1.0));
+  std::vector<gpucast::math::vec4f> vertices;
+  vertices.push_back(gpucast::math::vec4f( -width/2.0f, -height/2.0f,  0.0, 1.0));
+  vertices.push_back(gpucast::math::vec4f(  width/2.0f, -height/2.0f,  0.0, 1.0));
+  vertices.push_back(gpucast::math::vec4f(  width/2.0f,  height/2.0f,  0.0, 1.0));
+  vertices.push_back(gpucast::math::vec4f( -width/2.0f,  height/2.0f,  0.0, 1.0));
 
-  _vertices.buffersubdata (0, unsigned( vertices.size() * sizeof(vec4f)),  &vertices.front());
+  _vertices.buffersubdata (0, unsigned( vertices.size() * sizeof(gpucast::math::vec4f)),  &vertices.front());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void      
-plane::texcoords (vec4f const& a, 
-                  vec4f const& b, 
-                  vec4f const& c, 
-                  vec4f const& d)
+plane::texcoords (gpucast::math::vec4f const& a, 
+                  gpucast::math::vec4f const& b, 
+                  gpucast::math::vec4f const& c, 
+                  gpucast::math::vec4f const& d)
 {
-  std::vector<vec4f> tmp(4);
+  std::vector<gpucast::math::vec4f> tmp(4);
 
   tmp.at(0) = a;
   tmp.at(1) = b;
   tmp.at(2) = c;
   tmp.at(3) = d;
   
-  _texcoords.buffersubdata (0, tmp.size() * sizeof(vec4f), &tmp.front());
+  _texcoords.buffersubdata (0, tmp.size() * sizeof(gpucast::math::vec4f), &tmp.front());
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 void      
-plane::normal (vec4f const& n)
+plane::normal (gpucast::math::vec4f const& n)
 {
   // normal in z-axis
-  std::vector<vec4f> normals(4, n);
-  _normals.buffersubdata (0, unsigned(  normals.size() * sizeof(vec4f)),   &normals.front());
+  std::vector<gpucast::math::vec4f> normals(4, n);
+  _normals.buffersubdata (0, unsigned(  normals.size() * sizeof(gpucast::math::vec4f)),   &normals.front());
 }
 
 

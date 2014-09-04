@@ -9,8 +9,8 @@
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_GL_VEC4_HPP
-#define GPUCAST_GL_VEC4_HPP
+#ifndef GPUCAST_MATH_VEC4_HPP
+#define GPUCAST_MATH_VEC4_HPP
 
 // header, system
 #include <iostream> // std::cout
@@ -18,10 +18,10 @@
 #include <limits>
 
 // header, project
-#include <gpucast/gl/math/vec2.hpp>
-#include <gpucast/gl/math/vec3.hpp>
+#include <gpucast/math/vec2.hpp>
+#include <gpucast/math/vec3.hpp>
 
-namespace gpucast { namespace gl {
+namespace gpucast { namespace math {
 
 template <typename value_t>
 class vec4
@@ -137,8 +137,8 @@ typedef vec4<int>       vec4i;
 typedef vec4<unsigned>  vec4u;
 typedef vec4<char>      vec4b;
 
-} } // namespace gpucast / namespace gl
+} } // namespace gpucast / namespace math
 
-#include <gpucast/gl/math/vec4_impl.hpp>
+#include <gpucast/math/vec4_impl.hpp>
 
-#endif // GPUCAST_GL_vec4_HPP
+#endif // GPUCAST_MATH_vec4_HPP

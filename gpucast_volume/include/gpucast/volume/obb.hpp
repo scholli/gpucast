@@ -24,8 +24,8 @@
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
-#include <gpucast/gl/math/matrix4x4.hpp>
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/matrix4x4.hpp>
+#include <gpucast/math/vec4.hpp>
 
 // header, project
 #include <gpucast/volume/gpucast.hpp>
@@ -57,8 +57,8 @@ class GPUCAST_VOLUME obb : public gpucast::math::oriented_boundingbox<gpucast::m
 
   public : // methods
 
-    void                      draw  ( gpucast::gl::matrix4x4<float> const& mvp );
-    void                      color ( gpucast::gl::vec4f const& color );
+    void                      draw  ( gpucast::math::matrix4x4<float> const& mvp );
+    void                      color ( gpucast::math::vec4f const& color );
 
   private : // auxilliary methods
 
@@ -73,7 +73,7 @@ class GPUCAST_VOLUME obb : public gpucast::math::oriented_boundingbox<gpucast::m
     std::shared_ptr<gpucast::gl::vertexarrayobject>   _arrayobject;
 
     std::shared_ptr<gpucast::gl::program>             _program;             
-    gpucast::gl::vec4f                                  _color;
+    gpucast::math::vec4f                                  _color;
 
 };
 

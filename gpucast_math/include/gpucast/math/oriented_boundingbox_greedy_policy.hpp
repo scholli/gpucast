@@ -119,15 +119,15 @@ namespace gpucast { namespace math {
 
         switch (dim) {
           case 0 : {
-            candidate = orientation * make_rotation_x ( angle * _stepwidth );
+            candidate = orientation * mat3::make_rotation_x ( angle * _stepwidth );
             break;
           }
           case 1 : {
-            candidate = orientation * make_rotation_y ( angle * _stepwidth );
+                     candidate = orientation * mat3::make_rotation_y(angle * _stepwidth);
             break;
           }
           case 2 : {
-            candidate = orientation * make_rotation_z ( angle * _stepwidth );
+                     candidate = orientation * mat3::make_rotation_z(angle * _stepwidth);
             break;
           }
         }

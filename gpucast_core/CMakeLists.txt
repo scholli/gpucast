@@ -31,7 +31,6 @@ ADD_LIBRARY( gpucast_core SHARED
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
-                     ${GLEW_INCLUDE_DIR} 
                      ${QHULL_INCLUDE_DIR} 
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
@@ -56,12 +55,10 @@ ADD_DEPENDENCIES(gpucast_core gpucast_gl gpucast_math)
 
 IF (MSVC)
     TARGET_LINK_LIBRARIES( gpucast_core 
-                           gpucast_gl
                            debug ${QHULL_LIBRARY_DEBUG} optimized ${QHULL_LIBRARY_RELEASE}
                            OpenGL32.lib )
 ELSEIF (UNIX)
     TARGET_LINK_LIBRARIES( gpucast_core 
-                           gpucast_gl
                            ${QHULL_LIBRARY}
                            GL )
 ENDIF (MSVC)

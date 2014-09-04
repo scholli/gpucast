@@ -15,7 +15,6 @@
 // header, system
 
 // header, external
-#include <gpucast/gl/util/material.hpp>
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
 
 // header, project
@@ -117,29 +116,29 @@ public : // data members
   /////////////////////////////////////////////////////////////////////////////
 
   // data for arraybuffer
-  std::vector<gpucast::gl::vec3f>    _attrib0; // vertices of convex hulls
-  std::vector<gpucast::gl::vec4f>    _attrib1; // [start_u, start_v, 0, 0]
-  std::vector<gpucast::gl::vec4f>    _attrib2; // [trimid, dataid, orderu, orderv]
-  std::vector<gpucast::gl::vec4f>    _attrib3; // [umin, umax, vmin, vmax] bezierpatch-domain in nurbs-domainspace
+  std::vector<gpucast::math::vec3f>    _attrib0; // vertices of convex hulls
+  std::vector<gpucast::math::vec4f>    _attrib1; // [start_u, start_v, 0, 0]
+  std::vector<gpucast::math::vec4f>    _attrib2; // [trimid, dataid, orderu, orderv]
+  std::vector<gpucast::math::vec4f>    _attrib3; // [umin, umax, vmin, vmax] bezierpatch-domain in nurbs-domainspace
 
   // data for element array buffer
   std::vector<int>                   _indices; // indices of convex hulls
 
   // data for texturebuffer
-  std::vector<gpucast::gl::vec4f>    _controlpoints; // "vertexdata" -> control point data for texturebuffer
+  std::vector<gpucast::math::vec4f>    _controlpoints; // "vertexdata" -> control point data for texturebuffer
 
   // trim approach 1 : contour based trimming
-  std::vector<gpucast::gl::vec4f>    _cmb_partition;    
-  std::vector<gpucast::gl::vec2f>    _cmb_contourlist;     
-  std::vector<gpucast::gl::vec4f>    _cmb_curvelist;    
+  std::vector<gpucast::math::vec4f>    _cmb_partition;    
+  std::vector<gpucast::math::vec2f>    _cmb_contourlist;     
+  std::vector<gpucast::math::vec4f>    _cmb_curvelist;    
   std::vector<float>                 _cmb_curvedata;    
-  std::vector<gpucast::gl::vec3f>    _cmb_pointdata;    
+  std::vector<gpucast::math::vec3f>    _cmb_pointdata;    
 
   // trim approach 2 : double binary search map
-  std::vector<gpucast::gl::vec4f>    _db_partition;   // "trimdata"    
-  std::vector<gpucast::gl::vec4f>    _db_celldata;    // "urangeslist" 
-  std::vector<gpucast::gl::vec4f>    _db_curvelist;   // "curvelist"   
-  std::vector<gpucast::gl::vec3f>    _db_curvedata;   // "curvedata"   
+  std::vector<gpucast::math::vec4f>    _db_partition;   // "trimdata"    
+  std::vector<gpucast::math::vec4f>    _db_celldata;    // "urangeslist" 
+  std::vector<gpucast::math::vec4f>    _db_curvelist;   // "curvelist"   
+  std::vector<gpucast::math::vec3f>    _db_curvedata;   // "curvedata"   
 };
 
 } // namespace gpucast

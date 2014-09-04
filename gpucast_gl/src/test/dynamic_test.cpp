@@ -93,12 +93,12 @@ namespace gpucast { namespace gl {
 
 
   ///////////////////////////////////////////////////////////////////////////////
-  matrix4f        
+  gpucast::math::matrix4f        
   dynamic_test::get_current_modeltransform () const
   {
     if ( _action_index > _actions.size() - 1 )
     {
-      return matrix4f();
+      return gpucast::math::matrix4f();
     } else {
       if ( current_transform()->finished() )
       {

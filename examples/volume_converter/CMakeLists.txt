@@ -11,6 +11,7 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_math/include 
                      ${CMAKE_SOURCE_DIR}/gpucast_gl/include
+                     ${CMAKE_SOURCE_DIR}/gpucast_glut/include
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
                      ${CMAKE_SOURCE_DIR}/gpucast_volume/include
                      ${FREEGLUT_INCLUDE_DIR}
@@ -39,12 +40,14 @@ ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 IF (MSVC)
   TARGET_LINK_LIBRARIES(${_EXE_NAME} 
                         gpucast_gl 
+                        gpucast_glut 
                         gpucast_core                           
                         gpucast_volume   
                         )
 ELSEIF (UNIX)
   TARGET_LINK_LIBRARIES(${_EXE_NAME} 
                         gpucast_gl 
+                        gpucast_glut 
                         gpucast_core                           
                         gpucast_volume   
                         ${FREEGLUT_LIBRARIES}                        

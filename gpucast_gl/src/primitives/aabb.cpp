@@ -4,14 +4,14 @@
 *
 *********************************************************************************
 *
-*  module     : obb.cpp
+*  module     : aabb.cpp
 *  project    : gpucast
 *  description:
 *
 ********************************************************************************/
 
 // header i/f
-#include "gpucast/volume/obb.hpp"
+#include "gpucast/gl/primitives/aabb.hpp"
 
 // header, system
 #include <gpucast/math/vec3.hpp>
@@ -23,31 +23,40 @@
 
 
 namespace gpucast {
+  namespace gl {
 
 ////////////////////////////////////////////////////////////////////////////////
-obb::obb ( )
-  : base_type     (),
-    _initialized  (false),
-    _color        ( 0.5f, 0.5f, 0.5f, 1.0f )
+aabb::aabb ()
+: base_type     (),
+  _initialized  (false),
+  _vertexarray  (),
+  _colorarray   (),
+  _arrayobject  (), 
+  _program      (),
+  _color        (0.5f, 0.5f, 0.5f, 1.0f)
 {}
 
 
 ////////////////////////////////////////////////////////////////////////////////
-obb::obb ( base_type const& b )
-  : base_type    ( b ),
-    _initialized (false),
-    _color       ( 0.5f, 0.5f, 0.5f, 1.0f )
+aabb::aabb ( base_type const& b )
+: base_type     (b),
+  _initialized  (false),
+  _vertexarray  (),
+  _colorarray   (),
+  _arrayobject  (),
+  _program      (),
+  _color        (0.5f, 0.5f, 0.5f, 1.0f)
 {}
 
 
 ////////////////////////////////////////////////////////////////////////////////
-obb::~obb ()
+aabb::~aabb ()
 {}
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-obb::draw ( gpucast::math::matrix4x4<float> const& mvp )
+void 
+aabb::draw ( gpucast::math::matrix4x4<float> const& mvp  )
 {
   _init ();
 
@@ -65,18 +74,18 @@ obb::draw ( gpucast::math::matrix4x4<float> const& mvp )
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-obb::color ( gpucast::math::vec4f const& color )
+void                      
+aabb::color ( gpucast::math::vec4f const& color )
 {
-  if ( color != _color )
+  if ( color != _color ) 
   {
     _color = color;
 
     // if already uploaded to GPU -> update color buffer
-    if ( _initialized )
+    if ( _initialized ) 
     {
       std::vector<gpucast::math::vec4f> colors (8);
-      std::fill ( colors.begin(), colors.end(), gpucast::math::vec4f(_color) );
+      std::fill ( colors.begin(), colors.end(), gpucast::math::vec4f(_color) ); 
       _colorarray->update ( colors.begin(), colors.end() );
     }
   }
@@ -84,19 +93,19 @@ obb::color ( gpucast::math::vec4f const& color )
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void obb::_init ( )
+void aabb::_init ( )
 {
   // if already initialized -> initialize
   if (_initialized) return;
 
   // allocate ressources
-  _vertexarray  = std::shared_ptr<gpucast::gl::arraybuffer>        ( new gpucast::gl::arraybuffer );
-  _colorarray   = std::shared_ptr<gpucast::gl::arraybuffer>        ( new gpucast::gl::arraybuffer );
-  _arrayobject  = std::shared_ptr<gpucast::gl::vertexarrayobject>  ( new gpucast::gl::vertexarrayobject );
-  _program      = std::shared_ptr<gpucast::gl::program>            ( new gpucast::gl::program );
+  _vertexarray.reset  ( new gpucast::gl::arraybuffer );
+  _colorarray.reset   ( new gpucast::gl::arraybuffer );
+  _arrayobject.reset  ( new gpucast::gl::vertexarrayobject );
+  _program.reset      ( new gpucast::gl::program );
 
   // compile shader and link program
-  std::string const vs_src =
+  std::string const vs_src = 
     "#version 330 compatibility \n \
      #extension GL_EXT_gpu_shader4 : enable \n \
       \n\
@@ -116,7 +125,7 @@ void obb::_init ( )
 
   vs.set_source(vs_src.c_str());
   vs.compile();
-
+  
   _program->add  (&vs);
   _program->link ();
 
@@ -149,7 +158,7 @@ void obb::_init ( )
   }
 
   std::vector<gpucast::math::vec4f> colors ( vertices.size() );
-  std::fill(colors.begin(), colors.end(), gpucast::math::vec4f(_color));
+  std::fill(colors.begin(), colors.end(), _color);
 
   _vertexarray->update ( vertices.begin(),  vertices.end() );
   _colorarray->update  ( colors.begin(),    colors.end()   );
@@ -167,5 +176,6 @@ void obb::_init ( )
 }
 
 
+  } // namespace gl
+} // namespace gpucast 
 
-} // namespace gpucast

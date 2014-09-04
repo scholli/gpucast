@@ -9,8 +9,8 @@
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_GL_VEC3_HPP
-#define GPUCAST_GL_VEC3_HPP
+#ifndef GPUCAST_MATH_VEC3_HPP
+#define GPUCAST_MATH_VEC3_HPP
 
 // header, system
 #include <iostream> // std::cout
@@ -20,7 +20,7 @@
 // header, project
 
 
-namespace gpucast { namespace gl {
+namespace gpucast { namespace math {
 
 template <typename value_t>
 class vec3
@@ -127,8 +127,17 @@ typedef vec3<int>       vec3i;
 typedef vec3<unsigned>  vec3u;
 typedef vec3<char>      vec3b;
 
-} } // namespace gpucast / namespace gl
+template <typename point_t>
+class rational_to_euclid3d {
+public:
+  vec3d operator()(point_t const& point) const
+  {
+    return vec3d(point[0], point[1], point[2]);
+  }
+};
 
-#include <gpucast/gl/math/vec3_impl.hpp>
+} } // namespace gpucast / namespace math
 
-#endif // GPUCAST_GL_VEC3_HPP
+#include <gpucast/math/vec3_impl.hpp>
+
+#endif // GPUCAST_MATH_VEC3_HPP

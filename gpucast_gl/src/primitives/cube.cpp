@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include <gpucast/gl/math/vec4.hpp>
+#include <gpucast/math/vec4.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 
@@ -79,23 +79,23 @@ cube::draw(bool wireframe)
 
 ///////////////////////////////////////////////////////////////////////////////
 void    
-cube::set_vertices (vec4f const& lbf,// 1
-                    vec4f const& rbf,// 2 
-                    vec4f const& ltf,// 3
-                    vec4f const& rtf,// 4
-                    vec4f const& lbr,// 5
-                    vec4f const& rbr,// 6
-                    vec4f const& ltr,// 7
-                    vec4f const& rtr // 8
+cube::set_vertices (gpucast::math::vec4f const& lbf,// 1
+                    gpucast::math::vec4f const& rbf,// 2 
+                    gpucast::math::vec4f const& ltf,// 3
+                    gpucast::math::vec4f const& rtf,// 4
+                    gpucast::math::vec4f const& lbr,// 5
+                    gpucast::math::vec4f const& rbr,// 6
+                    gpucast::math::vec4f const& ltr,// 7
+                    gpucast::math::vec4f const& rtr // 8
                    )
 {
-  std::vector<vec4f> vertices = create_triangle_mesh ( lbf, rbf, ltf, rtf, lbr, rbr, ltr, rtr );
+  std::vector<gpucast::math::vec4f> vertices = create_triangle_mesh ( lbf, rbf, ltf, rtf, lbr, rbr, ltr, rtr );
 
   // upload vertices 
-  _vertices.buffersubdata ( 0, unsigned( vertices.size() * sizeof(vec4f)),  &vertices.front());
+  _vertices.buffersubdata ( 0, unsigned( vertices.size() * sizeof(gpucast::math::vec4f)),  &vertices.front());
 
   // compute normals
-  std::vector<vec3f> normals(36);
+  std::vector<gpucast::math::vec3f> normals(36);
 
   //       6______5
   //      /.     /|
@@ -106,12 +106,12 @@ cube::set_vertices (vec4f const& lbf,// 1
   //    --------/              ----- +x
   //    4      3
 
-  vec3f top    = cross( vec3f(ltr-ltf), vec3f(rtr-ltf) );
-  vec3f bottom = cross( vec3f(rbr-lbf), vec3f(lbr-lbf) );
-  vec3f front  = cross( vec3f(ltf-lbf), vec3f(rbf-lbf) );
-  vec3f back   = cross( vec3f(rbr-lbr), vec3f(ltr-lbr) );
-  vec3f left   = cross( vec3f(lbr-lbf), vec3f(ltr-lbf) ); 
-  vec3f right  = cross( vec3f(rtf-rbf), vec3f(rbr-rbf) ); 
+  gpucast::math::vec3f top    = cross( gpucast::math::vec3f(ltr-ltf), gpucast::math::vec3f(rtr-ltf) );
+  gpucast::math::vec3f bottom = cross( gpucast::math::vec3f(rbr-lbf), gpucast::math::vec3f(lbr-lbf) );
+  gpucast::math::vec3f front  = cross( gpucast::math::vec3f(ltf-lbf), gpucast::math::vec3f(rbf-lbf) );
+  gpucast::math::vec3f back   = cross( gpucast::math::vec3f(rbr-lbr), gpucast::math::vec3f(ltr-lbr) );
+  gpucast::math::vec3f left   = cross( gpucast::math::vec3f(lbr-lbf), gpucast::math::vec3f(ltr-lbf) ); 
+  gpucast::math::vec3f right  = cross( gpucast::math::vec3f(rtf-rbf), gpucast::math::vec3f(rbr-rbf) ); 
 
   // use flat shading to get correct per-surface normal
   std::fill_n(normals.begin()     , 6, top   );
@@ -121,7 +121,7 @@ cube::set_vertices (vec4f const& lbf,// 1
   std::fill_n(normals.begin() + 24, 6, left  );
   std::fill_n(normals.begin() + 30, 6, right );
 
-  _normals.buffersubdata  ( 0, unsigned(  normals.size() * sizeof(vec3f)),   &normals.front());
+  _normals.buffersubdata  ( 0, unsigned(  normals.size() * sizeof(gpucast::math::vec3f)),   &normals.front());
 }
 
 
@@ -141,10 +141,10 @@ cube::_init ( GLint vertexattrib_index,
               GLint texcoordattrib_index)
 {
   // allocate memory
-  _vertices.bufferdata  (36 * sizeof(vec4f), 0);
-  _normals.bufferdata   (36 * sizeof(vec3f), 0);
-  _colors.bufferdata    (36 * sizeof(vec4f), 0);
-  _texcoords.bufferdata (36 * sizeof(vec4f), 0);
+  _vertices.bufferdata  (36 * sizeof(gpucast::math::vec4f), 0);
+  _normals.bufferdata   (36 * sizeof(gpucast::math::vec3f), 0);
+  _colors.bufferdata    (36 * sizeof(gpucast::math::vec4f), 0);
+  _texcoords.bufferdata (36 * sizeof(gpucast::math::vec4f), 0);
 
   // set data for cube
   set_vertices();
@@ -179,33 +179,33 @@ cube::_init ( GLint vertexattrib_index,
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-cube::set_texcoords (vec4f const& lbf,
-                     vec4f const& rbf,
-                     vec4f const& ltf,
-                     vec4f const& rtf,
-                     vec4f const& lbr,
-                     vec4f const& rbr,
-                     vec4f const& ltr,
-                     vec4f const& rtr )
+cube::set_texcoords (gpucast::math::vec4f const& lbf,
+                     gpucast::math::vec4f const& rbf,
+                     gpucast::math::vec4f const& ltf,
+                     gpucast::math::vec4f const& rtf,
+                     gpucast::math::vec4f const& lbr,
+                     gpucast::math::vec4f const& rbr,
+                     gpucast::math::vec4f const& ltr,
+                     gpucast::math::vec4f const& rtr )
 
 {
-  std::vector<vec4f> texcoords = create_triangle_mesh ( lbf, rbf, ltf, rtf, lbr, rbr, ltr, rtr );
-  _texcoords.buffersubdata( 0, unsigned(texcoords.size() * sizeof(vec4f)), &texcoords.front());
+  std::vector<gpucast::math::vec4f> texcoords = create_triangle_mesh ( lbf, rbf, ltf, rtf, lbr, rbr, ltr, rtr );
+  _texcoords.buffersubdata( 0, unsigned(texcoords.size() * sizeof(gpucast::math::vec4f)), &texcoords.front());
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-std::vector<vec4f>
-cube::create_triangle_mesh ( vec4f const& lbf,
-                             vec4f const& rbf,
-                             vec4f const& ltf,
-                             vec4f const& rtf,
-                             vec4f const& lbr,
-                             vec4f const& rbr,
-                             vec4f const& ltr,
-                             vec4f const& rtr )
+std::vector<gpucast::math::vec4f>
+cube::create_triangle_mesh ( gpucast::math::vec4f const& lbf,
+                             gpucast::math::vec4f const& rbf,
+                             gpucast::math::vec4f const& ltf,
+                             gpucast::math::vec4f const& rtf,
+                             gpucast::math::vec4f const& lbr,
+                             gpucast::math::vec4f const& rbr,
+                             gpucast::math::vec4f const& ltr,
+                             gpucast::math::vec4f const& rtr )
 {
-  std::vector<vec4f> attrib_array;
+  std::vector<gpucast::math::vec4f> attrib_array;
 
   //       7______8
   //      /.     /|
@@ -272,11 +272,11 @@ cube::create_triangle_mesh ( vec4f const& lbf,
 void
 cube::_init_color(float r, float g, float b, float a)
 {
-  std::vector<vec4f> colors(36);
+  std::vector<gpucast::math::vec4f> colors(36);
 
-  std::fill(colors.begin(), colors.end(), vec4f(r, g, b, a));
+  std::fill(colors.begin(), colors.end(), gpucast::math::vec4f(r, g, b, a));
 
-  _colors.buffersubdata( 0, unsigned( colors.size() * sizeof(vec4f)), &colors.front());
+  _colors.buffersubdata( 0, unsigned( colors.size() * sizeof(gpucast::math::vec4f)), &colors.front());
 }
 
 

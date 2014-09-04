@@ -329,7 +329,27 @@ matrix<value_t, N, N> compute_inverse ( matrix<value_t, N, N> const& rhs )
 
 //////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-matrix<value_t, 3, 3> compute_inverse ( matrix<value_t, 3, 3> const& rhs )
+matrix<value_t, 2, 2> compute_inverse(matrix<value_t, 2, 2> const& rhs)
+{
+  value_t det = rhs.determinant();
+
+  if (det == value_t(0)) {
+    throw std::runtime_error("Matrix could not be inverted");
+  }
+
+  matrix<value_t, 2, 2> m;
+
+  m[0][0] = rhs[1][1];
+  m[0][1] = -rhs[0][1];
+  m[1][0] = -rhs[1][0];
+  m[1][1] = rhs[0][0];
+
+  return (value_t(1) / det) * m;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+matrix<value_t, 3, 3> compute_inverse(matrix<value_t, 3, 3> const& rhs)
 {
   value_t det = rhs.determinant();
 
@@ -340,108 +360,89 @@ matrix<value_t, 3, 3> compute_inverse ( matrix<value_t, 3, 3> const& rhs )
 
   matrix<value_t, 3, 3> m;
 
-  m[0][0] = compute_determinant  ( generate_submatrix( rhs, 0, 0 ) );
-  m[0][1] = -compute_determinant ( generate_submatrix( rhs, 1, 0 ) );
-  m[0][2] = compute_determinant  ( generate_submatrix( rhs, 2, 0 ) );
+  m[0][0] = compute_determinant(generate_submatrix(rhs, 0, 0));
+  m[0][1] = -compute_determinant(generate_submatrix(rhs, 1, 0));
+  m[0][2] = compute_determinant(generate_submatrix(rhs, 2, 0));
 
-  m[1][0] = -compute_determinant ( generate_submatrix( rhs, 0, 1 ) );
-  m[1][1] = compute_determinant  ( generate_submatrix( rhs, 1, 1 ) );
-  m[1][2] = -compute_determinant ( generate_submatrix( rhs, 2, 1 ) );
+  m[1][0] = -compute_determinant(generate_submatrix(rhs, 0, 1));
+  m[1][1] = compute_determinant(generate_submatrix(rhs, 1, 1));
+  m[1][2] = -compute_determinant(generate_submatrix(rhs, 2, 1));
 
-  m[2][0] = compute_determinant  ( generate_submatrix( rhs, 0, 2 ) );
-  m[2][1] = -compute_determinant ( generate_submatrix( rhs, 1, 2 ) );
-  m[2][2] = compute_determinant  ( generate_submatrix( rhs, 2, 2 ) );
+  m[2][0] = compute_determinant(generate_submatrix(rhs, 0, 2));
+  m[2][1] = -compute_determinant(generate_submatrix(rhs, 1, 2));
+  m[2][2] = compute_determinant(generate_submatrix(rhs, 2, 2));
 
-  return (value_t(1)/det) * m;
+  return (value_t(1) / det) * m;
 }
 
+  namespace mat3 {
 
-//////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-matrix<value_t, 2, 2> compute_inverse ( matrix<value_t, 2, 2> const& rhs )
-{
-  value_t det = rhs.determinant();
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename value_t>
+  matrix<value_t, 3, 3> make_rotation_x(value_t const& arc)
+  {
+    matrix<value_t, 3, 3> m;
 
-  if (det == value_t(0)) {
-    throw std::runtime_error("Matrix could not be inverted");
+    //m[0][0] = 1;
+    //m[0][1] = 0;
+    //m[0][2] = 0;
+
+    //m[1][0] = 0;
+    m[1][1] = cos(arc);
+    m[1][2] = -sin(arc);
+
+    //m[2][0] = 0;
+    m[2][1] = sin(arc);
+    m[2][2] = cos(arc);
+
+    return m;
   }
 
-  matrix<value_t, 2, 2> m;
 
-  m[0][0] =  rhs[1][1];
-  m[0][1] = -rhs[0][1];
-  m[1][0] = -rhs[1][0];
-  m[1][1] =  rhs[0][0];
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename value_t>
+  matrix<value_t, 3, 3> make_rotation_y(value_t const& arc)
+  {
+    matrix<value_t, 3, 3> m;
 
-  return (value_t(1)/det) * m;
-}
+    m[0][0] = cos(arc);
+    //m[0][1] = 0;
+    m[0][2] = -sin(arc);
 
+    //m[1][0] = 0;
+    //m[1][1] = 1;
+    //m[1][2] = 0;
 
-//////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-matrix<value_t, 3, 3> make_rotation_x ( value_t const& arc )
-{
-  matrix<value_t, 3, 3> m;
+    m[2][0] = sin(arc);
+    //m[2][1] = 0;
+    m[2][2] = cos(arc);
 
-  //m[0][0] = 1;
-  //m[0][1] = 0;
-  //m[0][2] = 0;
-
-  //m[1][0] = 0;
-  m[1][1] = cos(arc);
-  m[1][2] = -sin(arc);
-
-  //m[2][0] = 0;
-  m[2][1] = sin(arc);
-  m[2][2] = cos(arc);
-
-  return m;
-}
+    return m;
+  }
 
 
-//////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-matrix<value_t, 3, 3> make_rotation_y ( value_t const& arc )
-{
-  matrix<value_t, 3, 3> m;
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename value_t>
+  matrix<value_t, 3, 3> make_rotation_z(value_t const& arc)
+  {
+    matrix<value_t, 3, 3> m;
 
-  m[0][0] = cos(arc);
-  //m[0][1] = 0;
-  m[0][2] = -sin(arc);
+    m[0][0] = cos(arc);
+    m[0][1] = sin(arc);
+    //m[0][2] = 0;
 
-  //m[1][0] = 0;
-  //m[1][1] = 1;
-  //m[1][2] = 0;
+    m[1][0] = -sin(arc);
+    m[1][1] = cos(arc);
+    //m[1][2] = 0;
 
-  m[2][0] = sin(arc);
-  //m[2][1] = 0;
-  m[2][2] = cos(arc);
+    //m[2][0] = 0;
+    //m[2][1] = 0;
+    //m[2][2] = 1;
 
-  return m;
-}
+    return m;
+  }
 
-
-//////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-matrix<value_t, 3, 3> make_rotation_z ( value_t const& arc )
-{
-  matrix<value_t, 3, 3> m;
-
-  m[0][0] = cos(arc);
-  m[0][1] = sin(arc);
-  //m[0][2] = 0;
-
-  m[1][0] = -sin(arc);
-  m[1][1] = cos(arc);
-  //m[1][2] = 0;
-
-  //m[2][0] = 0;
-  //m[2][1] = 0;
-  //m[2][2] = 1;
-
-  return m;
-}
-
+} // namespace mat3
 
 //////////////////////////////////////////////////////////////////////////////
 template <typename value_t, unsigned N>

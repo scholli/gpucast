@@ -13,7 +13,6 @@
 #include "gpucast/gl/test/dynamic_transform.hpp"
 
 #include <gpucast/gl/glpp.hpp>
-#include <GL/freeglut.h>
 
 namespace gpucast { namespace gl {
 

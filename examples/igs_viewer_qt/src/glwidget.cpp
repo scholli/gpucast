@@ -205,20 +205,20 @@ glwidget::paintGL()
   auto& renderer = gpucast::gl::bezierobject_renderer::instance();
   renderer.set_nearfar(nearplane, farplane);
 
-  gpucast::gl::matrix4f view = gpucast::gl::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
+  gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
                                      0.0f, 0.0f, 0.0f, 
                                      0.0f, 1.0f, 0.0f);
 
-  gpucast::gl::vec3f translation = _boundingbox.center();
+  gpucast::math::vec3f translation = _boundingbox.center();
 
-  gpucast::gl::matrix4f model    = gpucast::gl::make_translation(_trackball->shiftx(), _trackball->shifty(), 
+  gpucast::math::matrix4f model    = gpucast::math::make_translation(_trackball->shiftx(), _trackball->shifty(), 
                                    _trackball->distance()) *_trackball->rotation() * 
-                                   gpucast::gl::make_translation(-translation[0], -translation[1], -translation[2]);
+                                   gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
 
-  gpucast::gl::matrix4f proj = gpucast::gl::perspective(60.0f, float(_width) / _height, nearplane, farplane); 
-  gpucast::gl::matrix4f mv   = view * model;
-  gpucast::gl::matrix4f mvp  = proj * mv;
-  gpucast::gl::matrix4f mvpi = gpucast::gl::inverse(mvp);
+  gpucast::math::matrix4f proj = gpucast::math::perspective(60.0f, float(_width) / _height, nearplane, farplane); 
+  gpucast::math::matrix4f mv   = view * model;
+  gpucast::math::matrix4f mvp  = proj * mv;
+  gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
 
   renderer.projectionmatrix(proj);
   renderer.modelviewmatrix(mv);
@@ -661,9 +661,9 @@ glwidget::_parse_material_conf(std::istringstream& sstr, gpucast::gl::material& 
 
   // opacity
   if (_parse_float(sstr, opac)) {
-    mat.ambient   = gpucast::gl::vec3f(ar, ag, ab);
-    mat.diffuse   = gpucast::gl::vec3f(dr, dg, db);
-    mat.specular  = gpucast::gl::vec3f(sr, sg, sb);
+    mat.ambient   = gpucast::math::vec3f(ar, ag, ab);
+    mat.diffuse   = gpucast::math::vec3f(dr, dg, db);
+    mat.specular  = gpucast::math::vec3f(sr, sg, sb);
     mat.shininess = shine;
     mat.opacity   = opac;
 	} else {
@@ -686,9 +686,9 @@ glwidget::_parse_float(std::istringstream& sstr, float& result) const
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-glwidget::_parse_background(std::istringstream& sstr, gpucast::gl::vec3f& bg) const
+glwidget::_parse_background(std::istringstream& sstr, gpucast::math::vec3f& bg) const
 {
   float r, g, b;
   sstr >> r >> g >> b;
-  bg = gpucast::gl::vec3f(r, g, b);
+  bg = gpucast::math::vec3f(r, g, b);
 }

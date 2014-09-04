@@ -17,8 +17,6 @@
 #include <vector>
 #include <memory>
 
-
-
 // header, project
 #include <gpucast/core/gpucast.hpp>
 
