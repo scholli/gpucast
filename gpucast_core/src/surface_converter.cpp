@@ -43,7 +43,7 @@ public :
       next          ( ),
       source_access ( ),
       target_access ( ),
-      nthreads      (8)
+      nthreads      (16)
   {}
 
   std::shared_ptr<beziersurfaceobject>   target;

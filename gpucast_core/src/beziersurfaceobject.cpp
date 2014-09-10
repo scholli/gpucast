@@ -26,18 +26,7 @@ namespace gpucast {
 void
 beziersurfaceobject::add(surface_ptr const& surface)
 {
-  // split up surface into 4 pieces
-#if 0
-  surface_type bl, tl, br, tr;
-  surface->split(bl, tl, br,tr);
-
-  _surfaces.insert( new beziersurface(bl) );
-  _surfaces.insert( new beziersurface(tl) );
-  _surfaces.insert( new beziersurface(br) );
-  _surfaces.insert( new beziersurface(tr) );
-#else
   _surfaces.insert(surface);
-#endif
 }
 
 

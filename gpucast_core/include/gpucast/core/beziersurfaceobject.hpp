@@ -122,7 +122,7 @@ public : // data members
   std::vector<gpucast::math::vec4f>    _attrib3; // [umin, umax, vmin, vmax] bezierpatch-domain in nurbs-domainspace
 
   // data for element array buffer
-  std::vector<int>                   _indices; // indices of convex hulls
+  std::vector<int>                     _indices; // indices of convex hulls
 
   // data for texturebuffer
   std::vector<gpucast::math::vec4f>    _controlpoints; // "vertexdata" -> control point data for texturebuffer
@@ -131,7 +131,7 @@ public : // data members
   std::vector<gpucast::math::vec4f>    _cmb_partition;    
   std::vector<gpucast::math::vec2f>    _cmb_contourlist;     
   std::vector<gpucast::math::vec4f>    _cmb_curvelist;    
-  std::vector<float>                 _cmb_curvedata;    
+  std::vector<float>                   _cmb_curvedata;    
   std::vector<gpucast::math::vec3f>    _cmb_pointdata;    
 
   // trim approach 2 : double binary search map

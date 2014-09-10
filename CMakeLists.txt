@@ -50,6 +50,16 @@ ELSE (MSVC)
 	include(FindCUDA)
 ENDIF (MSVC)
 
+################################################################
+# Write Configuration
+################################################################
+SET(INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/gpucast_core/include/gpucast/core/config.hpp
+)
+
 set(LIB_PATHS
     ${BOOST_LIBRARY_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/lib
