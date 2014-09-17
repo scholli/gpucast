@@ -24,6 +24,11 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 ################################################################
+# gpucast Configuration
+################################################################
+SET(ENABLE_GPUCAST_VOLUME_MODULE true CACHE BOOL "Build module gpucast volume")
+
+################################################################
 # Configure and find libraries
 ################################################################
 SET(GLOBAL_EXT_DIR ${CMAKE_SOURCE_DIR}/externals)
@@ -40,15 +45,17 @@ include(find_freeglut)
 include(find_freeimage)
 include(find_qhull)
 
-IF (MSVC)
-	set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5)
-	set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5/bin)
-	include(findCUDA)
-ELSE (MSVC)
-	set(ENV{CUDA_PATH} /opt/cuda/latest/cuda/)
-	set(ENV{CUDA_BIN_PATH} /opt/cuda/latest/cuda/bin)
-	include(FindCUDA)
-ENDIF (MSVC)
+IF (${ENABLE_GPUCAST_VOLUME_MODULE})
+  IF (MSVC)
+	  set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5)
+	  set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5/bin)
+	  include(findCUDA)
+  ELSE (MSVC)
+	  set(ENV{CUDA_PATH} /opt/cuda/latest/cuda/)
+	  set(ENV{CUDA_BIN_PATH} /opt/cuda/latest/cuda/bin)
+	  include(FindCUDA)
+  ENDIF (MSVC)
+ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})
 
 ################################################################
 # Write Configuration
@@ -85,11 +92,6 @@ ELSEIF(MSVC)
 	set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG /MDd /Zi /MP")
   add_definitions(-D _USE_MATH_DEFINES -D NOMINMAX)
 ENDIF(UNIX)
-
-################################################################
-# gpucast Configuration
-################################################################
-SET(ENABLE_GPUCAST_VOLUME_MODULE true CACHE BOOL "Build module gpucast volume")
 
 ################################################################
 # Create build flags
