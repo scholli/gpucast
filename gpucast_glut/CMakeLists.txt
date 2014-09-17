@@ -46,8 +46,8 @@ IF (MSVC)
                          debug ${GLEW_LIBRARY_DEBUG} optimized ${GLEW_LIBRARY_RELEASE}
                        )
 
-ELSE (MSVC)
-  TARGET_LINK_LIBRARIES( gpucast_gl
+ELSEIF (UNIX)
+  TARGET_LINK_LIBRARIES( gpucast_glut
                          ${GLEW_LIBRARY} 
                          ${FREEGLUT_LIBRARY}
                          GL GLU
