@@ -150,7 +150,7 @@ public :
     std::transform(a.begin(), a.end(),
 		   std::back_inserter(target_),
 		   convert<source_t, target_t>());
-    id_map_.insert(std::make_pair<std::size_t, std::size_t>(index_, pos));
+    id_map_.insert(std::make_pair(index_, pos));
     ++index_;
   }
 private:
