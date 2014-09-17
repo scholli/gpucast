@@ -37,7 +37,7 @@
     #define GPUCAST_GLUT __declspec(dllimport)
   #endif
 #else
-  #define GPUCAST_GL
+#define GPUCAST_GLUT
 #endif
 
 #define GPUCAST_GL_DIRECT_STATE_ACCESS 1
