@@ -26,7 +26,7 @@ endif()
 ################################################################
 # gpucast Configuration
 ################################################################
-SET(ENABLE_GPUCAST_VOLUME_MODULE true CACHE BOOL "Build module gpucast volume")
+SET(ENABLE_GPUCAST_VOLUME_MODULE false CACHE BOOL "Build module gpucast volume")
 
 ################################################################
 # Configure and find libraries
