@@ -1,3 +1,5 @@
+IF (${ENABLE_GPUCAST_VOLUME_MODULE})
+
 ###############################################################################
 # set sources
 ###############################################################################
@@ -65,3 +67,5 @@ IF (MSVC)
         copy_runtime_dependencies ( ${_EXE_NAME} \"${_LIB_DIR}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\")
     ENDFOREACH (_LIB_DIR ${LIB_PATHS})
 ENDIF (MSVC)
+
+ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})

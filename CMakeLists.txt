@@ -44,7 +44,7 @@ IF (MSVC)
 	set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5)
 	set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5/bin)
 	include(findCUDA)
-ELSEIF (UNIX)
+ELSE (MSVC)
 	set(ENV{CUDA_PATH} /opt/cuda/latest/cuda/)
 	set(ENV{CUDA_BIN_PATH} /opt/cuda/latest/cuda/bin)
 	include(FindCUDA)
@@ -89,6 +89,7 @@ ENDIF(UNIX)
 ################################################################
 # gpucast Configuration
 ################################################################
+SET(ENABLE_GPUCAST_VOLUME_MODULE true CACHE BOOL "Build module gpucast volume")
 
 ################################################################
 # Create build flags
@@ -104,7 +105,11 @@ ADD_SUBDIRECTORY(gpucast_math)
 ADD_SUBDIRECTORY(gpucast_gl)
 ADD_SUBDIRECTORY(gpucast_glut)
 ADD_SUBDIRECTORY(gpucast_core)
+
+IF (${ENABLE_GPUCAST_VOLUME_MODULE})
 ADD_SUBDIRECTORY(gpucast_volume)
+ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})
+
 ADD_SUBDIRECTORY(examples)
 
 ################################################################
