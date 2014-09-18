@@ -62,3 +62,39 @@ ELSEIF (UNIX)
                            ${QHULL_LIBRARY}
                            GL )
 ENDIF (MSVC)
+
+###############################################################################
+# install 
+###############################################################################
+
+IF (MSVC)
+  install (TARGETS gpucast_core
+    CONFIGURATIONS Release
+    RUNTIME DESTINATION bin/Release
+    LIBRARY DESTINATION lib/Release
+    ARCHIVE DESTINATION lib/Release
+  )
+
+  install (TARGETS gpucast_core
+    CONFIGURATIONS Debug
+    RUNTIME DESTINATION bin/Debug
+    LIBRARY DESTINATION lib/Debug
+    ARCHIVE DESTINATION lib/Debug
+  )
+ELSEIF (UNIX)
+  install (TARGETS gpucast_core 
+    RUNTIME DESTINATION lib
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+ENDIF (MSVC)
+
+# header files 
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/gpucast DESTINATION include/gpucast_core FILES_MATCHING PATTERN "*.hpp")
+
+# shader and material resources
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../resources/glsl DESTINATION resources/glsl
+        FILES_MATCHING 
+        PATTERN "*.frag" 
+        PATTERN "*.vert" 
+        PATTERN "*.glsl")

@@ -103,3 +103,31 @@ ELSE (MSVC)
                        )
 ENDIF (MSVC)
 
+###############################################################################
+# install 
+###############################################################################
+
+IF (MSVC)
+  install (TARGETS gpucast_gl
+    CONFIGURATIONS Release
+    RUNTIME DESTINATION bin/Release
+    LIBRARY DESTINATION lib/Release
+    ARCHIVE DESTINATION lib/Release
+  )
+
+  install (TARGETS gpucast_gl
+    CONFIGURATIONS Debug
+    RUNTIME DESTINATION bin/Debug
+    LIBRARY DESTINATION lib/Debug
+    ARCHIVE DESTINATION lib/Debug
+  )
+ELSEIF (UNIX)
+  install (TARGETS gpucast_gl
+    RUNTIME DESTINATION lib
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+ENDIF (MSVC)
+
+# header files 
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/gpucast DESTINATION include/gpucast_gl FILES_MATCHING PATTERN "*.hpp")

@@ -101,7 +101,7 @@ SET (BUILD_FLAGS " ")
 ################################################################
 # Create libraries
 ################################################################
-SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+SET(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/lib)
 
 ADD_SUBDIRECTORY(gpucast_math)
 ADD_SUBDIRECTORY(gpucast_gl)

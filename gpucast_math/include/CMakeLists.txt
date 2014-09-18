@@ -28,3 +28,10 @@ ADD_LIBRARY( gpucast_math SHARED
            ${GPUCAST_MATH_MATH_UTIL_INC}
 )
 SET_TARGET_PROPERTIES(gpucast_math PROPERTIES LINKER_LANGUAGE CXX)
+
+###############################################################################
+# install
+###############################################################################
+
+# header files 
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/gpucast DESTINATION include/gpucast_math FILES_MATCHING PATTERN "*.hpp")
