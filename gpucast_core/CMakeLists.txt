@@ -90,7 +90,7 @@ ELSEIF (UNIX)
 ENDIF (MSVC)
 
 # header files 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/gpucast DESTINATION include/gpucast_core FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/gpucast DESTINATION include FILES_MATCHING PATTERN "*.hpp")
 
 # shader and material resources
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../resources/glsl DESTINATION resources

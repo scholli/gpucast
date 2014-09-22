@@ -19,7 +19,7 @@
 #include <functional>
 
 // header, project
-#include <gpucast/gpucast_glut.hpp>
+#include <gpucast/glut/gpucast_glut.hpp>
 #include <gpucast/gl/util/eventhandler.hpp>
 
 namespace gpucast { namespace gl {

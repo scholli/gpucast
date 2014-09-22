@@ -130,4 +130,4 @@ ELSEIF (UNIX)
 ENDIF (MSVC)
 
 # header files 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/gpucast DESTINATION include/gpucast_gl FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/gpucast DESTINATION include FILES_MATCHING PATTERN "*.hpp")

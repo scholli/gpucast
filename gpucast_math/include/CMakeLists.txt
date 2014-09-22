@@ -34,4 +34,4 @@ SET_TARGET_PROPERTIES(gpucast_math PROPERTIES LINKER_LANGUAGE CXX)
 ###############################################################################
 
 # header files 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/gpucast DESTINATION include/gpucast_math FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION . FILES_MATCHING PATTERN "*.hpp")
