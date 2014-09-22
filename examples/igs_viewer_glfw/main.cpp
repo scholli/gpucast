@@ -65,18 +65,26 @@ public:
     gpucast::surface_converter converter;
 
     auto& renderer = gpucast::gl::bezierobject_renderer::instance();
-
-    renderer.add_search_path("../../../../");
-    renderer.add_search_path("../../../");
-    renderer.add_search_path("../../");
-    renderer.add_search_path("../");
     renderer.recompile();
 
     bool initialized_bbox = false;
-    for (int i = 1; i < _argc; ++i)
+    std::vector<std::string> filenames;
+
+    if (_argc > 1)
     {
-      std::cout << "loading " << _argv[i] << std::endl;
-      auto nurbs_object = loader.load(_argv[i]);
+      for (int i = 1; i < _argc; ++i)
+      {
+        filenames.push_back(_argv[i]);
+      }
+    }
+    else {
+      filenames.push_back("data/part.igs");
+    }
+    
+    for (auto const& file : filenames)
+    {
+      std::cout << "loading " << file << std::endl;
+      auto nurbs_object = loader.load(file);
 
       if (nurbs_object)
       {
@@ -103,7 +111,7 @@ public:
         _objects.push_back(drawable);
       }
       else {
-        std::cerr << "failed to load " << _argv[i] << std::endl;
+        std::cerr << "failed to load " << file << std::endl;
         std::cerr << loader.error_message() << std::endl;
       }
     }
@@ -201,12 +209,25 @@ glut_display()
   the_app->draw();
 }
 
-void glfw_mousebutton(GLFWwindow* window, int button, int action, int mods)
+void glfw_mousebutton(GLFWwindow* window, int b, int action, int mods)
 {
   glfwMakeContextCurrent(window);
 
-  the_app->mouse((button == GLFW_MOUSE_BUTTON_LEFT) ? gpucast::gl::eventhandler::left : gpucast::gl::eventhandler::right,
-    (action == GLFW_RELEASE) ? gpucast::gl::eventhandler::release : gpucast::gl::eventhandler::press, the_app->posx(), the_app->posy());
+  gpucast::gl::eventhandler::button button;
+  gpucast::gl::eventhandler::state state;
+
+  switch (b) {
+  case 0: button = gpucast::gl::eventhandler::left; break;
+  case 2: button = gpucast::gl::eventhandler::middle; break;
+  case 1: button = gpucast::gl::eventhandler::right; break;
+  };
+
+  switch (action) {
+  case 0: state = gpucast::gl::eventhandler::release; break;
+  case 1: state = gpucast::gl::eventhandler::press; break;
+  };
+
+  the_app->mouse(button, state, the_app->posx(), the_app->posy());
 }
 
 void glfw_motion(GLFWwindow* window, double x, double y)

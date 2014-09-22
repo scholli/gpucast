@@ -34,11 +34,8 @@ namespace gpucast {
        _nearplane         ( 1 ),
        _farplane          ( 10000 )
   {
-    _pathlist.insert(".");
-    _pathlist.insert("./c");
-    _pathlist.insert("./glsl");
-    _pathlist.insert("./gpucast_core/glsl");
-    _pathlist.insert("./gpucast_core/c");
+    _pathlist.insert("");
+    _pathlist.insert("./");
   }
 
 
@@ -209,6 +206,7 @@ namespace gpucast {
       if (boost::filesystem::exists( (*path_to_source) + filename ) ) {
         break;
       }
+
       ++path_to_source;
     }
 

@@ -34,7 +34,7 @@ SET(ENABLE_GPUCAST_VOLUME_MODULE false CACHE BOOL "Build module gpucast volume")
 SET(GLOBAL_EXT_DIR ${CMAKE_SOURCE_DIR}/externals)
 
 if (UNIX)
-	pkg_check_modules(GL REQUIRED gl)
+	pkg_check_modules(GL REQUIRED gl) 
 endif (UNIX)
 
 include(macros)

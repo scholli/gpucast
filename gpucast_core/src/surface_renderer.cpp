@@ -32,6 +32,7 @@ namespace gpucast {
        _trimapproach      ( double_binary_partition ),
        _newton_iterations ( 5 )
   {
+    _pathlist.insert("");
     _pathlist.insert(".");
     _pathlist.insert("../..");
     _pathlist.insert("../../gpucast_core/cl");

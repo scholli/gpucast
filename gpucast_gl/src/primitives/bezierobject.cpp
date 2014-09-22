@@ -16,6 +16,7 @@
 
 #include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/fragmentshader.hpp>
+#include <gpucast/core/config.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -235,6 +236,8 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     bezierobject_renderer::bezierobject_renderer() 
     {
+      _pathlist.insert("");
+
       _init_program();
     }
 
@@ -370,26 +373,33 @@ namespace gpucast {
       _program.reset(new program);
 
       init_program(_program,
-        "./gpucast_core/glsl/trimmed_surface/raycast_surface.glsl.vert",
-        "./gpucast_core/glsl/trimmed_surface/raycast_surface.glsl.frag");
+        GPUCAST_INSTALL_DIR + std::string("/resources/glsl/trimmed_surface/raycast_surface.glsl.vert"),
+        GPUCAST_INSTALL_DIR + std::string("/resources/glsl/trimmed_surface/raycast_surface.glsl.frag"));
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    bool bezierobject_renderer::_path_to_file(std::string const& filename, std::string& result) const
+    bool bezierobject_renderer::_path_to_file(std::string const& filename, std::vector<std::string> const& rootdirs, std::string& result) const
     {
-      std::set<std::string>::const_iterator path_to_source = _pathlist.begin();
-        
-      while (path_to_source != _pathlist.end())
-      {
-        if (boost::filesystem::exists((*path_to_source) + filename)) {
-          break;
+      std::string filepath;
+      if (boost::filesystem::exists(filename)) {
+        filepath = filename;
+      } else {
+        for (auto const& dir : rootdirs)
+        {
+          if (boost::filesystem::exists(dir + "/" + filename)) {
+            filepath = dir + filename;
+            break;
+          }
+          if (boost::filesystem::exists(dir + filename)) {
+            filepath = dir + filename;
+            break;
+          }
         }
-        ++path_to_source;
       }
 
-      if (path_to_source != _pathlist.end())
+      if (!filepath.empty())
       {
-        std::fstream fstr(((*path_to_source) + filename).c_str(), std::ios::in);
+        std::fstream fstr(filepath.c_str(), std::ios::in);
         if (fstr)
         {
           result = std::string((std::istreambuf_iterator<char>(fstr)), std::istreambuf_iterator<char>());
@@ -413,7 +423,7 @@ namespace gpucast {
 
               // replace include with source
               std::string included_source;
-              bool success = _path_to_file(filename, included_source);
+              bool success = _path_to_file(filename, { GPUCAST_INSTALL_DIR, "." }, included_source);
                 
               if (success) {
                 result.replace(result.find(include_line.str()), include_line.str().size(), included_source);
@@ -451,8 +461,8 @@ namespace gpucast {
         std::string fs_source; 
         std::string gs_source;
 
-        bool vs_available = _path_to_file(vertexshader_filename, vs_source);
-        bool fs_available = _path_to_file(fragmentshader_filename, fs_source);
+        bool vs_available = _path_to_file(vertexshader_filename, { GPUCAST_INSTALL_DIR, "." }, vs_source);
+        bool fs_available = _path_to_file(fragmentshader_filename, { GPUCAST_INSTALL_DIR, "." }, fs_source);
 
         if (vs_available)
         {

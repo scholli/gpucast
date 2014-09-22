@@ -160,7 +160,7 @@ private : // methods
 
   void _init_program();
 
-  bool _path_to_file(std::string const& filename, std::string& result) const;
+  bool _path_to_file(std::string const& filename, std::vector<std::string> const& rootdirs, std::string& result) const;
 
 
 

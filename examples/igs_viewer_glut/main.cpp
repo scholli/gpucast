@@ -20,7 +20,7 @@
 
 #include <gpucast/gl/error.hpp>
 #include <gpucast/glut/window.hpp>
-#include <gpucast/math/matrix4x4.hpp>
+#include <gpucast/math/matrix4x4.hpp> 
 #include <gpucast/gl/primitives/bezierobject.hpp>
 
 #include <gpucast/core/import/igs.hpp>
@@ -69,13 +69,26 @@ public:
     renderer.recompile();
 
     bool initialized_bbox = false;
-    for (int i = 1; i < _argc; ++i)
+    std::vector<std::string> filenames;
+
+    if (_argc > 1)
     {
-      std::cout << "loading " << _argv[i] << std::endl;
-      auto nurbs_object  = loader.load(_argv[i]);
+      for (int i = 1; i < _argc; ++i)
+      {
+        filenames.push_back(_argv[i]);
+      }
+    }
+    else {
+      filenames.push_back("data/part.igs");
+    }
+
+    for (auto const& file : filenames)
+    {
+      std::cout << "loading " << file << std::endl;
+      auto nurbs_object = loader.load(file);
 
       if (nurbs_object)
-      { 
+      {
         auto bezier_object = std::make_shared<gpucast::beziersurfaceobject>();
         converter.convert(nurbs_object, bezier_object);
 
@@ -97,8 +110,9 @@ public:
         drawable->set_material(mat);
 
         _objects.push_back(drawable);
-      } else {
-        std::cerr << "failed to load " << _argv[i] << std::endl;
+      }
+      else {
+        std::cerr << "failed to load " << file << std::endl;
         std::cerr << loader.error_message() << std::endl;
       }
     }

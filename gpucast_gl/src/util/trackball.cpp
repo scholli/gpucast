@@ -168,24 +168,21 @@ namespace gpucast { namespace gl {
 
       rotation_euler_ =  gpucast::math::make_rotation_x(-radx) * rotation_euler_;
       rotation_euler_ =  gpucast::math::make_rotation_y(-rady) * rotation_euler_;
-
-      mousepos_x_ = x;
-      mousepos_y_ = y;
     }
 
     if ( button_right_ )
     {
       distance_ += config_.mapping_zoom * float(y - mousepos_y_);
-      mousepos_y_ = y;
     }
 
     if ( button_middle_ )
     {
       shiftx_ += config_.mapping_shift * float(x - mousepos_x_);
       shifty_ -= config_.mapping_shift * float(y - mousepos_y_);
-      mousepos_y_ = y;
-      mousepos_x_ = x;
     }
+
+    mousepos_y_ = y;
+    mousepos_x_ = x;
   }
 
 
