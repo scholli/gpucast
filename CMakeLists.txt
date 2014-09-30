@@ -60,7 +60,11 @@ ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})
 ################################################################
 # Write Configuration
 ################################################################
-SET(INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+IF (MSVC)
+  SET(CMAKE_INSTALL_PREFIX "C:/gpucast")
+ELSEIF (UNIX)
+  SET(CMAKE_INSTALL_PREFIX /opt/local)
+ENDIF (MSVC)
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
