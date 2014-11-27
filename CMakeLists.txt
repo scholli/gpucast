@@ -61,7 +61,7 @@ ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})
 # Write Configuration
 ################################################################
 IF (MSVC)
-  SET(CMAKE_INSTALL_PREFIX "C:/gpucast")
+  SET(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
 ELSEIF (UNIX)
   SET(CMAKE_INSTALL_PREFIX /opt/local)
 ENDIF (MSVC)

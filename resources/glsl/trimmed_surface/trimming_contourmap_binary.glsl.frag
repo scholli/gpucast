@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-uvec4 intToUInt4 ( uint input )
+uvec4 intToUInt4 ( in uint input )
 {
   uvec4 result;
   result.w = (input & 0xFF000000) >> 24U;
@@ -19,9 +19,14 @@ void intToUint8_24 ( in  uint input,
 }
 
 
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 bool
-bisect_contour ( in samplerBuffer buffer,
+bisect_contour ( in samplerBuffer data,
                  in vec2          uv,
                  in int           id,
                  in int           intervals,
@@ -41,7 +46,7 @@ bisect_contour ( in samplerBuffer buffer,
   while ( id_min <= id_max && !preclassified )
   {
     int id    = id_min + (id_max - id_min) / int(2);
-    vec4 p    = texelFetch(buffer, id);
+    vec4 p    = texelFetch(data, id);
     
     vec2  u   = unpackHalf2x16 ( floatBitsToUint ( p.z ) );
     uvec4 tmp = intToUInt4 ( floatBitsToUint ( p.w ) );
@@ -91,13 +96,13 @@ bisect_contour ( in samplerBuffer buffer,
 
 ///////////////////////////////////////////////////////////////////////////////
 bool
-contour_binary_search ( in samplerBuffer buffer,
+contour_binary_search ( in samplerBuffer data,
                         in vec2          uv,
                         in int           id,
                         in int           intervals,
                         in bool          uincreasing,
-                        inout int        intersections,
-                        inout int        curveindex )
+                        inout int     intersections,
+                        inout int     curveindex )
 {
   int id_min = id;
   int id_max = id + intervals - 1;
@@ -108,7 +113,7 @@ contour_binary_search ( in samplerBuffer buffer,
   while ( id_min <= id_max )
   {
     int id = id_min + (id_max - id_min) / int(2);
-    tmp = texelFetch(buffer, id );
+    tmp = texelFetch(data, id );
 
     if ( uv[1] >= tmp[0] && uv[1] <= tmp[1])
     {
@@ -171,7 +176,7 @@ contour_binary_search ( in samplerBuffer buffer,
 
 
 bool
-trim ( in samplerBuffer partition,
+trim ( in samplerBuffer trimpartition,
        in samplerBuffer contourlist,
        in samplerBuffer curvelist,
        in samplerBuffer curvedata,
@@ -179,12 +184,12 @@ trim ( in samplerBuffer partition,
        in vec2          uv, 
        in int           id, 
        in int           trim_outer, 
-       inout int        iters,
+       inout int     iters,
        in float         tolerance,
        in int           max_iterations )
 {
   int total_intersections  = 0;
-  int v_intervals          = int ( floatBitsToUint ( texelFetch ( partition, id ).x ) );
+  int v_intervals          = int ( floatBitsToUint ( texelFetch ( trimpartition, id ).x ) );
 
   // if there is no partition in vertical(v) direction -> return
   if ( v_intervals == 0) 
@@ -192,7 +197,7 @@ trim ( in samplerBuffer partition,
     return false;
   }
     
-  vec4 domaininfo2 = texelFetch ( partition, id+1 );
+  vec4 domaininfo2 = texelFetch ( trimpartition, id+1 );
 
   // classify against whole domain
   if ( uv[0] > domaininfo2[1] || uv[0] < domaininfo2[0] ||
@@ -202,7 +207,7 @@ trim ( in samplerBuffer partition,
   }
 
   vec4 vinterval = vec4(0.0, 0.0, 0.0, 0.0);
-  bool vinterval_found = binary_search ( partition, uv[1], id + 2, v_intervals, vinterval );
+  bool vinterval_found = binary_search ( trimpartition, uv[1], id + 2, v_intervals, vinterval );
 
   //if ( !vinterval_found ) {
   //  return bool(trim_outer);
@@ -211,9 +216,9 @@ trim ( in samplerBuffer partition,
   int celllist_id = int(floatBitsToUint(vinterval[2]));
   int ncells      = int(floatBitsToUint(vinterval[3]));
 
-  vec4 celllist_info  = texelFetch(partition, int(celllist_id) );
+  vec4 celllist_info  = texelFetch(trimpartition, int(celllist_id) );
   vec4 cell           = vec4(0.0);
-  bool cellfound      = binary_search   (partition, uv[0], celllist_id + 1, int(ncells), cell );
+  bool cellfound      = binary_search   (trimpartition, uv[0], celllist_id + 1, int(ncells), cell );
 
   //if (!cellfound) 
   //{
