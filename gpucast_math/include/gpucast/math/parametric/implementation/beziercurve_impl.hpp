@@ -662,9 +662,12 @@ namespace gpucast { namespace math {
                                   interval<value_type> const& para_rng,
                                   std::size_t max_iters ) const
   {
+    assert(weak_monotonic(std::size_t fx));
+
+    // determine pmin and pmax
     point_t pmin;
     point_t pmax;
-
+    
     if (para_rng.minimum() != 0.0) {
       evaluate(para_rng.minimum(), pmin, horner<point_t>());
     } else {
@@ -696,7 +699,7 @@ namespace gpucast { namespace math {
       evaluate(root, pi, horner<point_t>());
 
       if (point[x] < pi[x]) { // check early intersect
-        if (( inc_dx &&  inc_dy && point[fx] > pi[fx])  ||
+        if (( inc_dx &&  inc_dy && point[fx] > pi[fx]) ||
             (!inc_dx &&  inc_dy && point[fx] < pi[fx]) ||
             ( inc_dx && !inc_dy && point[fx] < pi[fx]) ||
             (!inc_dx && !inc_dy && point[fx] > pi[fx])){
@@ -717,12 +720,14 @@ namespace gpucast { namespace math {
       }
 
       // continue bisection
-      if (pi[fx] > point[fx]) {
+      if ( inc_dy && pi[fx] > point[fx] ||
+          !inc_dy && pi[fx] < point[fx]) {
         umax = root;
       } else {
         umin = root;
       }
     }
+
     iters = max_iters;
     if (pi[x] > point[x]) {
       intersects = true;

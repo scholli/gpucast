@@ -43,6 +43,10 @@ newton(inout vec2       uv,
   } 
 
   // return if convergence was reached
-  return !(length(Fuv) > epsilon || uv[0] < 0.0 || uv[0] > 1.0 || uv[1] < 0.0 || uv[1] > 1.0);
+  return !(length(Fuv) > epsilon) || 
+         uv[0] < 0.0 || 
+         uv[0] > 1.0 || 
+         uv[1] < 0.0 || 
+         uv[1] > 1.0;
 }
 

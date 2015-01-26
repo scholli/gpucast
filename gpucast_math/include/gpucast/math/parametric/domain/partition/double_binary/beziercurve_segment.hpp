@@ -101,7 +101,7 @@ private :
 };
 
 template <typename point_type>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::beziercurve_segment<point_type> const& );
+std::ostream& operator<<(std::ostream& os, gpucast::math::domain::beziercurve_segment<point_type> const&);
 
     } // namespace domain
   } // namespace math

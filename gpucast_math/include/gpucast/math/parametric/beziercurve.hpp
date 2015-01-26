@@ -164,7 +164,7 @@ namespace gpucast { namespace math {
     point_iterator        begin       ();
     point_iterator        end         ();
     const_point_iterator  begin       () const;
-    const_point_iterator  end         ()   const;
+    const_point_iterator  end         () const;
 
     // access to starting and endpoint
     point_t&              front       ();

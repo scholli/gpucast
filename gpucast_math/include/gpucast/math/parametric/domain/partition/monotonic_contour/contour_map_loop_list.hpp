@@ -22,7 +22,7 @@ namespace gpucast {
     namespace domain {
 
       template <typename value_t>
-      class loop_list : public contour_map_base<value_t>
+      class contour_map_loop_list : public contour_map_base<value_t>
       {
       public: // typedef / enums
 
@@ -47,17 +47,26 @@ namespace gpucast {
 
       private: // internal/auxilliary methods
 
+        bool _is_child(contour_type const& parent
+
       protected: // attributes
+
+        struct trimloop {
+          contour_type          contour;
+          std::vector<trimloop> children;
+        };
+
+        trimloop outer;
 
       };
 
       template <typename value_t>
-      std::ostream& operator<<(std::ostream& os, gpucast::math::contour_map_kd<value_t> const& rhs);
+      std::ostream& operator<<(std::ostream& os, gpucast::math::domain::contour_map_loop_list<value_t> const& rhs);
 
     } // namespace domain
   } // namespace math
 } // namespace gpucast 
 
-#include "contour_map_kd_impl.hpp"
+#include "contour_map_loop_list_impl.hpp"
 
-#endif // GPUCAST_MATH_CONTOUR_MAP_KD_HPP
+#endif // GPUCAST_MATH_CONTOUR_MAP_LOOP_LIST_HPP

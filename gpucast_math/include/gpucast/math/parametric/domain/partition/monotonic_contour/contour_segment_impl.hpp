@@ -25,6 +25,7 @@ contour_segment<value_t>::contour_segment ( curve_ptr_iterator_t begin,
    _continous(false)
 {
   _determine_monotony();
+  _continous = is_continous();
   _update_bbox();
 }
 
@@ -56,7 +57,7 @@ contour_segment<value_t>::bbox () const
 /////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
 bool
-contour_segment<value_t>::continous () const
+contour_segment<value_t>::is_continous() const
 {
   if ( _curves.empty() )
   {
@@ -74,6 +75,8 @@ contour_segment<value_t>::continous () const
         {
           return false;
         }
+        ++snd;
+        ++fst;
       }
       return true;
     } else {
@@ -85,7 +88,7 @@ contour_segment<value_t>::continous () const
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-bool contour_segment<value_t>::increasing ( typename point_type::coordinate_type const& c ) const
+bool contour_segment<value_t>::is_increasing ( typename point_type::coordinate_type const& c ) const
 {
   for ( auto curve : _curves )
   {
@@ -110,6 +113,49 @@ contour_segment<value_t>::is_constant ( typename point_type::coordinate_type con
     }
   }
   return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+bool                  
+contour_segment<value_t>::right_of(point_type const& origin) const
+{
+  auto contour_segment_bbox = bbox();
+
+  // origin in contour's v-interval
+  if (origin[point_type::v] >= contour_segment_bbox.min[point_type::v] &&
+      origin[point_type::v] <= contour_segment_bbox.max[point_type::v])
+  {
+    unsigned intersections_on_right = 0;
+
+    for (auto const& curve : _curves)
+    {
+      contour_segment<value_t>::bbox_type curve_bbox;
+      curve->bbox_simple(curve_bbox);
+
+      // origin in curve's v-interval --> try to intersect
+      if (origin[point_type::v] >= contour_segment_bbox.min[point_type::v] &&
+          origin[point_type::v] <= contour_segment_bbox.max[point_type::v])
+      {
+        bool curve_on_right = 0;
+        std::size_t tmp = 0;
+
+        curve->optbisect(origin, point_type::v, point_type::u, curve_on_right, tmp);
+
+        if (curve_on_right)
+        {
+          ++intersections_on_right;
+        }
+      }
+    }
+
+    // monotonic_segment can have only one intersection
+    return intersections_on_right == 1;
+
+  } else {
+    return false;
+  }
+  
 }
 
 
@@ -187,7 +233,32 @@ contour_segment<value_t>::print ( std::ostream& os ) const
 template <typename value_t>
 void contour_segment<value_t>::_determine_monotony ()
 {
+  if (_curves.empty()) {
+    _monotony = unclassified;
+    return;
+  }
+  else {
+    bool u_mono = true;
+    bool v_mono = true;
 
+    bool u_increasing = _curves.front()->is_increasing(point_type::u);
+    bool v_increasing = _curves.front()->is_increasing(point_type::v);
+
+    for (auto const& curve : _curves)
+    {
+      if (u_increasing != curve->is_increasing(point_type::u)) {
+        u_mono = false;
+      }
+      if (v_increasing != curve->is_increasing(point_type::v)) {
+        v_mono = false;
+      }
+    }
+
+    if (u_mono && v_mono)   _monotony = bi_monotonic;
+    if (u_mono && !v_mono)  _monotony = u_monotonic;
+    if (!u_mono && v_mono)  _monotony = v_monotonic;
+    if (!u_mono && !v_mono) _monotony = unclassified;
+  }
 }
 
 
@@ -210,7 +281,7 @@ void contour_segment<value_t>::_update_bbox ()
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::contour_segment<value_t> const& rhs)
+std::ostream& operator<<(std::ostream& os,  contour_segment<value_t> const& rhs)
 {
   rhs.print(os);
   return os;

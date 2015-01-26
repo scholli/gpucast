@@ -115,7 +115,7 @@ namespace gpucast {
   };
 
 template <typename value_type>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::uniform_cell<value_type> const& cell);
+std::ostream& operator<<(std::ostream& os, gpucast::math::domain::uniform_cell<value_type> const& cell);
 
 } // namespace domain
 } // namespace math

@@ -114,13 +114,54 @@ contour<value_t>::curves() const
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
+typename contour<value_t>::bbox_type const&       
+contour<value_t>::bbox() const
+{
+  if (_curves.empty()) throw std::runtime_error("contour<value_t>::bbox(): Invalid bbox. No curves.");
+
+  bbox_type bbox;
+  _curves.front().bbox_simple(bbox);
+
+  for (auto const& curve : _curves)
+  {
+    bbox_type b;
+    curve.bbox_simple(b);
+    bbox.merge(b);
+  }
+
+  return bbox;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+bool                  
+contour<value_t>::is_inside(point_type const& origin) const
+{
+  // convert to monotonic contour segments
+  std::vector<contour_segment_ptr> monotonic_segments;
+  monotonize(monotonic_segments);
+
+  // do point-in-polygon test with monotonic segments
+  unsigned intersections_to_right = 0;
+
+  for (auto const& segment : monotonic_segments) {
+    intersections_to_right += unsigned(segment->right_of(origin));
+  }
+
+  return intersections_to_right % 2 == 1;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
 template <typename contour_segment_ptr_container>
 void contour<value_t>::monotonize ( contour_segment_ptr_container& target ) const
 {
   std::vector<curve_type> contour_of_bimonotonic_curves;
 
   // split contour at all extremas
-  for ( auto c : _curves )
+  for ( auto const& c : _curves )
   {
     // identify extrema
     std::set<value_type> t_extrema;
@@ -173,7 +214,8 @@ void contour<value_t>::monotonize ( contour_segment_ptr_container& target ) cons
   // flush last contour
   if ( !current_contour.empty() )
   {
-    target.push_back ( contour_segment_ptr ( new contour_segment_type ( current_contour.begin(), current_contour.end() ) ) );
+    auto new_segment = std::make_shared<contour_segment_type>(current_contour.begin(), current_contour.end());
+    target.push_back(new_segment);
   }
 }
 
@@ -189,7 +231,7 @@ void contour<value_t>::print ( std::ostream& os ) const
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::contour<value_t> const& rhs)
+std::ostream& operator<<(std::ostream& os,  contour<value_t> const& rhs)
 {
   rhs.print(os);
   return os;

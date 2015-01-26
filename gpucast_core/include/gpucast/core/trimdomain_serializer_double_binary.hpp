@@ -13,7 +13,7 @@
 #define GPUCAST_CORE_TRIMDOMAIN_SERIALIZER_DOUBLE_BINARY_HPP
 
 // header, system
-#include <gpucast/math/parametric/domain/partition.hpp>
+#include <gpucast/math/parametric/domain/partition/double_binary/partition.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
@@ -95,7 +95,7 @@ trimdomain_serializer_double_binary::serialize ( trimdomain_ptr const&          
 
   // copy curves to double binary partition
   trimdomain::curve_container curves = input_domain->curves();
-  gpucast::math::partition<trimdomain_serializer::point_type>  input_partition ( curves.begin(), curves.end() );
+  gpucast::math::domain::partition<trimdomain_serializer::point_type>  input_partition ( curves.begin(), curves.end() );
 
   // initialize partition
   input_partition.initialize();
@@ -130,7 +130,7 @@ trimdomain_serializer_double_binary::serialize ( trimdomain_ptr const&          
                                        unsigned_bits_as_float ( address_type (v->size()) ),
                                        0 ) );
 
-    for ( gpucast::math::partition<gpucast::math::point2d>::cell_ptr_type const& c : *v )
+    for ( gpucast::math::domain::partition<gpucast::math::point2d>::cell_ptr_type const& c : *v )
     {
       assert ( c->intersections() < std::numeric_limits<address_type>::max());
       assert ( output_curvelists.size() < std::numeric_limits<address_type>::max());
@@ -143,7 +143,7 @@ trimdomain_serializer_double_binary::serialize ( trimdomain_ptr const&          
 
       output_curvelists.push_back ( float4_type ( unsigned_bits_as_float ( address_type (c->size() ) ), 0, 0, 0) );
 
-      for ( gpucast::math::partition<gpucast::math::point2d>::curve_segment_ptr const& cv : *c)
+      for ( gpucast::math::domain::partition<gpucast::math::point2d>::curve_segment_ptr const& cv : *c)
       {
         address_type curve_index = trimdomain_serializer::serialize (cv->curve(), referenced_curves, output_curves );
         //address_type order_and_u_increase = cv->curve()->is_increasing(point_type::u) ? explicit_type_conversion<size_t, int>(cv->curve()->order()) : -explicit_type_conversion<size_t, int>(cv->curve()->order());

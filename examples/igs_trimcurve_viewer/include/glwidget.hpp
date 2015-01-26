@@ -49,8 +49,10 @@ public:
               contour_binary_classification = 4, 
               contour_map_partition         = 5, 
               contour_map_classification    = 6, 
-              minification                  = 7, 
-              count                         = 8 };
+              contour_map_loop_list         = 7,
+              minification                  = 8, 
+              sampled                       = 9,
+              count                         = 10 };
 
 public : 
 
@@ -66,6 +68,9 @@ public Q_SLOTS :
   void                    generate_original_view        ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    generate_double_binary_view   ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    generate_bboxmap_view         ( gpucast::beziersurface::trimdomain_ptr const& domain );
+  void                    generate_loop_list_view       ( gpucast::beziersurface::trimdomain_ptr const& domain );
+  void                    generate_sampled_view         ( gpucast::beziersurface::trimdomain_ptr const& domain );
+
   void                    serialize_double_binary       ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    serialize_contour_binary      ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    serialize_contour_map         ( gpucast::beziersurface::trimdomain_ptr const& domain );
@@ -76,6 +81,8 @@ public Q_SLOTS :
   trimdomain_ptr          get_domain                    ( std::string const& name, std::size_t const index ) const;
   std::size_t             get_objects                   () const;
   std::size_t             get_surfaces                  ( std::string const& name ) const;
+
+  void                    recompile                     ();
 
 protected:
 
@@ -90,7 +97,6 @@ private : // helper methods
 
   void                    _init ();
   void                    _initialize_shader            ();
-  gpucast::gl::program*          _init_program                 ( std::string const& vshader_file, std::string const& fshader_file );
 
 private : // attributes                     
                                             
@@ -107,8 +113,8 @@ private : // attributes
   std::size_t                             _current_surface;
 
   // simple partition views
-  gpucast::math::matrix4f                          _projection;
-  gpucast::gl::program*                          _partition_program;
+  gpucast::math::matrix4f                        _projection;
+  std::shared_ptr<gpucast::gl::program>          _partition_program;
   std::vector<gpucast::gl::line*>                _curve_geometry;
 
   // commonly used resources
@@ -119,14 +125,14 @@ private : // attributes
   gpucast::gl::plane*                            _quad;
 
   // double binary resources
-  gpucast::gl::program*                          _db_program;
+  std::shared_ptr<gpucast::gl::program>          _db_program;
   gpucast::gl::texturebuffer*                    _db_trimdata;
   gpucast::gl::texturebuffer*                    _db_celldata;
   gpucast::gl::texturebuffer*                    _db_curvelist;
   gpucast::gl::texturebuffer*                    _db_curvedata;
 
   // contourmap_binary resources
-  gpucast::gl::program*                          _cmb_program;
+  std::shared_ptr<gpucast::gl::program>          _cmb_program;
   gpucast::gl::texturebuffer*                    _cmb_partition;
   gpucast::gl::texturebuffer*                    _cmb_contourlist;
   gpucast::gl::texturebuffer*                    _cmb_curvelist;
@@ -134,7 +140,7 @@ private : // attributes
   gpucast::gl::texturebuffer*                    _cmb_pointdata;
 
   // contourmap_kd resources
-  gpucast::gl::program*                          _kd_program;
+  std::shared_ptr<gpucast::gl::program>          _kd_program;
   gpucast::gl::texturebuffer*                    _kd_partition;
   gpucast::gl::texturebuffer*                    _kd_contourlist;
   gpucast::gl::texturebuffer*                    _kd_curvelist;

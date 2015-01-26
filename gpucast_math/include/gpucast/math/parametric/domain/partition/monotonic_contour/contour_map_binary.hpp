@@ -74,12 +74,12 @@ class contour_map_binary : public contour_map_base<value_t>
 
   protected : // attributes
 
-    cell_partition _cells;
+    cell_partition _partition;
 
 };
 
 template <typename value_t>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::contour_map_binary<value_t> const& rhs);
+std::ostream& operator<<(std::ostream& os,  contour_map_binary<value_t> const& rhs);
 
     } // namespace domain
   } // namespace math

@@ -16,13 +16,10 @@
 #include <iostream>
 
 #include <gpucast/math/parametric/beziercurve.hpp>
-#include <gpucast/math/parametric/domain/contour_map_binary.hpp>
-
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
-#include <boost/shared_ptr.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_binary.hpp>
 
 using namespace gpucast::math;
+using namespace gpucast::math::domain;
 
 SUITE (polynomial)
 {
@@ -44,7 +41,7 @@ SUITE (polynomial)
     bc3.add(point2d(0, 7));
     bc3.add(point2d(0, 0));
 
-    std::vector<contour<double>::curve_ptr> loop1;                                          
+    std::vector<domain::contour<double>::curve_ptr> loop1;                                          
     loop1.push_back ( contour<double>::curve_ptr ( new contour<double>::curve_type(bc1) ) );
     loop1.push_back ( contour<double>::curve_ptr ( new contour<double>::curve_type(bc2) ) );
     loop1.push_back ( contour<double>::curve_ptr ( new contour<double>::curve_type(bc3) ) );

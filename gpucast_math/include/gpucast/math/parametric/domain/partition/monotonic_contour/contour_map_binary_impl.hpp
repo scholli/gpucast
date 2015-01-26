@@ -37,7 +37,7 @@ contour_map_binary<value_t>::contour_cell::print ( std::ostream& os ) const
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
 contour_map_binary<value_t>::contour_map_binary ()
-  : _cells()
+  : _partition()
 {}
 
 
@@ -52,7 +52,16 @@ template <typename value_t>
 void
 contour_map_binary<value_t>::initialize ()
 {
-  _cells.clear();
+  // make sure bi-monotonic contour segments are v-monotonic increasing
+  for (auto const& c : _contour_segments)
+  {
+    if (!c->is_increasing(point_type::v))
+    {
+      c->invert();
+    }
+  }
+
+  _partition.clear();
 
   std::for_each ( this->_contour_segments.begin(), this->_contour_segments.end(), std::bind ( &base_type::contour_segment_type::clip_horizontal, std::placeholders::_1 ) );
 
@@ -98,7 +107,7 @@ contour_map_binary<value_t>::initialize ()
 
       cells_in_v_interval.cells.push_back ( cell );
     }
-    _cells.push_back ( cells_in_v_interval );
+    _partition.push_back ( cells_in_v_interval );
   }
 }
 
@@ -107,7 +116,7 @@ template <typename value_t>
 typename contour_map_binary<value_t>::cell_partition const&
 contour_map_binary<value_t>::partition () const
 {
-  return _cells;
+  return _partition;
 }
 
 
@@ -117,8 +126,8 @@ void
 contour_map_binary<value_t>::print ( std::ostream& os ) const
 {
   base_type::print(os);
-  os << "vintervals : " << _cells.size() << std::endl;
-  for ( contour_interval const& interval : _cells )
+  os << "vintervals : " << _partition.size() << std::endl;
+  for ( contour_interval const& interval : _partition )
   {
     os << "number of uintervals in vinterval : " << interval.cells.size() << std::endl;
   }
@@ -127,7 +136,7 @@ contour_map_binary<value_t>::print ( std::ostream& os ) const
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::contour_map_binary<value_t> const& rhs)
+std::ostream& operator<<(std::ostream& os, contour_map_binary<value_t> const& rhs)
 {
   rhs.print(os);
   return os;

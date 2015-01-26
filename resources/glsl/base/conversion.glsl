@@ -1,3 +1,6 @@
+#ifndef GPUCAST_GLSL_CONVERSION
+#define GPUCAST_GLSL_CONVERSION
+
 /********************************************************************************
 *
 * Copyright (C) 2007-2011 Bauhaus-Universitaet Weimar
@@ -50,3 +53,20 @@ bvec4 uintToBvec4 ( in uint input )
   return result;
 }
 
+uvec2 intToUInt2(in uint input)
+{
+  uvec2 result;
+  result.y = (input & 0xFFFF0000) >> 16U;
+  result.x = (input & 0x0000FFFF);
+  return result;
+}
+
+void intToUint8_24 ( in  uint input,
+                     out uint a,
+                     out uint b )
+{
+  b = (input & 0xFFFFFF00) >> 8U;
+  a = (input & 0x000000FF);
+}
+
+#endif

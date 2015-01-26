@@ -239,7 +239,7 @@ beziercurve_segment<point_type>::print ( std::ostream& os, std::string const& ad
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename point_type>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::beziercurve_segment<point_type> const& rhs)
+std::ostream& operator<<(std::ostream& os, beziercurve_segment<point_type> const& rhs)
 {
   rhs.print(os);
   return os;

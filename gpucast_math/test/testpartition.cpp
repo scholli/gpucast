@@ -19,10 +19,12 @@
 #include <gpucast/math/parametric/beziercurve.hpp>
 #include <gpucast/math/parametric/algorithm/decasteljau.hpp>
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
-#include <gpucast/math/parametric/domain/partition.hpp>
+
+#include <gpucast/math/parametric/domain/partition/double_binary/partition.hpp>
 
 
 using namespace gpucast::math;
+using namespace gpucast::math::domain;
 
 namespace
 {

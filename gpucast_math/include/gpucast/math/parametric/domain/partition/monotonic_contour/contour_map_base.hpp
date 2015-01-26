@@ -32,12 +32,13 @@ class contour_map_base
     typedef interval<value_type>                                    interval_type;
     
     typedef contour<value_type>                                     contour_type;
+    typedef std::vector<contour_type>                               contour_container;
     typedef contour_segment<value_type>                             contour_segment_type;
-    typedef std::shared_ptr<contour_segment_type>                 contour_segment_ptr;
+    typedef std::shared_ptr<contour_segment_type>                   contour_segment_ptr;
     typedef std::vector<contour_segment_ptr>                        contour_segment_container;
 
     typedef beziercurve<point_type>                                 curve_type;
-    typedef std::shared_ptr<curve_type>                           curve_ptr;
+    typedef std::shared_ptr<curve_type>                             curve_ptr;
 
   public : // c'tor / d'tor
 
@@ -48,6 +49,7 @@ class contour_map_base
 
     void                              add                           ( contour_type const& loop );
     void                              clear                         ();
+    contour_container const&          loops                         () const;
 
     contour_segment_container const&  monotonic_segments   () const;
 
@@ -87,15 +89,17 @@ class contour_map_base
   protected : // attributes
 
     // geometrical data
-    contour_segment_container   _contour_segments;
+    contour_container                 _loops;
+
+    contour_segment_container         _contour_segments;
 
     // total bounds of domain
-    bbox_type                   _bounds;
+    bbox_type                         _bounds;
 };
 
 
 template <typename value_t>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::contour_map_base<value_t> const& rhs);
+std::ostream& operator<<(std::ostream& os, contour_map_base<value_t> const& rhs);
 
     } // namespace domain
   } // namespace math

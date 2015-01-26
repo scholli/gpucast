@@ -1,28 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////
-uvec4 intToUInt4 ( in uint input )
-{
-  uvec4 result;
-  result.w = (input & 0xFF000000) >> 24U;
-  result.z = (input & 0x00FF0000) >> 16U;
-  result.y = (input & 0x0000FF00) >> 8U;
-  result.x = (input & 0x000000FF);
-  return result;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void intToUint8_24 ( in  uint input,
-                     out uint a,
-                     out uint b )
-{
-  b = (input & 0xFFFFFF00) >> 8U;
-  a = (input & 0x000000FF);
-}
-
-
-
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 bool
@@ -235,7 +210,7 @@ trim ( in samplerBuffer trimpartition,
   {
     vec2 contour    = texelFetch ( contourlist, contourlist_id + i ).xy;
 
-    uvec4 ncurves_uincreasing = intToUInt4 ( floatBitsToUint(contour.x) );
+    uvec2 ncurves_uincreasing = intToUInt2 ( floatBitsToUint(contour.x) );
     bool contour_uincreasing  = ncurves_uincreasing.y > 0;
     int curves_in_contour     = int(ncurves_uincreasing.x);
     int  curvelist_id         = int(floatBitsToUint(contour.y));

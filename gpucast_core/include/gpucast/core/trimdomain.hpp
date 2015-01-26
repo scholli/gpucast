@@ -25,8 +25,8 @@
 
 #include <gpucast/math/parametric/point.hpp>
 #include <gpucast/math/parametric/beziercurve.hpp>
-#include <gpucast/math/parametric/domain/contour.hpp>
-#include <gpucast/math/parametric/domain/contour_segment.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_segment.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
@@ -41,7 +41,7 @@ class GPUCAST_CORE trimdomain
     typedef double                                     value_type;                               
     typedef gpucast::math::point<double,2>             point_type;
 
-    typedef gpucast::math::contour_segment<value_type> contour_segment_type;
+    typedef gpucast::math::domain::contour_segment<value_type> contour_segment_type;
     typedef std::shared_ptr<contour_segment_type>      contour_segment_ptr;
     typedef std::shared_ptr<trimdomain>                domain_ptr;
 
@@ -50,7 +50,7 @@ class GPUCAST_CORE trimdomain
     typedef std::vector<curve_ptr>                     curve_container;
 
     typedef gpucast::math::axis_aligned_boundingbox<point_type> bbox_type;
-    typedef gpucast::math::contour<value_type>         contour_type;
+    typedef gpucast::math::domain::contour<value_type> contour_type;
 
     typedef std::vector<contour_type>                  trimloop_container;
 
@@ -79,6 +79,7 @@ class GPUCAST_CORE trimdomain
 
     curve_container           curves        () const;
     std::size_t               loop_count    () const;
+
     trimloop_container const& loops         () const;
 
     void                      print         ( std::ostream& os ) const;

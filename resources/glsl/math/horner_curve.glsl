@@ -1,3 +1,8 @@
+#ifndef GPUCAST_GLSL_HORNER_CURVE
+#define GPUCAST_GLSL_HORNER_CURVE
+
+#include "resources/glsl/common/config.glsl"
+
 /*******************************************************************************
  * Evaluate Curve using modificated horner algorithm in Bernstein basis        *
  *   - points are supposed to be in hyperspace : [wx, wy, w]                   *
@@ -35,3 +40,5 @@ evaluateCurve ( in samplerBuffer data,
   p[0] = p[0]/p[2];
   p[1] = p[1]/p[2];
 }
+
+#endif

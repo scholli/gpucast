@@ -37,21 +37,14 @@ template <typename value_t>
 void
 contour_map_base<value_t>::add ( contour_type const& loop )
 {
+  // store original loop
+  _loops.push_back(loop);
+
   // split into bi-monotonic contour segments
   loop.monotonize ( _contour_segments );
 
   // update boundary
   update_bounds();
-
-  // make sure bi-monotonic contour segments are v-monotonic increasing
-  for ( auto c : _contour_segments ) 
-  {
-    if ( !c->increasing ( point_type::v ) )
-    {
-      c->invert();
-    }
-  }
-
 }
 
 
@@ -61,6 +54,15 @@ void contour_map_base<value_t>::clear ()
 {
   _contour_segments.clear();
   update_bounds();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+typename contour_map_base<value_t>::contour_container const&
+contour_map_base<value_t>::loops() const
+{
+  return _loops;
 }
 
 

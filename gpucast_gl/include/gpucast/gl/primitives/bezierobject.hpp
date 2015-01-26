@@ -58,7 +58,8 @@ public :
   void            raycasting(bool enable);
   bool            raycasting() const;
 
-  void            trim_approach(beziersurfaceobject::trimapproach type);
+  beziersurfaceobject::trim_approach_t trim_approach() const;
+  void            trim_approach(beziersurfaceobject::trim_approach_t type);
 
   void            set_material(material const& m);
   material const& get_material() const;
@@ -70,40 +71,40 @@ private :
   void _upload(gpucast::beziersurfaceobject const& b);
 
   // render parameters
-  unsigned                           _iterations    = 6;
-  float                              _epsilon       = 0.001f;
-  bool                               _culling       = true;
-  bool                               _trimming      = true;
-  bool                               _raycasting    = true;
-  beziersurfaceobject::trimapproach  _trim_approach = beziersurfaceobject::double_binary;
+  unsigned                              _iterations    = 6;
+  float                                 _epsilon       = 0.001f;
+  bool                                  _culling       = true;
+  bool                                  _trimming      = true;
+  bool                                  _raycasting    = true;
+  beziersurfaceobject::trim_approach_t  _trim_approach = beziersurfaceobject::double_binary;
   
   // object properties
-  material                           _material;
+  material                              _material;
 
   // ressources
-  std::size_t                        _size;
+  std::size_t                           _size;
 
-  gpucast::gl::arraybuffer           _attribarray0;
-  gpucast::gl::arraybuffer           _attribarray1;
-  gpucast::gl::arraybuffer           _attribarray2;
-  gpucast::gl::arraybuffer           _attribarray3;
+  gpucast::gl::arraybuffer              _attribarray0;
+  gpucast::gl::arraybuffer              _attribarray1;
+  gpucast::gl::arraybuffer              _attribarray2;
+  gpucast::gl::arraybuffer              _attribarray3;
 
-  gpucast::gl::elementarraybuffer    _indexarray;
+  gpucast::gl::elementarraybuffer       _indexarray;
 
-  gpucast::gl::texturebuffer         _controlpoints;
-                                     
-  gpucast::gl::texturebuffer         _cmb_partition;
-  gpucast::gl::texturebuffer         _cmb_contourlist;
-  gpucast::gl::texturebuffer         _cmb_curvelist;
-  gpucast::gl::texturebuffer         _cmb_curvedata;
-  gpucast::gl::texturebuffer         _cmb_pointdata;
+  gpucast::gl::texturebuffer            _controlpoints;
+                                        
+  gpucast::gl::texturebuffer            _cmb_partition;
+  gpucast::gl::texturebuffer            _cmb_contourlist;
+  gpucast::gl::texturebuffer            _cmb_curvelist;
+  gpucast::gl::texturebuffer            _cmb_curvedata;
+  gpucast::gl::texturebuffer            _cmb_pointdata;
 
-  gpucast::gl::texturebuffer         _db_partition;
-  gpucast::gl::texturebuffer         _db_celldata;
-  gpucast::gl::texturebuffer         _db_curvelist;
-  gpucast::gl::texturebuffer         _db_curvedata;
+  gpucast::gl::texturebuffer            _db_partition;
+  gpucast::gl::texturebuffer            _db_celldata;
+  gpucast::gl::texturebuffer            _db_curvelist;
+  gpucast::gl::texturebuffer            _db_curvedata;
 
-  gpucast::gl::vertexarrayobject     _vao;
+  gpucast::gl::vertexarrayobject        _vao;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -152,17 +153,12 @@ public: // methods
                  
   void           apply_uniforms();
 
-  void           init_program(std::shared_ptr<gpucast::gl::program>&  p,
-                              std::string const& vertexshader_filename,
-                              std::string const& fragmentshader_filename);
+  std::shared_ptr<gpucast::gl::program> init_program(std::string const& vertexshader_code,
+                                                     std::string const& fragmentshader_code);
 
 private : // methods
 
   void _init_program();
-
-  bool _path_to_file(std::string const& filename, std::vector<std::string> const& rootdirs, std::string& result) const;
-
-
 
 private: // attributes
 

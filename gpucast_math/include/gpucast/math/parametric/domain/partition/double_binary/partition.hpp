@@ -192,7 +192,7 @@ class partition
 
 
 template <typename point_type>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::partition<point_type> const& rhs);
+std::ostream& operator<<(std::ostream& os, gpucast::math::domain::partition<point_type> const& rhs);
 
     } // namespace domain
   } // namespace math

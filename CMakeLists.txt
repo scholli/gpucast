@@ -23,6 +23,11 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+        SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "Default install
+                 prefix" FORCE)
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT) 
+
 ################################################################
 # gpucast Configuration
 ################################################################

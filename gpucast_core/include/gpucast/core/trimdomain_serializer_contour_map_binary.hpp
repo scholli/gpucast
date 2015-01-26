@@ -13,7 +13,7 @@
 #define GPUCAST_CORE_TRIMDOMAIN_SERIALIZER_CONTOUR_MAP_BINARY_HPP
 
 // header, system
-#include <gpucast/math/parametric/domain/contour_map_binary.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_binary.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
@@ -29,8 +29,8 @@ class trimdomain_serializer_contour_map_binary : public trimdomain_serializer
 {
   public : // enums/typedefs
  
-    typedef trimdomain::value_type                                              value_type;
-    typedef gpucast::math::contour_map_binary<value_type>::contour_segment_ptr  contour_segment_ptr;
+    typedef trimdomain::value_type                                                      value_type;
+    typedef gpucast::math::domain::contour_map_binary<value_type>::contour_segment_ptr  contour_segment_ptr;
 
   public : // methods
 
@@ -69,7 +69,7 @@ trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&     
                                                       std::vector<float>&                                     output_curvedata,
                                                       std::vector<float3_type>&                               output_pointdata ) const
 {
-  typedef gpucast::math::contour_map_binary<beziersurface::curve_point_type::value_type> contour_map_type;
+  typedef gpucast::math::domain::contour_map_binary<beziersurface::curve_point_type::value_type> contour_map_type;
   assert ( output_partition.size() < std::numeric_limits<address_type>::max() );
 
   // if already in buffer -> return index
@@ -98,7 +98,7 @@ trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&     
   output_partition[partition_index+1] = float4_type ( umin, umax, vmin, vmax );
   std::size_t vindex = partition_index + 2;
   
-  for ( auto vinterval : map.partition() )
+  for ( auto const& vinterval : map.partition() )
   {
     assert ( vinterval.cells.size() < std::numeric_limits<address_type>::max() );
 
@@ -114,7 +114,7 @@ trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&     
                                            0, 
                                            0 ) );
 
-    for ( auto cell : vinterval.cells )
+    for (auto const& cell : vinterval.cells)
     {
       address_type contourlist_id = explicit_type_conversion<std::size_t, unsigned>(output_contourlist.size());
       address_type type_and_contours = uint4ToUInt(0, cell.inside, explicit_type_conversion<size_t, address_type>(cell.overlapping_segments.size()), 0);
@@ -124,9 +124,10 @@ trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&     
                                              unsigned_bits_as_float(type_and_contours), 
                                              unsigned_bits_as_float(contourlist_id) ) );
 
-      for ( auto contour_segment : cell.overlapping_segments )
+      for (auto const& contour_segment : cell.overlapping_segments)
       { 
-        address_type ncurves_uincreasing = uint4ToUInt(explicit_type_conversion<size_t, address_type>(contour_segment->size()), contour_segment->increasing(point_type::u), 0, 0);
+        address_type ncurves_uincreasing = uint2x16ToUInt(explicit_type_conversion<size_t, address_type>(contour_segment->size()), 
+                                                          contour_segment->is_increasing(point_type::u));
         
         address_type curvelist_id = serialize_contour_segment ( contour_segment, referenced_contour_segments, referenced_curves, output_curvelist, output_curvedata, output_pointdata );
 

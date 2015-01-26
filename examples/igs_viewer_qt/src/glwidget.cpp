@@ -24,11 +24,14 @@
 #include <cctype>
 #include <typeinfo>
 
+#include <gpucast/core/config.hpp>
+
 #include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/util/init_glew.hpp>
 #include <gpucast/gl/util/timer.hpp>
 #include <gpucast/gl/util/vsync.hpp>
+#include <gpucast/gl/util/resource_factory.hpp>
 #include <gpucast/gl/error.hpp>
 
 #include <gpucast/math/parametric/point.hpp>
@@ -122,7 +125,9 @@ void
 glwidget::recompile ( )
 {
   gpucast::gl::bezierobject_renderer::instance().recompile();
-  gpucast::gl::bezierobject_renderer::instance().init_program(_fbo_program, "./gpucast_core/glsl/base/render_from_texture_sao.vert", "./gpucast_core/glsl/base/render_from_texture_sao.frag");
+
+  gpucast::gl::resource_factory program_factory;
+  _fbo_program = program_factory.create_program("resources/glsl/base/render_from_texture_sao.vert", "resources/glsl/base/render_from_texture_sao.frag");
 }
 
 
@@ -358,6 +363,19 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   {
     switch (key)
     {
+      case 'q':
+        if (gpucast::beziersurfaceobject::double_binary == o->trim_approach()) {
+          o->trim_approach(gpucast::beziersurfaceobject::contours_binary);
+          std::cout << "Switching trim approach to: contours_binary" << std::endl;
+        }
+        else {
+          if (gpucast::beziersurfaceobject::contours_binary == o->trim_approach()) {
+            o->trim_approach(gpucast::beziersurfaceobject::double_binary);
+            std::cout << "Switching trim approach to: double_binary" << std::endl;
+          }
+        }
+        
+        break;
       case 'I':
         o->max_newton_iterations(o->max_newton_iterations() + 1);
         break;

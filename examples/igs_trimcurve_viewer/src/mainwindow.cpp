@@ -52,13 +52,14 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   /////////////////////////////////////
   // control widget
   /////////////////////////////////////
-  //_controlwidget = new QWidget;
-  _controlwidget = new QWidget;
-  _list_object   = new QListWidget();
-  _list_surface  = new QListWidget();
-  _viewbox       = new QComboBox();
-  _label_fps     = new QLabel;
-  _label_mem     = new QLabel;
+  _controlwidget    = new QWidget;
+  _list_object      = new QListWidget();
+  _list_surface     = new QListWidget();
+  _viewbox          = new QComboBox();
+  _label_fps        = new QLabel;
+  _label_mem        = new QLabel;
+  _recompile_button = new QPushButton;
+  _recompile_button->setText("Recompile Shaders");
 
   QGridLayout* layout = new QGridLayout(this);
   _controlwidget->setLayout(layout);
@@ -69,30 +70,34 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   layout->addWidget(_list_object);
   layout->addWidget(_list_surface);
   layout->addWidget(_viewbox);
+  layout->addWidget(_recompile_button);
   layout->addWidget(_label_mem);
   layout->addWidget(_label_fps);
+  
 
   /////////////////////////////////////
   // view modes
   /////////////////////////////////////
-  _modes.insert ( std::make_pair ( glwidget::original                       ,"original" ) );
-  _modes.insert ( std::make_pair ( glwidget::double_binary_partition        ,"double_binary_partition" ) );
-  _modes.insert ( std::make_pair ( glwidget::double_binary_classification   ,"double_binary_classification" ) );
-  _modes.insert ( std::make_pair ( glwidget::contour_binary_partition       ,"contour_map_binary_partition" ) );
-  _modes.insert ( std::make_pair ( glwidget::contour_binary_classification  ,"contour_map_binary_classification" ) );
-  _modes.insert ( std::make_pair ( glwidget::contour_map_partition          ,"contour_map_partition" ) );
-  _modes.insert ( std::make_pair ( glwidget::contour_map_classification     ,"contour_map_classification" ) );
-  _modes.insert ( std::make_pair ( glwidget::minification                   ,"minification" ) );
+  _modes.insert(std::make_pair(glwidget::original, "original"));
+  _modes.insert(std::make_pair(glwidget::double_binary_partition, "double_binary_partition"));
+  _modes.insert(std::make_pair(glwidget::double_binary_classification, "double_binary_classification"));
+  _modes.insert(std::make_pair(glwidget::contour_binary_partition, "contour_map_binary_partition"));
+  _modes.insert(std::make_pair(glwidget::contour_binary_classification, "contour_map_binary_classification"));
+  _modes.insert(std::make_pair(glwidget::contour_map_partition, "contour_map_partition"));
+  _modes.insert(std::make_pair(glwidget::sampled, "sampled_view"));
+  _modes.insert(std::make_pair(glwidget::contour_map_classification, "contour_map_classification"));
+  _modes.insert(std::make_pair(glwidget::minification, "minification"));
 
   std::for_each ( _modes.begin(), _modes.end(), [&] ( std::map<glwidget::view, std::string>::value_type const& p ) { _viewbox->addItem(p.second.c_str()); } );
 
   /////////////////////////////////////
   // actions
   /////////////////////////////////////
-  connect(_action_loadfile,                 SIGNAL( triggered()),               this, SLOT( openfile() ) );
-  connect(_list_object,                     SIGNAL( itemSelectionChanged()),    this, SLOT( update_surfacelist() ) );
-  connect(_list_surface,                    SIGNAL( itemSelectionChanged()),    this, SLOT( update_view() ) );
-  connect(_viewbox,                         SIGNAL( currentIndexChanged (int)), this, SLOT( update_view() ) );
+  connect(_action_loadfile, SIGNAL(triggered()), this, SLOT(openfile()));
+  connect(_list_object, SIGNAL(itemSelectionChanged()), this, SLOT(update_surfacelist()));
+  connect(_list_surface, SIGNAL(itemSelectionChanged()), this, SLOT(update_view()));
+  connect(_viewbox, SIGNAL(currentIndexChanged(int)), this, SLOT(update_view()));
+  connect(_recompile_button, SIGNAL(clicked()), _glwindow, SLOT(recompile()));
   
   _controlwidget->show();
   this->show();

@@ -24,6 +24,7 @@
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QPushButton>
 
 #include <gpucast/core/nurbssurfaceobject.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
@@ -74,6 +75,7 @@ private: // attributes
   QComboBox*              _viewbox;
   QLabel*                 _label_fps;
   QLabel*                 _label_mem;
+  QPushButton*            _recompile_button;
 
   bezierobject_map        _objects;
   QListWidget*            _list_object;

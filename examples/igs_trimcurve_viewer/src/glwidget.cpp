@@ -32,6 +32,7 @@
 #include <gpucast/gl/util/contextinfo.hpp>
 #include <gpucast/gl/util/timer.hpp>
 
+#include <gpucast/core/config.hpp>
 #include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/arraybuffer.hpp>
@@ -39,6 +40,7 @@
 #include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/transferfunction.hpp>
+#include <gpucast/gl/util/resource_factory.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/unordered_map.hpp>
@@ -49,9 +51,11 @@
 #include <gpucast/core/trimdomain_serializer_double_binary.hpp>
 #include <gpucast/core/trimdomain_serializer_contour_map_binary.hpp>
 #include <gpucast/core/trimdomain_serializer_contour_map_kd.hpp>
+//#include <gpucast/core/trimdomain_serializer_loop_contour_list.hpp>
 
-#include <gpucast/math/parametric/domain/contour_map_binary.hpp>
-#include <gpucast/math/parametric/domain/partition.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_binary.hpp>
+//#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_loop_list.hpp>
+#include <gpucast/math/parametric/domain/partition/double_binary/partition.hpp>
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -92,22 +96,17 @@ glwidget::glwidget( int argc, char** argv, QGLFormat const& context_format, QWid
 ///////////////////////////////////////////////////////////////////////
 glwidget::~glwidget()
 {
-  if ( _partition_program         ) delete _partition_program;
-
-  if ( _db_program   ) delete _db_program   ;
   if ( _db_trimdata  ) delete _db_trimdata  ;
   if ( _db_celldata  ) delete _db_celldata  ;
   if ( _db_curvelist ) delete _db_curvelist ;
   if ( _db_curvedata ) delete _db_curvedata ;
 
-  if ( _cmb_program )    delete _cmb_program ;
   if ( _cmb_partition )  delete _cmb_partition ;
   if ( _cmb_contourlist ) delete _cmb_contourlist;
   if ( _cmb_curvelist   ) delete _cmb_curvelist  ;
   if ( _cmb_curvedata   ) delete _cmb_curvedata  ;
   if ( _cmb_pointdata   ) delete _cmb_pointdata  ;
 
-  if ( _kd_program )     delete _kd_program ;
   if ( _kd_partition )   delete _kd_partition ;
   if ( _kd_contourlist ) delete _kd_contourlist;
   if ( _kd_curvelist   ) delete _kd_curvelist  ;
@@ -305,6 +304,9 @@ glwidget::update_view ( std::string const& name, std::size_t const index, view c
         case contour_map_classification :
           serialize_contour_map ( domain );
           break;
+        case sampled:
+          generate_sampled_view(domain);
+          break;
         case minification  :
           // not implemented
           break;
@@ -313,11 +315,11 @@ glwidget::update_view ( std::string const& name, std::size_t const index, view c
       };
 
       _projection = gpucast::math::ortho(float(domain->nurbsdomain().min[gpucast::trimdomain::point_type::u] ), 
-                                float(domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] ), 
-                                float(domain->nurbsdomain().min[gpucast::trimdomain::point_type::v] ), 
-                                float(domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] ), 
-                                0.1f, 
-                                10.0f);
+                                         float(domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] ), 
+                                         float(domain->nurbsdomain().min[gpucast::trimdomain::point_type::v] ), 
+                                         float(domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] ), 
+                                         0.1f, 
+                                         10.0f);
     }
   }
 }
@@ -354,19 +356,19 @@ glwidget::generate_double_binary_view ( gpucast::beziersurface::trimdomain_ptr c
     add_gl_curve ( **curve, cpolygon_color );
   }
 
-  gpucast::math::partition<gpucast::beziersurface::curve_point_type>  partition ( curves.begin(), curves.end() );
+  gpucast::math::domain::partition<gpucast::beziersurface::curve_point_type>  partition ( curves.begin(), curves.end() );
   partition.initialize();
 
   for ( auto v = partition.begin(); v != partition.end(); ++v )
   {
     gpucast::math::bbox2d bbox ( gpucast::math::point2d ( (**v).get_horizontal_interval().minimum(), (**v).get_vertical_interval().minimum() ),
-                       gpucast::math::point2d ( (**v).get_horizontal_interval().maximum(), (**v).get_vertical_interval().maximum() ) );
+                                 gpucast::math::point2d ( (**v).get_horizontal_interval().maximum(), (**v).get_vertical_interval().maximum() ) );
       gpucast::math::vec4f cell_color ( 1.0f, 1.0f, 0.0f, 1.0f );
       add_gl_bbox ( bbox, cell_color ); 
     for ( auto c = (**v).begin(); c != (**v).end(); ++c )
     {
       gpucast::math::bbox2d bbox ( gpucast::math::point2d ( (**c).get_horizontal_interval().minimum(), (**c).get_vertical_interval().minimum() ),
-                         gpucast::math::point2d ( (**c).get_horizontal_interval().maximum(), (**c).get_vertical_interval().maximum() ) );
+                                   gpucast::math::point2d ( (**c).get_horizontal_interval().maximum(), (**c).get_vertical_interval().maximum() ) );
       gpucast::math::vec4f cell_color ( 0.0f, 1.0f, 0.0f, 1.0f );
       add_gl_bbox ( bbox, cell_color ); 
     }
@@ -378,15 +380,15 @@ glwidget::generate_double_binary_view ( gpucast::beziersurface::trimdomain_ptr c
 void                    
 glwidget::generate_bboxmap_view ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
-  gpucast::math::contour_map_binary<double> cmap;
+  gpucast::math::domain::contour_map_binary<double> cmap;
   for ( auto const& loop : domain->loops() )
   {
-    cmap.add ( gpucast::math::contour<double> ( loop.begin(), loop.end() ) );
+    cmap.add ( gpucast::math::domain::contour<double> ( loop.begin(), loop.end() ) );
   }
 
   cmap.initialize();
 
-  for ( gpucast::math::contour_map_binary<double>::contour_segment_ptr const& segment : cmap.monotonic_segments() )
+  for ( gpucast::math::domain::contour_map_binary<double>::contour_segment_ptr const& segment : cmap.monotonic_segments() )
   {
     gpucast::math::vec4f segment_color ( 0.0f, 1.0f, 1.0f, 1.0f );
     add_gl_bbox ( segment->bbox(), segment_color );
@@ -403,14 +405,14 @@ glwidget::generate_bboxmap_view ( gpucast::beziersurface::trimdomain_ptr const& 
     }
   }
 
-  for ( gpucast::math::contour_map_binary<double>::contour_interval const& vslab : cmap.partition() )
+  for ( gpucast::math::domain::contour_map_binary<double>::contour_interval const& vslab : cmap.partition() )
   {
-    for ( gpucast::math::contour_map_binary<double>::contour_cell const& cell : vslab.cells )
+    for ( gpucast::math::domain::contour_map_binary<double>::contour_cell const& cell : vslab.cells )
     {
       gpucast::math::vec4f vslab_color ( 0.0f, 1.0f, 0.0f, 1.0f );
       gpucast::math::bbox2d vbox ( gpucast::math::point2d ( cell.interval_u.minimum(), cell.interval_v.minimum()), gpucast::math::point2d ( cell.interval_u.maximum(), cell.interval_v.maximum()));
        add_gl_bbox ( vbox, vslab_color );
-      for ( gpucast::math::contour_map_binary<double>::contour_segment_ptr const& contour : cell.overlapping_segments )
+      for ( gpucast::math::domain::contour_map_binary<double>::contour_segment_ptr const& contour : cell.overlapping_segments )
       {
         gpucast::math::vec4f cell_color ( 0.0f, 1.0f, 0.0f, 1.0f );
         gpucast::math::bbox2d ubox = contour->bbox();
@@ -419,6 +421,62 @@ glwidget::generate_bboxmap_view ( gpucast::beziersurface::trimdomain_ptr const& 
     }
   }
 }
+
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& domain)
+{
+}
+
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::generate_sampled_view(gpucast::beziersurface::trimdomain_ptr const& domain)
+{
+  // draw curve
+  gpucast::trimdomain::curve_container curves = domain->curves();
+  for (auto curve = curves.begin(); curve != curves.end(); ++curve)
+  {
+    gpucast::math::vec4f cpolygon_color(1.0f, 1.0f, 1.0f, 1.0f);
+    add_gl_curve(**curve, cpolygon_color);
+  }
+
+  unsigned res_u = 16;
+  unsigned res_v = 16;
+
+  auto offset_u = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::u]) / res_u;
+  auto offset_v = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::v]) / res_v;
+
+  auto min_u = domain->nurbsdomain().min[gpucast::trimdomain::point_type::u];
+  auto min_v = domain->nurbsdomain().min[gpucast::trimdomain::point_type::v];
+  
+  // draw sampled regions
+  for (unsigned u = 0; u < res_u; ++u) 
+  {
+    for (unsigned v = 0; v < res_v; ++v) 
+    {
+      auto bbox_min = gpucast::trimdomain::point_type(min_u + u*offset_u, min_v + v*offset_v);
+      auto bbox_max = gpucast::trimdomain::point_type(min_u + (u + 1)*offset_u, min_v + (v + 1)*offset_v);
+
+      gpucast::math::bbox2d ubox(bbox_min, bbox_max);
+
+      unsigned intersections = 0;
+      for (auto const& loop : domain->loops()) {
+        intersections += loop.is_inside(ubox.center());
+      }
+
+      gpucast::math::vec4f color_inside  (0.0f, 1.0f, 0.0f, 1.0f);
+      gpucast::math::vec4f color_outside (1.0f, 0.0f, 0.0f, 1.0f);
+
+      if (intersections % 2) { 
+        add_gl_bbox(ubox, color_inside);
+      }
+      else {
+        add_gl_bbox(ubox, color_outside);
+      }
+    }
+  }
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -558,14 +616,21 @@ glwidget::add_gl_bbox (  gpucast::math::bbox2d const& bbox, gpucast::math::vec4f
 {
   std::vector<gpucast::math::vec4f> bbox_points;
 
-  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f ) );
-  bbox_points.push_back ( gpucast::math::vec4f ( float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f ) );
+  // outer boundary
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f));
+
+  // diagonals
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f));
+  bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f));
 
   std::vector<gpucast::math::vec4f> bbox_colors ( bbox_points.size(), color );
 
@@ -598,7 +663,7 @@ glwidget::get_domain ( std::string const& name, std::size_t const index ) const
 
 ///////////////////////////////////////////////////////////////////////
 std::size_t                    
-glwidget::get_objects () const
+glwidget::get_objects () const 
 {
   return _objects.size();
 }                    
@@ -614,6 +679,15 @@ glwidget::get_surfaces ( std::string const& name ) const
   } else {
     return 0;
   }
+}
+
+
+///////////////////////////////////////////////////////////////////////
+void                    
+glwidget::recompile()
+{
+  std::cout << "Recompiling shader code." << std::endl;
+  _initialize_shader();
 }
 
 
@@ -649,9 +723,11 @@ glwidget::paintGL()
 
   switch ( _view )
   {
+    // simply draw gl lines
     case original :
     case double_binary_partition :
     case contour_map_partition :
+    case sampled:
     case contour_binary_partition :
       {
         _partition_program->begin();
@@ -660,6 +736,7 @@ glwidget::paintGL()
         _partition_program->end();
         break;
       }
+    // per-pixel classification
     case double_binary_classification :
       {
         _db_program->begin();
@@ -683,6 +760,7 @@ glwidget::paintGL()
         _db_program->end();
         break;
       }
+      // per-pixel classification contour search
     case contour_binary_classification :
             
         _cmb_program->begin();
@@ -818,67 +896,12 @@ glwidget::_init()
 void 
 glwidget::_initialize_shader()  
 {
-  if ( _partition_program ) delete _partition_program;
-  if ( _db_program )        delete _db_program;
-  if ( _cmb_program )       delete _cmb_program;
-  if ( _kd_program )        delete _kd_program;
+  gpucast::gl::resource_factory program_factory;
 
-  _partition_program  = _init_program ( "../shader/partition.vert.glsl", "../shader/partition.frag.glsl" );
-  _db_program         = _init_program ( "../shader/domain.vert.glsl", "../shader/double_binary.frag.glsl" );
-  _cmb_program        = _init_program ( "../shader/domain.vert.glsl", "../shader/contour_binary.frag.glsl" );
-  _kd_program         = _init_program ( "../shader/domain.vert.glsl", "../shader/contour.frag.glsl" );
+  _partition_program = program_factory.create_program("./shader/partition.vert.glsl", "./shader/partition.frag.glsl");
+  _db_program = program_factory.create_program("./shader/double_binary.vert", "./shader/double_binary.frag");
+  _cmb_program = program_factory.create_program("./shader/contour_binary.vert", "./shader/contour_binary.frag");
+  _kd_program = program_factory.create_program("./shader/domain.vert.glsl", "./shader/contour.frag.glsl");
 }
 
-
-/////////////////////////////////////////////////////////////////////////////
-gpucast::gl::program*
-glwidget::_init_program ( std::string const& vertexshader_filename,
-                          std::string const& fragmentshader_filename )
-{
-  try {
-    gpucast::gl::vertexshader     vs;
-    gpucast::gl::fragmentshader   fs;
-
-    gpucast::gl::program* p = new gpucast::gl::program;
-
-    if ( boost::filesystem::exists(vertexshader_filename) )
-    {
-      vs.load(vertexshader_filename);
-      vs.compile();
-      if ( !vs.log().empty() ) {
-        std::cout << vertexshader_filename << " log : " << vs.log() << std::endl;
-      }
-      p->add(&vs);
-    } else {
-      throw std::runtime_error("renderer::_init_shader (): Couldn't open file " + vertexshader_filename);
-    }
-
-    if ( boost::filesystem::exists(fragmentshader_filename)  )
-    {
-      fs.load(fragmentshader_filename);
-      fs.compile();
- 
-      if ( !fs.log().empty() ) {
-        std::cout << fragmentshader_filename << " log : " << fs.log() << std::endl;
-      }
-      p->add(&fs);
-    } else {
-      throw std::runtime_error("renderer::_init_shader (): Couldn't open file " + fragmentshader_filename);
-    }
-
-    // link all shaders
-    p->link();
-
-    if ( !p->log().empty() )
-    {
-      // stream log to std output
-      std::cout << " program log : " << p->log() << std::endl;
-    }
-
-    return p;
-  } catch ( std::exception& e ) {
-    std::cerr << "renderer::init_program(): failed to init program : " << vertexshader_filename << ", " << fragmentshader_filename << "( " << e.what () << ")\n";
-    return nullptr;
-  }
-}
 

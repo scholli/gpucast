@@ -24,21 +24,20 @@ namespace gpucast {
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
 void
-contour_map_kd<value_t>::initialize()
-{
-}
+contour_map_loop_list<value_t>::initialize()
+{}
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
 void
-contour_map_kd<value_t>::print(std::ostream& os) const
+contour_map_loop_list<value_t>::print(std::ostream& os) const
 {
   os << "contour_map_kd<value_t>::print() not implemented" << std::endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::contour_map_kd<value_t> const& rhs)
+std::ostream& operator<<(std::ostream& os, gpucast::math::domain::contour_map_loop_list<value_t> const& rhs)
 {
   return os;
 }

@@ -36,10 +36,11 @@ public : // friends
 
 public : // enums, typedefs
 
-  enum trimapproach {
+  enum trim_approach_t {
     double_binary   = 0,
     contours_binary = 1,
-    contours_kd     = 2
+    contours_kd     = 2,
+    count           = 3
   };
 
   typedef beziersurface::value_type         value_type;
@@ -122,7 +123,7 @@ public : // data members
   std::vector<gpucast::math::vec4f>    _attrib3; // [umin, umax, vmin, vmax] bezierpatch-domain in nurbs-domainspace
 
   // data for element array buffer
-  std::vector<int>                     _indices; // indices of convex hulls
+  std::vector<unsigned>                     _indices; // indices of convex hulls
 
   // data for texturebuffer
   std::vector<gpucast::math::vec4f>    _controlpoints; // "vertexdata" -> control point data for texturebuffer

@@ -37,7 +37,7 @@ public : // enums / typedefs
   typedef axis_aligned_boundingbox<point_type>      bbox_type;
 
   typedef beziercurve<point_type>                   curve_type;
-  typedef std::shared_ptr<curve_type>             curve_ptr;
+  typedef std::shared_ptr<curve_type>               curve_ptr;
 
   typedef std::vector<curve_ptr>                    curve_container;
   typedef typename curve_container::iterator        curve_iterator;
@@ -57,9 +57,11 @@ public : // methods
 
   bbox_type const&      bbox                 () const;
   
-  bool                  continous            () const;
-  bool                  increasing           ( typename point_type::coordinate_type const& ) const;
+  bool                  is_continous         () const;
+  bool                  is_increasing        ( typename point_type::coordinate_type const& ) const;
   bool                  is_constant          ( typename point_type::coordinate_type const& ) const;
+
+  bool                  right_of             ( point_type const& origin ) const;
 
   std::size_t           size                 () const;
   const_curve_iterator  begin                () const;
@@ -88,7 +90,7 @@ private : // attributes
 };
 
 template <typename point_type>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::contour_segment<point_type> const& );
+std::ostream& operator<<(std::ostream& os, contour_segment<point_type> const& );
 
     } // namespace domain
   } // namespace math

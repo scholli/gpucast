@@ -9,8 +9,8 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_separate_shader_objects : enable 
 
 /****************************************************
 * choose type of root finder for trimming
@@ -137,17 +137,16 @@ layout (depth_any)    out float gl_FragDepth;
  * include functions
  ******************************************************************************/
 #include "./resources/glsl/base/compute_depth.frag"
+#include "./resources/glsl/base/conversion.glsl"
 #include "./resources/glsl/math/adjoint.glsl.frag"
 #include "./resources/glsl/math/euclidian_space.glsl.frag"
 #include "./resources/glsl/math/horner_surface.glsl.frag"
 #include "./resources/glsl/math/horner_surface_derivatives.glsl.frag"
-#include "./resources/glsl/math/horner_curve.glsl.frag"
+#include "./resources/glsl/math/horner_curve.glsl"
 #include "./resources/glsl/math/newton_surface.glsl.frag"
 #include "./resources/glsl/math/raygeneration.glsl.frag" 
-#include "./resources/glsl/trimmed_surface/binary_search.glsl.frag"
-#include "./resources/glsl/trimmed_surface/bisect_curve.glsl.frag"           
-#include "./resources/glsl/trimmed_surface/trimming_contourmap_binary.glsl.frag"
-#include "./resources/glsl/trimmed_surface/trimming.glsl.frag"
+#include "./resources/glsl/trimming/trimming_contour_double_binary.glsl"
+#include "./resources/glsl/trimming/trimming_double_binary.glsl"
 #include "./resources/glsl/trimmed_surface/shade_phong_fresnel.glsl.frag"
 
 /*******************************************************************************
@@ -204,34 +203,34 @@ void main(void)
   bool is_trimmed = false;
 
 
-  if ( true )
-  { 
-    is_trimmed = trim ( bp_trimdata, 
-                        bp_celldata, 
-                        bp_curvelist, 
-                        bp_curvedata, 
-                        uv, 
-                        trim_index_db, 
-                        trimtype, 
-                        iters, 
-                        0.00001, 
-                        16 );
-  } 
-
-  if ( false )
-  {
-    is_trimmed= trim ( cmb_partition, 
-                       cmb_contourlist,
-                       cmb_curvelist,
-                       cmb_curvedata,
-                       cmb_pointdata,
-                       uv, 
-                       trim_index_cmb, 
-                       trimtype, 
-                       iters, 
-                       0.00001, 
-                       16 );
-  }
+  //if ( trimapproach == 0 )
+  //{ 
+  //  is_trimmed = trimming_double_binary ( bp_trimdata, 
+  //                                        bp_celldata, 
+  //                                        bp_curvelist, 
+  //                                        bp_curvedata, 
+  //                                        uv, 
+  //                                        trim_index_db, 
+  //                                        trimtype, 
+  //                                        iters, 
+  //                                        0.00001, 
+  //                                        16 );
+  //} 
+  //
+  //if ( trimapproach == 1 )
+  //{
+    is_trimmed= trimming_contour_double_binary ( cmb_partition, 
+                                                 cmb_contourlist,
+                                                 cmb_curvelist,
+                                                 cmb_curvedata,
+                                                 cmb_pointdata,
+                                                 uv, 
+                                                 trim_index_cmb, 
+                                                 trimtype, 
+                                                 iters, 
+                                                 0.00001, 
+                                                 16 );
+  //}
 
   if ( bool(trimming_enabled) && is_trimmed)
   {

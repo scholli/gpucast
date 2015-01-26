@@ -249,7 +249,7 @@ uniform_cell<value_type>::print ( std::ostream& os, std::string const& addinfo )
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_type>
-std::ostream& operator<< (std::ostream& os,  gpucast::math::uniform_cell<value_type> const& rhs)
+std::ostream& operator<< (std::ostream& os, uniform_cell<value_type> const& rhs)
 {
   rhs.print(os);
   return os;

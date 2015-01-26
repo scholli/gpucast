@@ -13,7 +13,7 @@
 #define GPUCAST_CORE_TRIMDOMAIN_SERIALIZER_CONTOUR_MAP_KD_HPP
 
 // header, system
-#include <gpucast/math/parametric/domain/contour_map_kd.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_kd.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
@@ -30,7 +30,7 @@ class trimdomain_serializer_contour_map_kd : public trimdomain_serializer
   public : // enums/typedefs
  
     typedef trimdomain::value_type                                value_type;
-    typedef gpucast::math::contour_map_kd<value_type>::contour_segment_ptr  contour_segment_ptr;
+    typedef gpucast::math::domain::contour_map_kd<value_type>::contour_segment_ptr  contour_segment_ptr;
 
   public : // methods
 
@@ -69,7 +69,7 @@ trimdomain_serializer_contour_map_kd::serialize ( trimdomain_ptr const&         
                                                   std::vector<float>&                                       output_curvedata,
                                                   std::vector<float3_type>&                                 output_pointdata ) const
 {
-  typedef gpucast::math::contour_map_kd<beziersurface::curve_point_type::value_type> contour_map_type;
+  typedef gpucast::math::domain::contour_map_kd<beziersurface::curve_point_type::value_type> contour_map_type;
   assert ( output_partition.size() < std::numeric_limits<address_type>::max() );
 
   // if already in buffer -> return index

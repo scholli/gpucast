@@ -16,7 +16,7 @@
 #include <gpucast/math/interval.hpp>
 #include <gpucast/math/parametric/domain/partition/double_binary/uniform_cell.hpp>
 #include <gpucast/math/parametric/domain/partition/determine_splits_from_endpoints.hpp>
-#include <gpucast/math/parametric/domain/partition/double_binary/previous_next_set.hpp>
+#include <gpucast/math/parametric/domain/partition/previous_next_set.hpp>
 
 namespace gpucast {
   namespace math {
@@ -328,7 +328,7 @@ vertical_interval<value_type>::update_vicinity () const
 
 ///////////////////////////////////////////////////////////////////////////
 template <typename value_type>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::vertical_interval<value_type> const& rhs)
+std::ostream& operator<<(std::ostream& os, vertical_interval<value_type> const& rhs)
 {
   rhs.print(os);
   return os;

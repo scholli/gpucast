@@ -138,7 +138,7 @@ class vertical_interval
 
 
 template <typename value_type>
-std::ostream& operator<<(std::ostream& os,  gpucast::math::vertical_interval<value_type> const& rhs);
+std::ostream& operator<<(std::ostream& os, gpucast::math::domain::vertical_interval<value_type> const& rhs);
 
     } // namespace domain
   } // namespace math

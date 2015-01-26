@@ -16,6 +16,8 @@
 
 #include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/fragmentshader.hpp>
+#include <gpucast/gl/util/resource_factory.hpp>
+
 #include <gpucast/core/config.hpp>
 
 #include <boost/filesystem.hpp>
@@ -115,7 +117,13 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::trim_approach(beziersurfaceobject::trimapproach type)
+    beziersurfaceobject::trim_approach_t bezierobject::trim_approach() const
+    {
+      return _trim_approach;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::trim_approach(beziersurfaceobject::trim_approach_t type)
     {
       _trim_approach = type;
     }
@@ -164,7 +172,6 @@ namespace gpucast {
       p.set_texturebuffer("bp_celldata", _db_celldata, renderer.next_texunit());
       p.set_texturebuffer("bp_curvelist", _db_curvelist, renderer.next_texunit());
       p.set_texturebuffer("bp_curvedata", _db_curvedata, renderer.next_texunit());
-
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -370,131 +377,46 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_program()
     {
-      _program.reset(new program);
+      gpucast::gl::resource_factory factory;
 
-      init_program(_program,
-        GPUCAST_INSTALL_DIR + std::string("/resources/glsl/trimmed_surface/raycast_surface.glsl.vert"),
-        GPUCAST_INSTALL_DIR + std::string("/resources/glsl/trimmed_surface/raycast_surface.glsl.frag"));
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    bool bezierobject_renderer::_path_to_file(std::string const& filename, std::vector<std::string> const& rootdirs, std::string& result) const
-    {
-      std::string filepath;
-      if (boost::filesystem::exists(filename)) {
-        filepath = filename;
-      } else {
-        for (auto const& dir : rootdirs)
-        {
-          if (boost::filesystem::exists(dir + "/" + filename)) {
-            filepath = dir + filename;
-            break;
-          }
-          if (boost::filesystem::exists(dir + filename)) {
-            filepath = dir + filename;
-            break;
-          }
-        }
-      }
-
-      if (!filepath.empty())
-      {
-        std::fstream fstr(filepath.c_str(), std::ios::in);
-        if (fstr)
-        {
-          result = std::string((std::istreambuf_iterator<char>(fstr)), std::istreambuf_iterator<char>());
-
-          std::smatch include_line;
-          std::regex include_line_exp("#include[^\n]+");
-
-          // as long as there are include lines
-          while (std::regex_search(result, include_line, include_line_exp))
-          {
-            std::string include_line_str = include_line.str();
-            std::smatch include_filename;
-            std::regex include_filename_exp("[<\"][^>\"]+[>\"]");
-
-            // extract include filename
-            if (std::regex_search(include_line_str, include_filename, include_filename_exp))
-            {
-              std::string filename = include_filename.str();
-              auto is_delimiter = [](char a) { return (a == '"') || (a == '<') || (a == '>'); };
-              filename.erase(std::remove_if(filename.begin(), filename.end(), is_delimiter), filename.end());
-
-              // replace include with source
-              std::string included_source;
-              bool success = _path_to_file(filename, { GPUCAST_INSTALL_DIR, "." }, included_source);
-                
-              if (success) {
-                result.replace(result.find(include_line.str()), include_line.str().size(), included_source);
-              }
-              else {
-                result.replace(result.find(include_line.str()), include_line.str().size(), "");
-                std::cerr << "renderer::_path_to_file(): Could not open " << filename << std::endl;
-              }
-            }
-          }
-        }
-        fstr.close();
-
-        return true;
-      }
-      else {
-        return false;
-      }
+      _program = init_program(factory.read_shader_file("resources/glsl/trimmed_surface/raycast_surface.glsl.vert"), 
+                              factory.read_shader_file("resources/glsl/trimmed_surface/raycast_surface.glsl.frag"));
     }
 
 
-
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject_renderer::init_program(std::shared_ptr<gpucast::gl::program>& p,
-                                             std::string const&                     vertexshader_filename,
-                                             std::string const&                     fragmentshader_filename)
+    std::shared_ptr<gpucast::gl::program> bezierobject_renderer::init_program(std::string const& vertex_shader_code, std::string const& fragment_shader_code)
     {
       try {
         vertexshader     vs;
         fragmentshader   fs;
 
-        p.reset(new program);
+        auto p = std::make_shared<program>();
 
         std::string vs_source; 
         std::string fs_source; 
         std::string gs_source;
 
-        bool vs_available = _path_to_file(vertexshader_filename, { GPUCAST_INSTALL_DIR, "." }, vs_source);
-        bool fs_available = _path_to_file(fragmentshader_filename, { GPUCAST_INSTALL_DIR, "." }, fs_source);
-
-        if (vs_available)
-        {
-          vs.set_source(vs_source.c_str());
-          vs.compile();
-          if (!vs.log().empty()) {
-            std::fstream ostr(boost::filesystem::basename(vertexshader_filename) + ".vert.log", std::ios::out);
-            ostr << vs.log() << std::endl;
-            ostr.close();
-          }
-          p->add(&vs);
+        vs.set_source(vertex_shader_code.c_str());
+        vs.compile();
+        if (!vs.log().empty()) {
+          std::fstream ostr("vertex_shader.fail.log", std::ios::out);
+          ostr << vs.log() << std::endl;
+          ostr.close();
         }
-        else {
-          throw std::runtime_error("bezierobject_renderer::init_program (): Couldn't open file " + vertexshader_filename);
-        }
+        p->add(&vs);
+        
 
-        if (fs_available)
-        {
-          fs.set_source(fs_source.c_str());
-          fs.compile();
+        fs.set_source(fragment_shader_code.c_str());
+        fs.compile();
 
-          if (!fs.log().empty()) {
-            std::fstream ostr(boost::filesystem::basename(fragmentshader_filename) + ".frag.log", std::ios::out);
-            ostr << vs.log() << std::endl;
-            ostr.close();
-          }
-          p->add(&fs);
+        if (!fs.log().empty()) {
+          std::fstream ostr("fragment_shader.fail.log", std::ios::out);
+          ostr << vs.log() << std::endl;
+          ostr.close();
         }
-        else {
-          throw std::runtime_error("bezierobject_renderer::init_program (): Couldn't open file " + fragmentshader_filename);
-        }
-
+        p->add(&fs);
+        
         // link all shaders
         p->link();
 
@@ -503,12 +425,12 @@ namespace gpucast {
           // stream log to std output
           std::cout << " program log : " << p->log() << std::endl;
         }
-        else {
-          std::cout << "Compiling " << vertexshader_filename << ", " << fragmentshader_filename << " succeeded\n";
-        }
+
+        return p;
       }
       catch (std::exception& e) {
-        std::cerr << "renderer::init_program(): failed to init program : " << vertexshader_filename << ", " << fragmentshader_filename << "( " << e.what() << ")\n";
+        std::cerr << "renderer::init_program(): failed to init program : " << e.what() << ")\n";
+        throw e;
       }
     }
 
