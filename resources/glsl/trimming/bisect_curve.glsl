@@ -1,7 +1,6 @@
 #ifndef GPUCAST_TRIMMING_BISECT_CURVE
 #define GPUCAST_TRIMMING_BISECT_CURVE
 
-#include "resources/glsl/common/config.glsl"
 #include "resources/glsl/math/horner_curve.glsl"
 
 /////////////////////////////////////////////////////////////////////////////

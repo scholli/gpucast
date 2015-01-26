@@ -42,17 +42,14 @@ public:
   typedef std::shared_ptr<gpucast::beziersurfaceobject> bezierobject_ptr;
   typedef gpucast::beziersurface::trimdomain_ptr        trimdomain_ptr;
 
-  enum view { original                      = 0, 
-              double_binary_partition       = 1,
-              double_binary_classification  = 2,
-              contour_binary_partition      = 3, 
-              contour_binary_classification = 4, 
-              contour_map_partition         = 5, 
-              contour_map_classification    = 6, 
-              contour_map_loop_list         = 7,
-              minification                  = 8, 
-              sampled                       = 9,
-              count                         = 10 };
+  enum view { original                          = 0, 
+              double_binary_partition           = 1,
+              double_binary_classification      = 2,
+              contour_map_binary_partition      = 3, 
+              contour_map_binary_classification = 4, 
+              contour_map_loop_list_partition   = 5,
+              minification                      = 6,
+              count                             = 7 };
 
 public : 
 
@@ -69,11 +66,10 @@ public Q_SLOTS :
   void                    generate_double_binary_view   ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    generate_bboxmap_view         ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    generate_loop_list_view       ( gpucast::beziersurface::trimdomain_ptr const& domain );
-  void                    generate_sampled_view         ( gpucast::beziersurface::trimdomain_ptr const& domain );
+  void                    generate_minification_view    ( gpucast::beziersurface::trimdomain_ptr const& domain );
 
   void                    serialize_double_binary       ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    serialize_contour_binary      ( gpucast::beziersurface::trimdomain_ptr const& domain );
-  void                    serialize_contour_map         ( gpucast::beziersurface::trimdomain_ptr const& domain );
 
   void                    add_gl_curve                  ( gpucast::beziersurface::curve_type const& curve, gpucast::math::vec4f const& color  );
   void                    add_gl_bbox                   ( gpucast::math::bbox2d const& bbox, gpucast::math::vec4f const& color  );
@@ -82,6 +78,7 @@ public Q_SLOTS :
   std::size_t             get_objects                   () const;
   std::size_t             get_surfaces                  ( std::string const& name ) const;
 
+  void                    show_texel_fetches            (bool);
   void                    recompile                     ();
 
 protected:
@@ -119,9 +116,10 @@ private : // attributes
 
   // commonly used resources
   gpucast::gl::texture1d*                        _transfertexture;
-  unsigned                                _trimid;
-  gpucast::math::vec2f                             _domain_size;
-  gpucast::math::vec2f                             _domain_min;
+  unsigned                                       _trimid;
+  bool                                           _show_texel_fetches;
+  gpucast::math::vec2f                           _domain_size;
+  gpucast::math::vec2f                           _domain_min;
   gpucast::gl::plane*                            _quad;
 
   // double binary resources

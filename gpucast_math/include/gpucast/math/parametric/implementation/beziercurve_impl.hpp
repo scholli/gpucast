@@ -662,7 +662,7 @@ namespace gpucast { namespace math {
                                   interval<value_type> const& para_rng,
                                   std::size_t max_iters ) const
   {
-    assert(weak_monotonic(std::size_t fx));
+    assert(weak_monotonic(fx));
 
     // determine pmin and pmax
     point_t pmin;

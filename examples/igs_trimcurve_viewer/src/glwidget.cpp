@@ -51,10 +51,10 @@
 #include <gpucast/core/trimdomain_serializer_double_binary.hpp>
 #include <gpucast/core/trimdomain_serializer_contour_map_binary.hpp>
 #include <gpucast/core/trimdomain_serializer_contour_map_kd.hpp>
-//#include <gpucast/core/trimdomain_serializer_loop_contour_list.hpp>
+
 
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_binary.hpp>
-//#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_loop_list.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_loop_list.hpp>
 #include <gpucast/math/parametric/domain/partition/double_binary/partition.hpp>
 
 
@@ -87,7 +87,8 @@ glwidget::glwidget( int argc, char** argv, QGLFormat const& context_format, QWid
     _quad                     ( nullptr ),
     _transfertexture          ( nullptr ),
     _curve_geometry           ( ),
-    _view                     ( original )
+    _view                     ( original ),
+    _show_texel_fetches       ( false )
 {
   setFocusPolicy(Qt::StrongFocus);
 }
@@ -292,24 +293,17 @@ glwidget::update_view ( std::string const& name, std::size_t const index, view c
         case double_binary_classification :
           serialize_double_binary ( domain );
           break;
-        case contour_binary_partition :
+        case contour_map_binary_partition :
           generate_bboxmap_view ( domain );
           break;
-        case contour_binary_classification :
+        case contour_map_binary_classification :
           serialize_contour_binary ( domain );
           break;
-        case contour_map_partition :
-          generate_bboxmap_view ( domain );
+        case minification:
+          generate_minification_view(domain);
           break;
-        case contour_map_classification :
-          serialize_contour_map ( domain );
-          break;
-        case sampled:
-          generate_sampled_view(domain);
-          break;
-        case minification  :
-          // not implemented
-          break;
+        case contour_map_loop_list_partition:
+          generate_loop_list_view(domain);
         default : 
           break;
       };
@@ -426,11 +420,20 @@ glwidget::generate_bboxmap_view ( gpucast::beziersurface::trimdomain_ptr const& 
 void
 glwidget::generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& domain)
 {
+  gpucast::math::domain::contour_map_loop_list<double> looplist;
+
+  for (auto const& loop : domain->loops())
+  {
+    looplist.add(gpucast::math::domain::contour<double>(loop.begin(), loop.end()));
+  }
+
+  looplist.initialize();
+
 }
 
 ///////////////////////////////////////////////////////////////////////
 void
-glwidget::generate_sampled_view(gpucast::beziersurface::trimdomain_ptr const& domain)
+glwidget::generate_minification_view(gpucast::beziersurface::trimdomain_ptr const& domain)
 {
   // draw curve
   gpucast::trimdomain::curve_container curves = domain->curves();
@@ -524,7 +527,7 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
   _domain_min  = gpucast::math::vec2f ( domain->nurbsdomain().min );
 }
 
-
+///////////////////////////////////////////////////////////////////////
 void                    
 glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
@@ -583,10 +586,6 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
   _domain_min  = gpucast::math::vec2f ( domain->nurbsdomain().min );
 }
 
-///////////////////////////////////////////////////////////////////////
-void                    
-glwidget::serialize_contour_map ( gpucast::beziersurface::trimdomain_ptr const& domain )
-{}
 
 ///////////////////////////////////////////////////////////////////////
 void                    
@@ -681,6 +680,13 @@ glwidget::get_surfaces ( std::string const& name ) const
   }
 }
 
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::show_texel_fetches(bool enable)
+{
+  _show_texel_fetches = enable;
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 void                    
@@ -726,9 +732,8 @@ glwidget::paintGL()
     // simply draw gl lines
     case original :
     case double_binary_partition :
-    case contour_map_partition :
-    case sampled:
-    case contour_binary_partition :
+    case minification:
+    case contour_map_binary_partition :
       {
         _partition_program->begin();
         _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]); 
@@ -744,6 +749,7 @@ glwidget::paintGL()
           _db_program->set_uniform1i ( "trimid", _trimid );
           _db_program->set_uniform1i ( "width",  _width );
           _db_program->set_uniform1i ( "height", _height );
+          _db_program->set_uniform1i("show_costs", int(_show_texel_fetches));
                                                   
           _db_program->set_uniform2f ( "domain_size", _domain_size[0], _domain_size[1] );
           _db_program->set_uniform2f ( "domain_min",  _domain_min[0], _domain_min[1] );
@@ -761,13 +767,14 @@ glwidget::paintGL()
         break;
       }
       // per-pixel classification contour search
-    case contour_binary_classification :
+    case contour_map_binary_classification :
             
         _cmb_program->begin();
         {
           _cmb_program->set_uniform1i ( "trimid", _trimid );
           _cmb_program->set_uniform1i ( "width",  _width );
           _cmb_program->set_uniform1i ( "height", _height );
+          _cmb_program->set_uniform1i ( "show_costs", int(_show_texel_fetches) );
                                                   
           _cmb_program->set_uniform2f ( "domain_size", _domain_size[0], _domain_size[1] );
           _cmb_program->set_uniform2f ( "domain_min",  _domain_min[0], _domain_min[1] );
@@ -784,13 +791,6 @@ glwidget::paintGL()
         }
         _cmb_program->end();
         break;
-      break;
-    case contour_map_classification :
-      
-      break;
-    case minification  :
-      // not implemented
-      break;
     default : 
       break;
   };

@@ -43,20 +43,23 @@ namespace gpucast {
         /*virtual*/ void initialize() override;
         /*virtual*/ void print(std::ostream& os) const override;
 
+        trimloop const& root() const;
+
       protected: // methods
 
       private: // internal/auxilliary methods
 
-        bool _is_child(contour_type const& parent
+        contour_ptr const& _determine_outer_loop (contour_container const& in_loops);
+        bool _is_child(contour_ptr const& parent, contour_ptr const& child, contour_container const& other_loops);
 
       protected: // attributes
 
         struct trimloop {
-          contour_type          contour;
+          contour_ptr           contour;
           std::vector<trimloop> children;
         };
 
-        trimloop outer;
+        trimloop _outer_loop;
 
       };
 

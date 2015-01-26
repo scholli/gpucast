@@ -21,7 +21,10 @@ evaluateCurve ( in samplerBuffer data,
   
   float bc = 1.0;
   float tn = 1.0;
+
   p  = texelFetch(data, index);
+  gpucast_count_texel_fetch();
+
   p *= u;
 
   if (order > 2) {
@@ -29,11 +32,15 @@ evaluateCurve ( in samplerBuffer data,
       tn *= t;
       bc *= (float(deg-i+1) / float(i));
       p = (p + tn * bc * texelFetch(data, index + i)) * u;
+      gpucast_count_texel_fetch();
     } 
+
     p += tn * t * texelFetch(data, index + deg);
+    gpucast_count_texel_fetch();
   } else {
     /* linear piece*/
     p = mix(texelFetch(data, index), texelFetch(data, index + 1), t);
+    gpucast_count_texel_fetch();
   }
     
   /* project into euclidian coordinates */

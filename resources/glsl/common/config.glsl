@@ -1,10 +1,21 @@
 #ifndef GPUCAST_CAST_CONFIG
 #define GPUCAST_CAST_CONFIG
 
-#define GPUCAST_COUNT_TEXEL_FETCHES 0
+#define GPUCAST_COUNT_TEXEL_FETCHES 1
 
 #if GPUCAST_COUNT_TEXEL_FETCHES
-  unsigned gpucast_texel_fetches;
+
+  int gpucast_texel_fetches = 0;
+
+  void gpucast_count_texel_fetch() { 
+    ++gpucast_texel_fetches; 
+  }
+
+#else
+
+  void gpucast_count_texel_fetch() 
+  {}
+
 #endif
 
 #endif // GPUCAST_CAST_CONFIG

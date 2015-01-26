@@ -25,6 +25,7 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QCheckBox>
 
 #include <gpucast/core/nurbssurfaceobject.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
@@ -57,6 +58,7 @@ private Q_SLOTS: // slot events
   void                    update_objectlist  ();
   void                    update_surfacelist ();
   void                    update_view        () const;
+  void                    show_texel_fetches ();
 
 private: // methods
 
@@ -76,6 +78,7 @@ private: // attributes
   QLabel*                 _label_fps;
   QLabel*                 _label_mem;
   QPushButton*            _recompile_button;
+  QCheckBox*              _show_texel_fetches;
 
   bezierobject_map        _objects;
   QListWidget*            _list_object;

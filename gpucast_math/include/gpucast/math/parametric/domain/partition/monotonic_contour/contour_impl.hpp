@@ -155,6 +155,17 @@ contour<value_t>::is_inside(point_type const& origin) const
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
+bool                  
+contour<value_t>::is_inside(contour const& other) const
+{
+  assert(!empty());
+  auto const& first_curve_ptr = *other.begin();
+  return is_inside(first_curve_ptr->front());
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
 template <typename contour_segment_ptr_container>
 void contour<value_t>::monotonize ( contour_segment_ptr_container& target ) const
 {

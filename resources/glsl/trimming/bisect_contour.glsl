@@ -21,7 +21,9 @@ bisect_contour(in samplerBuffer data,
   while ( id_min <= id_max )
   {
     int id = id_min + (id_max - id_min) / int(2);
+
     tmp = texelFetch(data, id);
+    gpucast_count_texel_fetch();
 
     if ( uv[1] >= tmp[0] && uv[1] <= tmp[1])
     {

@@ -32,10 +32,14 @@ class contour_map_base
     typedef interval<value_type>                                    interval_type;
     
     typedef contour<value_type>                                     contour_type;
-    typedef std::vector<contour_type>                               contour_container;
+    typedef std::shared_ptr<contour_type>                           contour_ptr;
+
+    typedef std::vector<contour_ptr>                                contour_container;
     typedef contour_segment<value_type>                             contour_segment_type;
     typedef std::shared_ptr<contour_segment_type>                   contour_segment_ptr;
+
     typedef std::vector<contour_segment_ptr>                        contour_segment_container;
+    typedef std::map<contour_ptr, contour_segment_container>        contour_segment_map;
 
     typedef beziercurve<point_type>                                 curve_type;
     typedef std::shared_ptr<curve_type>                             curve_ptr;
@@ -49,7 +53,7 @@ class contour_map_base
 
     void                              add                           ( contour_type const& loop );
     void                              clear                         ();
-    contour_container const&          loops                         () const;
+    contour_segment_map const&        loops() const;
 
     contour_segment_container const&  monotonic_segments   () const;
 
@@ -89,7 +93,7 @@ class contour_map_base
   protected : // attributes
 
     // geometrical data
-    contour_container                 _loops;
+    contour_segment_map               _segmented_loops;
 
     contour_segment_container         _contour_segments;
 

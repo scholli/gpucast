@@ -4,6 +4,7 @@
 in vec2     uv_coord; 
      
 uniform int trimid;
+uniform int show_costs;
 
 uniform samplerBuffer sampler_partition;
 uniform samplerBuffer sampler_contourlist;
@@ -11,11 +12,10 @@ uniform samplerBuffer sampler_curvelist;
 uniform samplerBuffer sampler_curvedata;
 uniform samplerBuffer sampler_pointdata;
 
-uniform sampler1D     transfertexture;
-
 layout (location = 0) out vec4 outcolor; 
 
 #include "resources/glsl/common/config.glsl"
+#include "resources/glsl/math/transfer_function.glsl"
 #include "resources/glsl/trimming/trimming_contour_double_binary.glsl"
 
 
@@ -34,13 +34,17 @@ void main(void)
                                                 iterations, 
                                                 0.00001, 
                                                 16 );
-
-  if ( trimmed ) 
+  if ( show_costs != 0 )
   {
-    outcolor = vec4(1.0, 0.0, 0.0, 1.0 ) * float(gpucast_texel_fetches)/64.0;;
+    outcolor = transfer_function(clamp(float(gpucast_texel_fetches)/25.0, 0.0, 1.0));
   } else {
-    outcolor = vec4(0.0, 1.0, 0.0, 1.0 ) * float(gpucast_texel_fetches)/64.0;;
-  }
+    if ( trimmed ) 
+    {
+      outcolor = vec4(1.0, 0.0, 0.0, 1.0 ) * float(gpucast_texel_fetches)/64.0;;
+    } else {
+      outcolor = vec4(0.0, 1.0, 0.0, 1.0 ) * float(gpucast_texel_fetches)/64.0;;
+    }
+  }  
 }
 
 

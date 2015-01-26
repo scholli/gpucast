@@ -42,24 +42,20 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _glwindow->setFixedWidth(_width);
   this->setCentralWidget(_glwindow);
 
-  /////////////////////////////////////
-  // file menu
-  /////////////////////////////////////
-  _file_menu = menuBar()->addMenu(tr("File"));
-  _action_loadfile                        = new QAction(tr("Open"), this);
-  _file_menu->addAction   (_action_loadfile);
+
 
   /////////////////////////////////////
   // control widget
   /////////////////////////////////////
   _controlwidget    = new QWidget;
-  _list_object      = new QListWidget();
-  _list_surface     = new QListWidget();
-  _viewbox          = new QComboBox();
+  _list_object      = new QListWidget;
+  _list_surface     = new QListWidget;
+  _viewbox          = new QComboBox;
   _label_fps        = new QLabel;
   _label_mem        = new QLabel;
   _recompile_button = new QPushButton;
   _recompile_button->setText("Recompile Shaders");
+  _show_texel_fetches = new QCheckBox;
 
   QGridLayout* layout = new QGridLayout(this);
   _controlwidget->setLayout(layout);
@@ -71,21 +67,33 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   layout->addWidget(_list_surface);
   layout->addWidget(_viewbox);
   layout->addWidget(_recompile_button);
+
+  layout->addWidget(_show_texel_fetches);
+  _show_texel_fetches->setText("Show texel fetches");
+
   layout->addWidget(_label_mem);
   layout->addWidget(_label_fps);
-  
+
+  /////////////////////////////////////
+  // file menu
+  /////////////////////////////////////
+  _file_menu = menuBar()->addMenu(tr("File"));
+  _action_loadfile = new QAction(tr("Open"), _controlwidget);
+  _file_menu->addAction(_action_loadfile);
 
   /////////////////////////////////////
   // view modes
   /////////////////////////////////////
   _modes.insert(std::make_pair(glwidget::original, "original"));
+
   _modes.insert(std::make_pair(glwidget::double_binary_partition, "double_binary_partition"));
   _modes.insert(std::make_pair(glwidget::double_binary_classification, "double_binary_classification"));
-  _modes.insert(std::make_pair(glwidget::contour_binary_partition, "contour_map_binary_partition"));
-  _modes.insert(std::make_pair(glwidget::contour_binary_classification, "contour_map_binary_classification"));
-  _modes.insert(std::make_pair(glwidget::contour_map_partition, "contour_map_partition"));
-  _modes.insert(std::make_pair(glwidget::sampled, "sampled_view"));
-  _modes.insert(std::make_pair(glwidget::contour_map_classification, "contour_map_classification"));
+
+  _modes.insert(std::make_pair(glwidget::contour_map_binary_partition, "contour_map_binary_partition"));
+  _modes.insert(std::make_pair(glwidget::contour_map_binary_classification, "contour_map_binary_classification"));
+
+  _modes.insert(std::make_pair(glwidget::contour_map_loop_list_partition, "contour_map_loop_list_partition"));
+
   _modes.insert(std::make_pair(glwidget::minification, "minification"));
 
   std::for_each ( _modes.begin(), _modes.end(), [&] ( std::map<glwidget::view, std::string>::value_type const& p ) { _viewbox->addItem(p.second.c_str()); } );
@@ -98,6 +106,7 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   connect(_list_surface, SIGNAL(itemSelectionChanged()), this, SLOT(update_view()));
   connect(_viewbox, SIGNAL(currentIndexChanged(int)), this, SLOT(update_view()));
   connect(_recompile_button, SIGNAL(clicked()), _glwindow, SLOT(recompile()));
+  connect(_show_texel_fetches, SIGNAL(stateChanged(int)), this, SLOT(show_texel_fetches()));
   
   _controlwidget->show();
   this->show();
@@ -173,6 +182,12 @@ void mainwindow::update_view () const
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void                    
+mainwindow::show_texel_fetches()
+{
+  _glwindow->show_texel_fetches(_show_texel_fetches->isChecked());
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void                    

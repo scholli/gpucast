@@ -1,6 +1,8 @@
 #ifndef GPUCAST_TRIMMING_LINEAR_SEARCH_CONTOUR
 #define GPUCAST_TRIMMING_LINEAR_SEARCH_CONTOUR
 
+#include "resources/glsl/common/config.glsl"
+
 bool
 linear_search_contour(in samplerBuffer data,
                       in vec2          uv,
@@ -18,6 +20,7 @@ linear_search_contour(in samplerBuffer data,
   for (int i = id_min; i <= id_max; ++i)
   {
     vec4 tmp = texelFetch(data, i);
+    gpucast_count_texel_fetch();
 
     // is in v-range
     if (uv[1] >= tmp[0] && uv[1] <= tmp[1])

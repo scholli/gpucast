@@ -1,10 +1,13 @@
 #ifndef GPUCAST_TRIMMING_CONTOUR_DOUBLE_BINARY
 #define GPUCAST_TRIMMING_CONTOUR_DOUBLE_BINARY
 
+#include "resources/glsl/common/config.glsl"
 #include "resources/glsl/common/conversion.glsl"
+
 #include "resources/glsl/math/horner_curve.glsl"
+
 #include "resources/glsl/trimming/binary_search.glsl"
-#include "resources/glsl/trimming/bisect_curve.glsl.frag"
+#include "resources/glsl/trimming/bisect_curve.glsl"
 #include "resources/glsl/trimming/bisect_contour.glsl"
 #include "resources/glsl/trimming/linear_search_contour.glsl"
 
@@ -23,6 +26,7 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
 {
   int total_intersections  = 0;
   int v_intervals = int(floatBitsToUint(texelFetch(domainpartition, id).x));
+  gpucast_count_texel_fetch();
 
   // if there is no partition in vertical(v) direction -> return
   if ( v_intervals == 0) 
@@ -30,6 +34,7 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
     return false;
   }
   vec4 domaininfo2 = texelFetch(domainpartition, id + 1);
+  gpucast_count_texel_fetch();
 
   // classify against whole domain
   if ( uv[0] > domaininfo2[1] || uv[0] < domaininfo2[0] ||
@@ -49,6 +54,8 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
   int ncells      = int(floatBitsToUint(vinterval[3]));
 
   vec4 celllist_info = texelFetch(domainpartition, int(celllist_id));
+  gpucast_count_texel_fetch();
+
   vec4 cell           = vec4(0.0);
 
   bool cellfound = binary_search(domainpartition, uv[0], celllist_id + 1, int(ncells), cell);
@@ -92,6 +99,8 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
     {
       int iters = 0;
       float curveinfo = texelFetch (curvedata, curveid).x;
+      gpucast_count_texel_fetch();
+
       uint pointid    = 0;
       uint curveorder = 0;
       intToUint8_24 ( floatBitsToUint ( curveinfo ), curveorder, pointid );

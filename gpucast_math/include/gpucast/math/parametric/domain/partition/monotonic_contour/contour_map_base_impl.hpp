@@ -22,6 +22,7 @@ namespace gpucast {
 template <typename value_t>
 contour_map_base<value_t>::contour_map_base ()
 : _contour_segments (),
+  _segmented_loops(),
   _bounds           ()
 {}
 
@@ -37,11 +38,18 @@ template <typename value_t>
 void
 contour_map_base<value_t>::add ( contour_type const& loop )
 {
-  // store original loop
-  _loops.push_back(loop);
+  // keep loop copy as shared_ptr
+  auto loop_ptr = std::make_shared<contour_type>(loop);
+
+  // split loop into bimonotnic segments
+  contour_segment_container loop_segments;
 
   // split into bi-monotonic contour segments
-  loop.monotonize ( _contour_segments );
+  loop_ptr->monotonize(loop_segments);
+  std::copy(loop_segments.begin(), loop_segments.end(), std::back_inserter(_contour_segments));
+
+  // store original loop and its segments
+  _segmented_loops[loop_ptr] = loop_segments;
 
   // update boundary
   update_bounds();
@@ -59,7 +67,7 @@ void contour_map_base<value_t>::clear ()
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-typename contour_map_base<value_t>::contour_container const&
+typename contour_map_base<value_t>::contour_segment_map const&
 contour_map_base<value_t>::loops() const
 {
   return _loops;

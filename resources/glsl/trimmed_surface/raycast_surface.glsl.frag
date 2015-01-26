@@ -203,33 +203,33 @@ void main(void)
   bool is_trimmed = false;
 
 
-  //if ( trimapproach == 0 )
-  //{ 
-  //  is_trimmed = trimming_double_binary ( bp_trimdata, 
-  //                                        bp_celldata, 
-  //                                        bp_curvelist, 
-  //                                        bp_curvedata, 
-  //                                        uv, 
-  //                                        trim_index_db, 
-  //                                        trimtype, 
-  //                                        iters, 
-  //                                        0.00001, 
-  //                                        16 );
-  //} 
-  //
+  if ( trimapproach == 0 )
+  { 
+    is_trimmed = trimming_double_binary ( bp_trimdata, 
+                                          bp_celldata, 
+                                          bp_curvelist, 
+                                          bp_curvedata, 
+                                          uv, 
+                                          trim_index_db, 
+                                          trimtype, 
+                                          iters, 
+                                          0.00001, 
+                                          16 );
+  } 
+  
   //if ( trimapproach == 1 )
   //{
-    is_trimmed= trimming_contour_double_binary ( cmb_partition, 
-                                                 cmb_contourlist,
-                                                 cmb_curvelist,
-                                                 cmb_curvedata,
-                                                 cmb_pointdata,
-                                                 uv, 
-                                                 trim_index_cmb, 
-                                                 trimtype, 
-                                                 iters, 
-                                                 0.00001, 
-                                                 16 );
+  //  is_trimmed= trimming_contour_double_binary ( cmb_partition, 
+  //                                               cmb_contourlist,
+  //                                               cmb_curvelist,
+  //                                               cmb_curvedata,
+  //                                               cmb_pointdata,
+  //                                               uv, 
+  //                                               trim_index_cmb, 
+  //                                               trimtype, 
+  //                                               iters, 
+  //                                               0.00001, 
+  //                                               16 );
   //}
 
   if ( bool(trimming_enabled) && is_trimmed)

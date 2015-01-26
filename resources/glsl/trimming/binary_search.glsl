@@ -27,10 +27,8 @@ binary_search ( in samplerBuffer search_buffer,
     // compute center index and fetch center element
     int index_center = index_min + (index_max - index_min) / int(2);
 
-#if GPUCAST_COUNT_TEXEL_FETCHES
-    ++gpucast_texel_fetches;
-#endif
     center_element = texelFetch(search_buffer, index_center);
+    gpucast_count_texel_fetch();
 
     if (search_value >= center_element[0] &&
         search_value <= center_element[1])

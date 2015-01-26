@@ -1,6 +1,8 @@
 #ifndef GPUCAST_TRIMMING_DOUBLE_BINARY
 #define GPUCAST_TRIMMING_DOUBLE_BINARY
 
+#include "resources/glsl/common/config.glsl"
+
 #include "resources/glsl/trimming/binary_search.glsl"
 #include "resources/glsl/trimming/bisect_curve.glsl"
 

@@ -66,6 +66,7 @@ public : // methods
   bbox_type const&       bbox() const;
 
   bool                  is_inside(point_type const& origin) const;
+  bool                  is_inside(contour const& other) const;
 
   // split contour into bi-monotonic pieces
   template <typename contour_segment_ptr_container>
