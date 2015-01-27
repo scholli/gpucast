@@ -78,7 +78,9 @@ public:
       }
     }
     else {
-      filenames.push_back("data/deckel_vorn.igs");
+      //filenames.push_back("data/deckel_vorn.igs");
+      filenames.push_back("I:/repositories/gpucast-github/data/vw/scheiben/heckscheibe.igs");
+    
     }
     
     for (auto const& file : filenames)
@@ -167,6 +169,7 @@ public:
     switch (key)
     {
     case 'c':
+    case 'C':
       renderer.recompile();
       std::cout << "Shaders recompiled" << std::endl;
       break;

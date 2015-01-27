@@ -43,8 +43,6 @@ namespace gpucast {
         /*virtual*/ void initialize() override;
         /*virtual*/ void print(std::ostream& os) const override;
 
-        trimloop const& root() const;
-
       protected: // methods
 
       private: // internal/auxilliary methods

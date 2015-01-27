@@ -62,11 +62,6 @@ contour_map_loop_list<value_t>::print(std::ostream& os) const
   os << "contour_map_kd<value_t>::print() not implemented" << std::endl;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-contour_map_loop_list<value_t>::trimloop const& root() const {
-  return _outer_loop; 
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>

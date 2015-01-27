@@ -162,16 +162,16 @@ namespace gpucast {
       auto& renderer = bezierobject_renderer::instance();
       p.set_texturebuffer("vertexdata", _controlpoints, renderer.next_texunit());
 
+      p.set_texturebuffer("bp_trimdata", _db_partition, renderer.next_texunit());
+      p.set_texturebuffer("bp_celldata", _db_celldata, renderer.next_texunit());
+      p.set_texturebuffer("bp_curvelist", _db_curvelist, renderer.next_texunit());
+      p.set_texturebuffer("bp_curvedata", _db_curvedata, renderer.next_texunit());
+
       p.set_texturebuffer("cmb_partition", _cmb_partition, renderer.next_texunit());
       p.set_texturebuffer("cmb_contourlist", _cmb_contourlist, renderer.next_texunit());
       p.set_texturebuffer("cmb_curvelist", _cmb_contourlist, renderer.next_texunit());
       p.set_texturebuffer("cmb_curvedata", _cmb_curvelist, renderer.next_texunit());
       p.set_texturebuffer("cmb_pointdata", _cmb_pointdata, renderer.next_texunit());
-
-      p.set_texturebuffer("bp_trimdata", _db_partition, renderer.next_texunit());
-      p.set_texturebuffer("bp_celldata", _db_celldata, renderer.next_texunit());
-      p.set_texturebuffer("bp_curvelist", _db_curvelist, renderer.next_texunit());
-      p.set_texturebuffer("bp_curvedata", _db_curvedata, renderer.next_texunit());
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -189,7 +189,7 @@ namespace gpucast {
 
       // update texturebuffers
       _controlpoints.update(b._controlpoints.begin(), b._controlpoints.end());
-      _controlpoints.format(GL_RGBA32F_ARB);
+      _controlpoints.format(GL_RGBA32F);
 
       _cmb_partition.update(b._cmb_partition.begin(), b._cmb_partition.end());
       _cmb_contourlist.update(b._cmb_contourlist.begin(), b._cmb_contourlist.end());
@@ -379,61 +379,8 @@ namespace gpucast {
     {
       gpucast::gl::resource_factory factory;
 
-      _program = init_program(factory.read_shader_file("resources/glsl/trimmed_surface/raycast_surface.glsl.vert"), 
-                              factory.read_shader_file("resources/glsl/trimmed_surface/raycast_surface.glsl.frag"));
+      _program = factory.create_program("resources/glsl/trimmed_surface/raycast_surface.glsl.vert", "resources/glsl/trimmed_surface/raycast_surface.glsl.frag");
     }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    std::shared_ptr<gpucast::gl::program> bezierobject_renderer::init_program(std::string const& vertex_shader_code, std::string const& fragment_shader_code)
-    {
-      try {
-        vertexshader     vs;
-        fragmentshader   fs;
-
-        auto p = std::make_shared<program>();
-
-        std::string vs_source; 
-        std::string fs_source; 
-        std::string gs_source;
-
-        vs.set_source(vertex_shader_code.c_str());
-        vs.compile();
-        if (!vs.log().empty()) {
-          std::fstream ostr("vertex_shader.fail.log", std::ios::out);
-          ostr << vs.log() << std::endl;
-          ostr.close();
-        }
-        p->add(&vs);
-        
-
-        fs.set_source(fragment_shader_code.c_str());
-        fs.compile();
-
-        if (!fs.log().empty()) {
-          std::fstream ostr("fragment_shader.fail.log", std::ios::out);
-          ostr << vs.log() << std::endl;
-          ostr.close();
-        }
-        p->add(&fs);
-        
-        // link all shaders
-        p->link();
-
-        if (!p->log().empty())
-        {
-          // stream log to std output
-          std::cout << " program log : " << p->log() << std::endl;
-        }
-
-        return p;
-      }
-      catch (std::exception& e) {
-        std::cerr << "renderer::init_program(): failed to init program : " << e.what() << ")\n";
-        throw e;
-      }
-    }
-
 
   } // namespace gl
 } // namespace gpucast 

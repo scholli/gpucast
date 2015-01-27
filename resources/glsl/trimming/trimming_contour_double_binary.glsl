@@ -46,10 +46,6 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
   vec4 vinterval = vec4(0.0);
   bool vinterval_found = binary_search(domainpartition, uv[1], id + 2, v_intervals, vinterval);
 
-  //if ( !vinterval_found ) {
-  //  return bool(trim_outer);
-  //}
-
   int celllist_id = int(floatBitsToUint(vinterval[2]));
   int ncells      = int(floatBitsToUint(vinterval[3]));
 

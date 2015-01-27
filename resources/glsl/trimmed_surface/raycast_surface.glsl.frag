@@ -137,12 +137,10 @@ layout (depth_any)    out float gl_FragDepth;
  * include functions
  ******************************************************************************/
 #include "./resources/glsl/base/compute_depth.frag"
-#include "./resources/glsl/base/conversion.glsl"
 #include "./resources/glsl/math/adjoint.glsl.frag"
 #include "./resources/glsl/math/euclidian_space.glsl.frag"
 #include "./resources/glsl/math/horner_surface.glsl.frag"
 #include "./resources/glsl/math/horner_surface_derivatives.glsl.frag"
-#include "./resources/glsl/math/horner_curve.glsl"
 #include "./resources/glsl/math/newton_surface.glsl.frag"
 #include "./resources/glsl/math/raygeneration.glsl.frag" 
 #include "./resources/glsl/trimming/trimming_contour_double_binary.glsl"
@@ -166,28 +164,19 @@ void main(void)
   *********************************************************************/
   vec2 uv = vec2(frag_texcoord[0], frag_texcoord[1]);
   
-  vec4 p  = vec4(0.0);
+  vec4 p  = v_modelcoord;
   vec4 du = vec4(0.0);
   vec4 dv = vec4(0.0);
 
-  bool surface_hit = true;
-  //if ( bool(raycasting_enabled) )
+  if ( bool(raycasting_enabled) ) 
   {
-    // raycast for ray surface intersection
-    surface_hit = newton(uv, 0.001f, iterations, vertexdata, data_index, order_u, order_v, n1, n2, d1, d2, p, du, dv);
-  }
-
-  if ( !surface_hit )//&& bool(raycasting_enabled) )
-  {
-    discard;
+    bool surface_hit = newton(uv, 0.001f, iterations, vertexdata, data_index, order_u, order_v, n1, n2, d1, d2, p, du, dv);
+    if ( !surface_hit ) 
+    {
+      discard;
+    }
   }
   
-
-  if ( !bool(raycasting_enabled) )
-  {
-    p = v_modelcoord;
-  }
-
   vec3 normal = normalize(cross(normalize(du.xyz), normalize(dv.xyz)));
   
   /*********************************************************************
@@ -202,35 +191,30 @@ void main(void)
 
   bool is_trimmed = false;
 
-
-  if ( trimapproach == 0 )
-  { 
-    is_trimmed = trimming_double_binary ( bp_trimdata, 
-                                          bp_celldata, 
-                                          bp_curvelist, 
-                                          bp_curvedata, 
-                                          uv, 
-                                          trim_index_db, 
-                                          trimtype, 
-                                          iters, 
-                                          0.00001, 
-                                          16 );
-  } 
-  
-  //if ( trimapproach == 1 )
-  //{
-  //  is_trimmed= trimming_contour_double_binary ( cmb_partition, 
-  //                                               cmb_contourlist,
-  //                                               cmb_curvelist,
-  //                                               cmb_curvedata,
-  //                                               cmb_pointdata,
-  //                                               uv, 
-  //                                               trim_index_cmb, 
-  //                                               trimtype, 
-  //                                               iters, 
-  //                                               0.00001, 
-  //                                               16 );
-  //}
+#if 0
+  is_trimmed = trimming_double_binary ( bp_trimdata, 
+                                        bp_celldata, 
+                                        bp_curvelist, 
+                                        bp_curvedata, 
+                                        uv, 
+                                        trim_index_db, 
+                                        trimtype, 
+                                        iters, 
+                                        0.00001, 
+                                        16 );
+#else
+  is_trimmed= trimming_contour_double_binary ( cmb_partition, 
+                                               cmb_contourlist,
+                                               cmb_curvelist,
+                                               cmb_curvedata,
+                                               cmb_pointdata,
+                                               uv, 
+                                               trim_index_cmb, 
+                                               trimtype, 
+                                               iters, 
+                                               0.00001, 
+                                               16 );
+#endif
 
   if ( bool(trimming_enabled) && is_trimmed)
   {
@@ -249,16 +233,17 @@ void main(void)
    ********************************************************************/
   if (bool(raycasting_enabled)) 
   {
-    out_color = shade_phong_fresnel(p_world, 
-                                    normalize((normalmatrix * vec4(normal, 0.0)).xyz), 
-                                    vec4(1.0, 1.0, 1.0, 1.0),
-                                    mat_ambient, mat_diffuse, mat_specular,
-                                    shininess,
-                                    opacity,
-                                    bool(spheremapping),
-                                    spheremap,
-                                    bool(diffusemapping),
-                                    diffusemap);
+  out_color = vec4(uv, 0.0, 1.0);
+    //out_color = shade_phong_fresnel(p_world, 
+    //                                normalize((normalmatrix * vec4(normal, 0.0)).xyz), 
+    //                                vec4(1.0, 1.0, 1.0, 1.0),
+    //                                mat_ambient, mat_diffuse, mat_specular,
+    //                                shininess,
+    //                                opacity,
+    //                                bool(spheremapping),
+    //                                spheremap,
+    //                                bool(diffusemapping),
+    //                                diffusemap);
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }

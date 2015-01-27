@@ -153,17 +153,14 @@ public: // methods
                  
   void           apply_uniforms();
 
-  std::shared_ptr<gpucast::gl::program> init_program(std::string const& vertexshader_code,
-                                                     std::string const& fragmentshader_code);
-
 private : // methods
 
   void _init_program();
 
 private: // attributes
 
-  float                       _nearplane;
-  float                       _farplane;
+  float                         _nearplane;
+  float                         _farplane;
                               
   gpucast::math::matrix4f       _modelviewmatrix;
   gpucast::math::matrix4f       _modelviewmatrixinverse;
@@ -172,10 +169,10 @@ private: // attributes
   gpucast::math::matrix4f       _modelviewprojectionmatrix;
   gpucast::math::matrix4f       _modelviewprojectionmatrixinverse;
                               
-  std::set<std::string>       _pathlist;
+  std::set<std::string>         _pathlist;
   gpucast::math::vec3f          _background;
 
-  int                         _texunit = 0;
+  int                           _texunit = 0;
 
   // surface_renderer global ressources
   std::shared_ptr<program>    _program;
