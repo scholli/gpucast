@@ -69,6 +69,28 @@ beziersurfaceobject::init(std::size_t subdivision_level_u,
     _add(surface, db_domains, db_curves, cmb_domains, cmb_segments, cmb_curves);
   }
 
+  std::cout << "init : " << subdivision_level_u << " " << subdivision_level_v << std::endl;
+
+  for (auto i : _cmb_partition) {
+    std::cout << i << std::endl;
+  }
+  
+  for (auto i : _cmb_contourlist) {
+    std::cout << i << std::endl;
+  }
+  
+  //for (auto i : _cmb_curvelist) {
+  //  std::cout << i << std::endl;
+  //}
+  //
+  //for (auto i : _cmb_curvedata) {
+  //  std::cout << i << std::endl;
+  //}
+  //
+  //for (auto i : _cmb_pointdata) {
+  //  std::cout << i << std::endl;
+  //}
+
   _is_initialized = true;
 }
 
@@ -254,7 +276,6 @@ beziersurfaceobject::_add ( surface_ptr const& surface,
                                                    _db_celldata, 
                                                    _db_curvelist, 
                                                    _db_curvedata );
-
 
   // add convex hull to vbo
   std::size_t chull_index = _add(surface->convexhull());

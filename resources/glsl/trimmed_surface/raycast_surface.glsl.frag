@@ -209,7 +209,7 @@ void main(void)
                                                cmb_curvedata,
                                                cmb_pointdata,
                                                uv, 
-                                               trim_index_cmb, 
+                                               1, 
                                                trimtype, 
                                                iters, 
                                                0.00001, 
@@ -233,17 +233,16 @@ void main(void)
    ********************************************************************/
   if (bool(raycasting_enabled)) 
   {
-  out_color = vec4(uv, 0.0, 1.0);
-    //out_color = shade_phong_fresnel(p_world, 
-    //                                normalize((normalmatrix * vec4(normal, 0.0)).xyz), 
-    //                                vec4(1.0, 1.0, 1.0, 1.0),
-    //                                mat_ambient, mat_diffuse, mat_specular,
-    //                                shininess,
-    //                                opacity,
-    //                                bool(spheremapping),
-    //                                spheremap,
-    //                                bool(diffusemapping),
-    //                                diffusemap);
+    out_color = shade_phong_fresnel(p_world, 
+                                    normalize((normalmatrix * vec4(normal, 0.0)).xyz), 
+                                    vec4(1.0, 1.0, 1.0, 1.0),
+                                    mat_ambient, mat_diffuse, mat_specular,
+                                    shininess,
+                                    opacity,
+                                    bool(spheremapping),
+                                    spheremap,
+                                    bool(diffusemapping),
+                                    diffusemap);
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }

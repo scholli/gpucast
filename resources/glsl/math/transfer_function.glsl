@@ -3,7 +3,7 @@ vec4 transfer_function(in float relative_input)
   vec4 low = vec4(0.0, 0.0, 1.0, 1.0);
   vec4 normal = vec4(0.0, 1.0, 0.0, 1.0);
   vec4 high = vec4(1.0, 1.0, 0.0, 1.0);
-  vec4 critical = vec4(1.0, 1.0, 0.0, 1.0);
+  vec4 critical = vec4(1.0, 0.0, 0.0, 1.0);
 
   if (relative_input < 0.33) {
     return mix(low, normal, relative_input / 0.33);

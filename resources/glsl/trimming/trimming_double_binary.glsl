@@ -19,6 +19,7 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
                          in int     max_iterations)
 {
   vec4 domaininfo1 = texelFetch( partition_buffer, id );
+  gpucast_count_texel_fetch();
 
   int total_intersections  = 0;
   int v_intervals = int ( floatBitsToUint ( domaininfo1[0] ) );
@@ -30,6 +31,7 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
   } 
   
   vec4 domaininfo2 = texelFetch ( partition_buffer, id+1 );
+  gpucast_count_texel_fetch();
 
   // classify against whole domain
   if ( uv[0] > domaininfo2[1] || uv[0] < domaininfo2[0] ||
@@ -49,6 +51,8 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
   int ncells      = int(floatBitsToUint(vinterval[3]));
 
   vec4 celllist_info  = texelFetch(cell_buffer, int(celllist_id));
+  gpucast_count_texel_fetch();
+
   vec4 cell           = vec4(0.0);
 
   bool cellfound      = binary_search   (cell_buffer, uv[0], celllist_id + 1, int(ncells), cell );
@@ -58,12 +62,15 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
   }
 
   vec4 clist                       = texelFetch(curvelist_buffer, int(floatBitsToUint(cell[3])));
+  gpucast_count_texel_fetch();
+
   total_intersections              = int(floatBitsToUint(cell[2]));
   unsigned int curves_to_intersect = floatBitsToUint(clist[0]);
 
   for (int i = 1; i <= curves_to_intersect; ++i) 
   {
     vec4 curveinfo = texelFetch ( curvelist_buffer, int(floatBitsToUint(cell[3])) + i );
+    gpucast_count_texel_fetch();
 
     int index = int(floatBitsToUint(curveinfo[0]));
     int order = abs(floatBitsToInt(curveinfo[1]));

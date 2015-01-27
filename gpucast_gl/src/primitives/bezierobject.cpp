@@ -169,8 +169,8 @@ namespace gpucast {
 
       p.set_texturebuffer("cmb_partition", _cmb_partition, renderer.next_texunit());
       p.set_texturebuffer("cmb_contourlist", _cmb_contourlist, renderer.next_texunit());
-      p.set_texturebuffer("cmb_curvelist", _cmb_contourlist, renderer.next_texunit());
-      p.set_texturebuffer("cmb_curvedata", _cmb_curvelist, renderer.next_texunit());
+      p.set_texturebuffer("cmb_curvelist", _cmb_curvelist, renderer.next_texunit());
+      p.set_texturebuffer("cmb_curvedata", _cmb_curvedata, renderer.next_texunit());
       p.set_texturebuffer("cmb_pointdata", _cmb_pointdata, renderer.next_texunit());
     }
 

@@ -25,7 +25,7 @@ void main(void)
 
   if ( show_costs != 0 )
   {
-    outcolor = transfer_function(clamp(float(gpucast_texel_fetches)/25.0, 0.0, 1.0));
+    outcolor = transfer_function(clamp(float(gpucast_texel_fetches)/64.0, 0.0, 1.0));
   } else {
     if ( trimmed ) 
     {

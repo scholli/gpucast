@@ -558,6 +558,18 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
                                    curvedata,
                                    pointdata );
 
+  std::cout << _trimid << std::endl;
+
+  for (auto i : partition)
+  {
+    std::cout << i << std::endl;
+  }
+
+  for (auto i : contourlist)
+  {
+    std::cout << i << std::endl;
+  }
+
   std::size_t size_bytes = ( (partition.size()  - 1) * sizeof(gpucast::math::vec4f) + 
                              (contourlist.size()- 1) * sizeof(gpucast::math::vec2f) + 
                              (curvelist.size()  - 1) * sizeof(gpucast::math::vec4f) + 

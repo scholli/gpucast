@@ -175,9 +175,9 @@ private: // attributes
   int                           _texunit = 0;
 
   // surface_renderer global ressources
-  std::shared_ptr<program>    _program;
-  std::shared_ptr<texture2d>  _spheremap;
-  std::shared_ptr<texture2d>  _diffusemap;
+  std::shared_ptr<program>      _program;
+  std::shared_ptr<texture2d>    _spheremap;
+  std::shared_ptr<texture2d>    _diffusemap;
 };
 
 

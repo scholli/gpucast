@@ -68,6 +68,7 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
   for ( int i = 0; i < overlapping_contours; ++i )
   {
     vec2 contour    = texelFetch ( contourlist, contourlist_id + i ).xy;
+    gpucast_count_texel_fetch();
 
     uvec2 ncurves_uincreasing = intToUInt2(floatBitsToUint(contour.x));
     bool contour_uincreasing  = ncurves_uincreasing.y > 0;
