@@ -41,6 +41,7 @@ evaluateCurve ( in samplerBuffer data,
     /* linear piece*/
     p = mix(texelFetch(data, index), texelFetch(data, index + 1), t);
     gpucast_count_texel_fetch();
+    gpucast_count_texel_fetch();
   }
     
   /* project into euclidian coordinates */

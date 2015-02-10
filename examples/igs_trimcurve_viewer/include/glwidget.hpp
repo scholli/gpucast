@@ -27,6 +27,7 @@
 #include <gpucast/gl/primitives/line.hpp>
 #include <gpucast/gl/primitives/plane.hpp>
 #include <gpucast/gl/texture1d.hpp>
+#include <gpucast/gl/shaderstoragebuffer.hpp>
 #include <gpucast/math/matrix4x4.hpp>
 
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
@@ -42,14 +43,15 @@ public:
   typedef std::shared_ptr<gpucast::beziersurfaceobject> bezierobject_ptr;
   typedef gpucast::beziersurface::trimdomain_ptr        trimdomain_ptr;
 
-  enum view { original                          = 0, 
-              double_binary_partition           = 1,
-              double_binary_classification      = 2,
-              contour_map_binary_partition      = 3, 
-              contour_map_binary_classification = 4, 
-              contour_map_loop_list_partition   = 5,
-              minification                      = 6,
-              count                             = 7 };
+  enum view { original                             = 0, 
+              double_binary_partition              = 1,
+              double_binary_classification         = 2,
+              contour_map_binary_partition         = 3, 
+              contour_map_binary_classification    = 4, 
+              contour_map_loop_list_partition      = 5,
+              contour_map_loop_list_classification = 6,
+              minification                         = 7,
+              count                                = 8 };
 
 public : 
 
@@ -70,6 +72,7 @@ public Q_SLOTS :
 
   void                    serialize_double_binary       ( gpucast::beziersurface::trimdomain_ptr const& domain );
   void                    serialize_contour_binary      ( gpucast::beziersurface::trimdomain_ptr const& domain );
+  void                    serialize_contour_loop_list   ( gpucast::beziersurface::trimdomain_ptr const& domain );
 
   void                    add_gl_curve                  ( gpucast::beziersurface::curve_type const& curve, gpucast::math::vec4f const& color  );
   void                    add_gl_bbox                   ( gpucast::math::bbox2d const& bbox, gpucast::math::vec4f const& color  );
@@ -145,7 +148,13 @@ private : // attributes
   gpucast::gl::texturebuffer*                    _kd_curvedata;
   gpucast::gl::texturebuffer*                    _kd_pointdata;
 
-  view                                    _view;
+  std::shared_ptr<gpucast::gl::program>          _loop_list_program;
+  gpucast::gl::shaderstoragebuffer*              _loop_list_loops;
+  gpucast::gl::shaderstoragebuffer*              _loop_list_contours;
+  gpucast::gl::shaderstoragebuffer*              _loop_list_curves;
+  gpucast::gl::shaderstoragebuffer*              _loop_list_points;
+
+  view                                           _view;
 };
 
 

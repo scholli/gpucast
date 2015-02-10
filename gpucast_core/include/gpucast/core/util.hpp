@@ -159,38 +159,6 @@ private:
   std::size_t index_;
 };
 
-inline unsigned 
-uint4x8ToUInt ( unsigned char input0, unsigned char input1, unsigned char input2, unsigned char input3 )
-{
-  unsigned result = 0U;
-  result |= (input3 & 0x000000FF) << 24U;
-  result |= (input2 & 0x000000FF) << 16U;
-  result |= (input1 & 0x000000FF) << 8U;
-  result |= (input0 & 0x000000FF);
-  return result;
-}
-
-inline unsigned
-uint2x16ToUInt(unsigned short input0, unsigned short input1)
-{
-  unsigned result = 0U;
-  result |= (input1 & 0x0000FFFF) << 16U;
-  result |= (input0 & 0x0000FFFF);
-  return result;
-}
-
-inline unsigned 
-uint2ToUInt ( unsigned short input0, unsigned short input1 )
-{
-  unsigned result = 0U;
-  result |= (input1 & 0x0000FFFF) << 16U;
-  result |= (input0 & 0x0000FFFF);
-  return result;
-}
-
-
-
-
 } // namespace gpucast
 
 #endif // LIBNURBS_UTIL_HPP

@@ -28,13 +28,22 @@ namespace gpucast {
 
         typedef contour_map_base<value_t> base_type;
         using typename contour_map_base<value_t>::interval_type;
-        using typename contour_map_base<value_t>::contour_segment_container;
+        
         using typename contour_map_base<value_t>::value_type;
         using typename contour_map_base<value_t>::point_type;
         using typename contour_map_base<value_t>::bbox_type;
-        using typename contour_map_base<value_t>::contour_segment_ptr;
-        using typename contour_map_base<value_t>::contour_type;
+
         using typename contour_map_base<value_t>::contour_segment_type;
+        using typename contour_map_base<value_t>::contour_segment_ptr;
+        using typename contour_map_base<value_t>::contour_segment_container;
+
+        using typename contour_map_base<value_t>::contour_type;
+        using typename contour_map_base<value_t>::contour_ptr;
+        
+        struct trimloop {
+          contour_ptr           contour;
+          std::vector<trimloop> children;
+        };
 
       public: // c'tor / d'tor
 
@@ -43,21 +52,30 @@ namespace gpucast {
         /*virtual*/ void initialize() override;
         /*virtual*/ void print(std::ostream& os) const override;
 
+        trimloop const&  root() const;
+
+        // returns if left of segment is inside or outside of the domain
+        unsigned         parity(contour_segment_ptr const& segment) const;
+
+        // returns in how many segment bounding boxes is this segment
+        unsigned         priority(contour_segment_ptr const& segment) const;
+
       protected: // methods
 
       private: // internal/auxilliary methods
 
-        contour_ptr const& _determine_outer_loop (contour_container const& in_loops);
-        bool _is_child(contour_ptr const& parent, contour_ptr const& child, contour_container const& other_loops);
+        contour_ptr const&  _determine_outer_loop (contour_container const& in_loops);
+        bool                _is_child (contour_ptr const& parent, contour_ptr const& child, contour_container const& other_loops);
+
+        void                _determine_contour_segments_parity (); 
+        void                _determine_contour_segments_priority ();
 
       protected: // attributes
 
-        struct trimloop {
-          contour_ptr           contour;
-          std::vector<trimloop> children;
-        };
+        trimloop                                          _outer_loop;
 
-        trimloop _outer_loop;
+        std::unordered_map<contour_segment_ptr, unsigned> _segment_parity_classification;
+        std::unordered_map<contour_segment_ptr, unsigned> _segment_priority_classification;
 
       };
 

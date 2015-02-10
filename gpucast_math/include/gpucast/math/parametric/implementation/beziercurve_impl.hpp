@@ -18,6 +18,7 @@
 #include <iterator>  // std::ostream_iterator
 #include <algorithm> // std::reverse
 #include <string>    // std::string
+#include <iomanip>
 
 // header, project
 #include <gpucast/math/parametric/algorithm/horner.hpp>
@@ -461,7 +462,6 @@ namespace gpucast { namespace math {
     }
   }
 
-
   //////////////////////////////////////////////////////////////////////////////
   template <typename point_t>
   inline void
@@ -543,8 +543,8 @@ namespace gpucast { namespace math {
 
       for (unsigned int i = 0; i != _points.size() - 1; ++i)
       {
-        increasing &= _points[i][dim] >= _points[i+1][dim];
-        decreasing &= _points[i][dim] <= _points[i+1][dim];
+        increasing &= _points[i][dim] <= _points[i+1][dim];
+        decreasing &= _points[i][dim] >= _points[i+1][dim];
       }
 
       return increasing || decreasing;

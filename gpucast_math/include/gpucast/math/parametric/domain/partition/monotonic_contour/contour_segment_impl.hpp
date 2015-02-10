@@ -53,6 +53,29 @@ contour_segment<value_t>::bbox () const
   return _bbox;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+bool 
+contour_segment<value_t>::is_monotonic(typename point_type::coordinate_type const& c) const
+{
+  if (_curves.empty()) {
+    return true;
+  }
+
+  bool monotony = _curves.front()->weak_monotonic(c);
+  bool increase = _curves.front()->is_increasing(c);
+
+  for (auto const& curve : _curves)
+  {
+    if (monotony != curve->weak_monotonic(c) ||
+        increase != curve->is_increasing(c)) {
+      return false;
+    }
+  }
+
+  // no change in monotony or direction
+  return true;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
@@ -154,8 +177,39 @@ contour_segment<value_t>::right_of(point_type const& origin) const
 
   } else {
     return false;
+  } 
+}
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+typename contour_segment<value_t>::point_type            
+contour_segment<value_t>::intersect(typename point_type::coordinate_type const& direction, value_type const& v) const
+{
+  for (auto const& curve : _curves)
+  {
+    contour_segment<value_t>::bbox_type curve_bbox;
+    curve->bbox_simple(curve_bbox);
+
+    // origin in curve's v-interval --> try to intersect
+    if (v >= curve_bbox.min[direction] &&
+        v <= curve_bbox.max[direction])
+    { 
+      bool is_root = false;
+      value_type t = 0;
+
+      curve->bisect(point_type::v, v, is_root, t);
+
+      if (is_root)
+      {
+        return curve->evaluate(t);
+      }
+      else {
+        throw std::runtime_error("contour_segment<value_t>::intersect(): no intersection");
+      }
+    }
   }
-  
+  throw std::runtime_error("contour_segment<value_t>::intersect(): no intersection");
+
 }
 
 

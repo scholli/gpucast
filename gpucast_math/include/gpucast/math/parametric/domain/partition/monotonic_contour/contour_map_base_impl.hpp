@@ -42,10 +42,19 @@ contour_map_base<value_t>::add ( contour_type const& loop )
   auto loop_ptr = std::make_shared<contour_type>(loop);
 
   // split loop into bimonotnic segments
-  contour_segment_container loop_segments;
+  contour_segment_container loop_segments = loop_ptr->monotonic_segments();
+
+  // make monotonic segments point into positive v direction
+  for (auto const& segment : loop_segments) {
+    if (!segment->is_increasing(point_type::v)) {
+      segment->invert();
+    }
+    if (!segment->is_monotonic(point_type::u) && !segment->is_monotonic(point_type::v)) {
+      std::cout << "Caution: non-bi-monotonic segment!" << std::endl;
+    }
+  }
 
   // split into bi-monotonic contour segments
-  loop_ptr->monotonize(loop_segments);
   std::copy(loop_segments.begin(), loop_segments.end(), std::back_inserter(_contour_segments));
 
   // store original loop and its segments
@@ -70,7 +79,7 @@ template <typename value_t>
 typename contour_map_base<value_t>::contour_segment_map const&
 contour_map_base<value_t>::loops() const
 {
-  return _loops;
+  return _segmented_loops;
 }
 
 

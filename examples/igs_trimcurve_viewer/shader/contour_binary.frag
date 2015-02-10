@@ -40,9 +40,9 @@ void main(void)
   } else {
     if ( trimmed ) 
     {
-      outcolor = vec4(1.0, 0.0, 0.0, 1.0 ) * float(gpucast_texel_fetches)/64.0;;
+      outcolor = vec4(1.0, 0.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
     } else {
-      outcolor = vec4(0.0, 1.0, 0.0, 1.0 ) * float(gpucast_texel_fetches)/64.0;;
+      outcolor = vec4(0.0, 1.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
     }
   }  
 }

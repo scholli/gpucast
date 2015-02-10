@@ -14,6 +14,7 @@
 #pragma warning(disable: 4127) // Qt conditional expression is constant
 
 #include <QtWidgets/QMenuBar>
+#include <QSettings>
 #include <QtWidgets/QGridLayout>
 
 // system includes
@@ -93,6 +94,7 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _modes.insert(std::make_pair(glwidget::contour_map_binary_classification, "contour_map_binary_classification"));
 
   _modes.insert(std::make_pair(glwidget::contour_map_loop_list_partition, "contour_map_loop_list_partition"));
+  _modes.insert(std::make_pair(glwidget::contour_map_loop_list_classification, "contour_map_loop_list_classification"));
 
   _modes.insert(std::make_pair(glwidget::minification, "minification"));
 
@@ -229,7 +231,7 @@ mainwindow::openfile()
 {
  _filenames.clear();
  QStringList qfilelist = QFileDialog::getOpenFileNames(this, tr("Open IGS File"), ".", tr("Surface Files (*.igs)"));
- 
+
  std::transform(qfilelist.begin(), qfilelist.end(), std::back_inserter(_filenames), []( QString const& qstr ) { return qstr.toStdString(); } );
  _glwindow->open(_filenames); 
 

@@ -14,6 +14,7 @@
 #include "gpucast/gl/program.hpp"
 
 #include <gpucast/gl/texturebuffer.hpp>
+#include <gpucast/gl/shaderstoragebuffer.hpp>
 #include <gpucast/gl/texture1d.hpp>
 #include <gpucast/gl/texture2d.hpp>
 #include <gpucast/gl/texture3d.hpp>
@@ -566,6 +567,16 @@ program::set_texturebuffer(char const* varname, texturebuffer& t, GLint unit) co
   set_uniform1i(varname, unit);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void        
+program::set_shaderstoragebuffer(char const* varname, shaderstoragebuffer& ssbo, unsigned binding_point) const
+{
+  GLuint location = glGetProgramResourceIndex(id_, GL_SHADER_STORAGE_BLOCK, varname);
+
+  ssbo.bind();
+  glShaderStorageBlockBinding(id_, location, binding_point);
+  ssbo.unbind();
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

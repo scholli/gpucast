@@ -63,21 +63,22 @@ public : // methods
   const_curve_iterator  end   () const;
 
   curve_container const& curves() const;
-  bbox_type const&       bbox() const;
+  bbox_type             bbox() const;
 
   bool                  is_inside(point_type const& origin) const;
   bool                  is_inside(contour const& other) const;
 
   // split contour into bi-monotonic pieces
-  template <typename contour_segment_ptr_container>
-  void monotonize ( contour_segment_ptr_container& target_container ) const;
+  void                  monotonize ();
+  std::vector<contour_segment_ptr> const& monotonic_segments() const;
 
   // print to output stream
   void print ( std::ostream& os ) const;
 
 private :
 
-  curve_container _curves;
+  std::vector<contour_segment_ptr> _monotonic_segments;
+  curve_container                  _curves;
 };
 
 template <typename value_t>

@@ -58,10 +58,13 @@ public : // methods
   bbox_type const&      bbox                 () const;
   
   bool                  is_continous         () const;
+  bool                  is_monotonic         ( typename point_type::coordinate_type const& ) const;
   bool                  is_increasing        ( typename point_type::coordinate_type const& ) const;
   bool                  is_constant          ( typename point_type::coordinate_type const& ) const;
 
   bool                  right_of             ( point_type const& origin ) const;
+  point_type            intersect            ( typename point_type::coordinate_type const& direction,
+                                               value_type const& v) const;
 
   std::size_t           size                 () const;
   const_curve_iterator  begin                () const;
