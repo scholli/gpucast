@@ -16,14 +16,20 @@ layout (location = 0) out vec4 outcolor;
 void main(void) 
 { 
   int iterations = 0;
+
   bool trimmed = trimming_loop_list(uv_coord, trim_index);
 
-  if ( trimmed ) 
+  if ( show_costs != 0 )
   {
-    outcolor = vec4(1.0, 0.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
+    outcolor = transfer_function(clamp(float(gpucast_texel_fetches)/64.0, 0.0, 1.0));
   } else {
-    outcolor = vec4(0.0, 1.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
-  }
+    if ( trimmed ) 
+    {
+      outcolor = vec4(1.0, 0.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
+    } else {
+      outcolor = vec4(0.0, 1.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
+    }
+  } 
 }
 
 

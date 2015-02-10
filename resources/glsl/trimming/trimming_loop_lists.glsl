@@ -245,8 +245,7 @@ bool is_inside(in bbox_t outer, in bbox_t inner)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
-bool
-trimming_loop_list (in vec2 uv, in int index)
+bool classify_loop(in vec2 uv, in int index)
 {
   bbox_t loop_bbox = loops[index].bbox;
   gpucast_count_texel_fetch();
@@ -257,16 +256,14 @@ trimming_loop_list (in vec2 uv, in int index)
 
     unsigned int ci = loops[index].contour_index;
     gpucast_count_texel_fetch();
-    
-    for (unsigned int i = 0; i != loops[index].ncontours; ++i) 
+
+    for (unsigned int i = 0; i != loops[index].ncontours; ++i)
     {
-      bbox_t       contour_bbox   = contours[ci + i].bbox;
-      
+      bbox_t       contour_bbox = contours[ci + i].bbox;
       gpucast_count_texel_fetch();
-      unsigned int highest_priority = 0;
 
       // is inside monotonic contour segment
-      if ( uv[1] >= contour_bbox.vmin && uv[1] <= contour_bbox.vmax )
+      if (uv[1] >= contour_bbox.vmin && uv[1] <= contour_bbox.vmax)
       {
         if (uv[0] >= contour_bbox.umin && uv[0] <= contour_bbox.umax)
         {
@@ -300,12 +297,27 @@ trimming_loop_list (in vec2 uv, in int index)
         intersections += unsigned int(uv.x < contour_bbox.umin);
       }
     }
-    
+
     return mod(intersections, 2) == 0;
   }
   else {
     return true;
   }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+bool
+trimming_loop_list (in vec2 uv, in int index)
+{
+  bool is_trimmed;
+  is_trimmed = classify_loop(uv, index);
+
+  for (unsigned int i = 0; i < loops[index].nchildren; ++i) {
+    //is_trimmed = is_trimmed && classify_loop(uv, int(loops[index].child_index + i));
+    is_trimmed = is_trimmed != classify_loop(uv, int(loops[index].child_index + i));
+  }
+  return is_trimmed;
 }
 
 #endif
