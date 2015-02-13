@@ -68,6 +68,7 @@ namespace gpucast { namespace math {
 
     value_type    volume        () const;
     value_type    surface       () const;
+    value_type    distance      ( point_type const& p ) const;
 
     bool          valid         () const;
 

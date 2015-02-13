@@ -27,6 +27,8 @@
 #include <gpucast/gl/primitives/line.hpp>
 #include <gpucast/gl/primitives/plane.hpp>
 #include <gpucast/gl/texture1d.hpp>
+#include <gpucast/gl/texture2d.hpp>
+#include <gpucast/gl/sampler.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>
 #include <gpucast/math/matrix4x4.hpp>
 
@@ -51,42 +53,51 @@ public:
               contour_map_loop_list_partition      = 5,
               contour_map_loop_list_classification = 6,
               minification                         = 7,
-              count                                = 8 };
+              binary_field                         = 8,
+              distance_field                       = 9,  
+              count                                = 10 };
 
 public : 
 
   glwidget                                              ( int argc, char** argv, QGLFormat const& format, QWidget *parent = 0 );
   ~glwidget                                             ();
 
+  void                    generate_original_view(gpucast::beziersurface::trimdomain_ptr const& domain);
+  void                    generate_double_binary_view(gpucast::beziersurface::trimdomain_ptr const& domain);
+  void                    generate_bboxmap_view(gpucast::beziersurface::trimdomain_ptr const& domain);
+  void                    generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& domain);
+
+  void                    generate_minification_view(gpucast::beziersurface::trimdomain_ptr const& domain, unsigned resolution);
+  void                    generate_binary_field(gpucast::beziersurface::trimdomain_ptr const& domain, unsigned resolution);
+  void                    generate_distance_field(gpucast::beziersurface::trimdomain_ptr const& domain, unsigned resolution);
+
+  void                    serialize_double_binary(gpucast::beziersurface::trimdomain_ptr const& domain);
+  void                    serialize_contour_binary(gpucast::beziersurface::trimdomain_ptr const& domain);
+  void                    serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr const& domain);
+
+  void                    initialize_filter();
+  void                    generate_trim_region_vbo(gpucast::beziersurface::trimdomain_ptr const& domain);
+
+  void                    add_gl_curve(gpucast::beziersurface::curve_type const& curve, gpucast::math::vec4f const& color);
+  void                    add_gl_bbox(gpucast::math::bbox2d const& bbox, gpucast::math::vec4f const& color);
+
+  trimdomain_ptr          get_domain(std::string const& name, std::size_t const index) const;
+  std::size_t             get_objects() const;
+  std::size_t             get_surfaces(std::string const& name) const;
+
 public Q_SLOTS : 
 
   void                    open                          ( std::list<std::string> const& files );
   void                    clear                         ();
-  void                    update_view                   ( std::string const& name, std::size_t const index, view current );
+  void                    update_view                   ( std::string const& name, std::size_t const index, view current, unsigned resolution );
 
-  void                    generate_original_view        ( gpucast::beziersurface::trimdomain_ptr const& domain );
-  void                    generate_double_binary_view   ( gpucast::beziersurface::trimdomain_ptr const& domain );
-  void                    generate_bboxmap_view         ( gpucast::beziersurface::trimdomain_ptr const& domain );
-  void                    generate_loop_list_view       ( gpucast::beziersurface::trimdomain_ptr const& domain );
-  void                    generate_minification_view    ( gpucast::beziersurface::trimdomain_ptr const& domain );
-
-  void                    serialize_double_binary       ( gpucast::beziersurface::trimdomain_ptr const& domain );
-  void                    serialize_contour_binary      ( gpucast::beziersurface::trimdomain_ptr const& domain );
-  void                    serialize_contour_loop_list   ( gpucast::beziersurface::trimdomain_ptr const& domain );
-
-  void                    add_gl_curve                  ( gpucast::beziersurface::curve_type const& curve, gpucast::math::vec4f const& color  );
-  void                    add_gl_bbox                   ( gpucast::math::bbox2d const& bbox, gpucast::math::vec4f const& color  );
-
-  trimdomain_ptr          get_domain                    ( std::string const& name, std::size_t const index ) const;
-  std::size_t             get_objects                   () const;
-  std::size_t             get_surfaces                  ( std::string const& name ) const;
-
-  void                    show_texel_fetches            (bool);
+  void                    show_texel_fetches            (int);
   void                    recompile                     ();
+  void                    texture_filtering             (int);
+  void                    optimal_distance              (int);
 
 protected:
 
-  /* virtual */ void      initializeGL                  ();
   /* virtual */ void      resizeGL                      ( int w, int h );
   /* virtual */ void      paintGL                       ();
 
@@ -113,46 +124,56 @@ private : // attributes
   std::size_t                             _current_surface;
 
   // simple partition views
-  gpucast::math::matrix4f                        _projection;
-  std::shared_ptr<gpucast::gl::program>          _partition_program;
-  std::vector<gpucast::gl::line*>                _curve_geometry;
+  gpucast::math::matrix4f                         _projection;
+  std::shared_ptr<gpucast::gl::program>           _partition_program;
+  std::vector<std::shared_ptr<gpucast::gl::line>> _curve_geometry;
 
   // commonly used resources
-  gpucast::gl::texture1d*                        _transfertexture;
+  std::unique_ptr<gpucast::gl::texture1d>       _transfertexture;
   unsigned                                       _trimid;
   bool                                           _show_texel_fetches;
   gpucast::math::vec2f                           _domain_size;
   gpucast::math::vec2f                           _domain_min;
-  gpucast::gl::plane*                            _quad;
+  std::unique_ptr<gpucast::gl::plane>            _quad;
+
+  // program to show textures
+  std::shared_ptr<gpucast::gl::program>          _tex_program;
+  std::unique_ptr<gpucast::gl::texture2d>        _binary_texture;
+  std::unique_ptr<gpucast::gl::texture2d>        _distance_field_texture;
+
+  bool                                           _optimal_distance = false;
+  bool                                           _linear_filter = false;
+  std::unique_ptr<gpucast::gl::sampler>          _bilinear_filter;
+  std::unique_ptr<gpucast::gl::sampler>          _nearest_filter;
 
   // double binary resources
   std::shared_ptr<gpucast::gl::program>          _db_program;
-  gpucast::gl::texturebuffer*                    _db_trimdata;
-  gpucast::gl::texturebuffer*                    _db_celldata;
-  gpucast::gl::texturebuffer*                    _db_curvelist;
-  gpucast::gl::texturebuffer*                    _db_curvedata;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _db_trimdata;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _db_celldata;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _db_curvelist;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _db_curvedata;
 
   // contourmap_binary resources
   std::shared_ptr<gpucast::gl::program>          _cmb_program;
-  gpucast::gl::texturebuffer*                    _cmb_partition;
-  gpucast::gl::texturebuffer*                    _cmb_contourlist;
-  gpucast::gl::texturebuffer*                    _cmb_curvelist;
-  gpucast::gl::texturebuffer*                    _cmb_curvedata;
-  gpucast::gl::texturebuffer*                    _cmb_pointdata;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _cmb_partition;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _cmb_contourlist;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _cmb_curvelist;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _cmb_curvedata;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _cmb_pointdata;
 
   // contourmap_kd resources
   std::shared_ptr<gpucast::gl::program>          _kd_program;
-  gpucast::gl::texturebuffer*                    _kd_partition;
-  gpucast::gl::texturebuffer*                    _kd_contourlist;
-  gpucast::gl::texturebuffer*                    _kd_curvelist;
-  gpucast::gl::texturebuffer*                    _kd_curvedata;
-  gpucast::gl::texturebuffer*                    _kd_pointdata;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _kd_partition;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _kd_contourlist;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _kd_curvelist;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _kd_curvedata;
+  std::unique_ptr<gpucast::gl::texturebuffer>    _kd_pointdata;
 
-  std::shared_ptr<gpucast::gl::program>          _loop_list_program;
-  gpucast::gl::shaderstoragebuffer*              _loop_list_loops;
-  gpucast::gl::shaderstoragebuffer*              _loop_list_contours;
-  gpucast::gl::shaderstoragebuffer*              _loop_list_curves;
-  gpucast::gl::shaderstoragebuffer*              _loop_list_points;
+  std::shared_ptr<gpucast::gl::program>             _loop_list_program;
+  std::unique_ptr<gpucast::gl::shaderstoragebuffer> _loop_list_loops;
+  std::unique_ptr<gpucast::gl::shaderstoragebuffer> _loop_list_contours;
+  std::unique_ptr<gpucast::gl::shaderstoragebuffer> _loop_list_curves;
+  std::unique_ptr<gpucast::gl::shaderstoragebuffer> _loop_list_points;
 
   view                                           _view;
 };

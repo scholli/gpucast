@@ -101,35 +101,7 @@ glwidget::glwidget( int argc, char** argv, QGLFormat const& context_format, QWid
 
 ///////////////////////////////////////////////////////////////////////
 glwidget::~glwidget()
-{
-  if ( _db_trimdata  ) delete _db_trimdata  ;
-  if ( _db_celldata  ) delete _db_celldata  ;
-  if ( _db_curvelist ) delete _db_curvelist ;
-  if ( _db_curvedata ) delete _db_curvedata ;
-
-  if ( _cmb_partition )  delete _cmb_partition ;
-  if ( _cmb_contourlist ) delete _cmb_contourlist;
-  if ( _cmb_curvelist   ) delete _cmb_curvelist  ;
-  if ( _cmb_curvedata   ) delete _cmb_curvedata  ;
-  if ( _cmb_pointdata   ) delete _cmb_pointdata  ;
-
-  if ( _kd_partition )   delete _kd_partition ;
-  if ( _kd_contourlist ) delete _kd_contourlist;
-  if ( _kd_curvelist   ) delete _kd_curvelist  ;
-  if ( _kd_curvedata   ) delete _kd_curvedata  ;
-  if ( _kd_pointdata   ) delete _kd_pointdata  ;
-
-  if (_loop_list_loops) delete _loop_list_loops;
-
-  if ( _quad                      ) delete _quad                       ;
-  if ( _transfertexture           ) delete _transfertexture            ;
-}
-
-
-///////////////////////////////////////////////////////////////////////
-void glwidget::initializeGL()
 {}
-
 
 ///////////////////////////////////////////////////////////////////////
 void                    
@@ -152,18 +124,13 @@ glwidget::open ( std::list<std::string> const& files )
 void                    
 glwidget::clear() 
 {
-  // delete old polygons
-  for ( gpucast::gl::line* p : _curve_geometry ) {
-    delete p;
-  }
-  // delete invalid pointers
   _curve_geometry.clear();
 }
 
 
 ///////////////////////////////////////////////////////////////////////
 void                    
-glwidget::update_view ( std::string const& name, std::size_t const index, view current_view )
+glwidget::update_view(std::string const& name, std::size_t const index, view current_view, unsigned resolution)
 {
   _current_object  = name;
   _current_surface = index;
@@ -201,13 +168,19 @@ glwidget::update_view ( std::string const& name, std::size_t const index, view c
           serialize_contour_binary ( domain );
           break;
         case minification:
-          generate_minification_view(domain);
+          generate_minification_view(domain, resolution);
           break;
         case contour_map_loop_list_partition:
           generate_loop_list_view(domain);
           break;
         case contour_map_loop_list_classification:
           serialize_contour_loop_list(domain);
+          break;
+        case distance_field:
+          generate_distance_field(domain, resolution);
+          break;
+        case binary_field:
+          generate_binary_field(domain, resolution);
           break;
         default : 
           break;
@@ -248,14 +221,9 @@ glwidget::generate_original_view ( gpucast::beziersurface::trimdomain_ptr const&
 void                    
 glwidget::generate_double_binary_view ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
-  gpucast::trimdomain::curve_container curves = domain->curves();
-  for ( auto curve = curves.begin(); curve != curves.end(); ++curve )
-  {
-    gpucast::math::vec4f cpolygon_color ( 1.0f, 1.0f, 1.0f, 1.0f );
-    add_gl_curve ( **curve, cpolygon_color );
-  }
+  generate_trim_region_vbo(domain);
 
-  gpucast::math::domain::partition<gpucast::beziersurface::curve_point_type>  partition ( curves.begin(), curves.end() );
+  gpucast::math::domain::partition<gpucast::beziersurface::curve_point_type>  partition(domain->curves().begin(), domain->curves().end());
   partition.initialize();
 
   for ( auto v = partition.begin(); v != partition.end(); ++v )
@@ -325,12 +293,7 @@ glwidget::generate_bboxmap_view ( gpucast::beziersurface::trimdomain_ptr const& 
 void
 glwidget::generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& domain)
 {
-  gpucast::trimdomain::curve_container curves = domain->curves();
-  for (auto curve = curves.begin(); curve != curves.end(); ++curve)
-  {
-    gpucast::math::vec4f cpolygon_color(1.0f, 1.0f, 1.0f, 1.0f);
-    add_gl_curve(**curve, cpolygon_color);
-  }
+  generate_trim_region_vbo(domain);
 
   gpucast::math::domain::contour_map_loop_list<double> looplist;
 
@@ -358,18 +321,12 @@ glwidget::generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& 
 
 ///////////////////////////////////////////////////////////////////////
 void
-glwidget::generate_minification_view(gpucast::beziersurface::trimdomain_ptr const& domain)
+glwidget::generate_minification_view(gpucast::beziersurface::trimdomain_ptr const& domain, unsigned resolution)
 {
-  // draw curve
-  gpucast::trimdomain::curve_container curves = domain->curves();
-  for (auto curve = curves.begin(); curve != curves.end(); ++curve)
-  {
-    gpucast::math::vec4f cpolygon_color(1.0f, 1.0f, 1.0f, 1.0f);
-    add_gl_curve(**curve, cpolygon_color);
-  }
+  generate_trim_region_vbo(domain);
 
-  unsigned res_u = 16;
-  unsigned res_v = 16;
+  unsigned res_u = resolution;
+  unsigned res_v = resolution;
 
   auto offset_u = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::u]) / res_u;
   auto offset_v = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::v]) / res_v;
@@ -382,18 +339,30 @@ glwidget::generate_minification_view(gpucast::beziersurface::trimdomain_ptr cons
   {
     for (unsigned v = 0; v < res_v; ++v) 
     {
-      auto bbox_min = gpucast::trimdomain::point_type(min_u + u*offset_u, min_v + v*offset_v);
-      auto bbox_max = gpucast::trimdomain::point_type(min_u + (u + 1)*offset_u, min_v + (v + 1)*offset_v);
+      auto bbox_min = gpucast::trimdomain::point_type(min_u + u*offset_u ,     min_v + v*offset_v);
+      auto bbox_max = gpucast::trimdomain::point_type(min_u + (u+1)*offset_u , min_v + (v+1)*offset_v);
 
       gpucast::math::bbox2d ubox(bbox_min, bbox_max);
 
       unsigned intersections = 0;
+      float minimal_distance = std::numeric_limits<float>::max();
+
       for (auto const& loop : domain->loops()) {
         intersections += loop.is_inside(ubox.center());
+
+        for (auto const& curve : loop.curves()) {
+          if (!_optimal_distance) {
+            minimal_distance = std::min(float(curve->estimate_closest_distance(ubox.center())), minimal_distance);
+          }
+          else {
+            minimal_distance = std::min(float(curve->closest_distance(ubox.center())), minimal_distance);
+          }
+        }
       }
 
-      gpucast::math::vec4f color_inside  (0.0f, 1.0f, 0.0f, 1.0f);
-      gpucast::math::vec4f color_outside (1.0f, 0.0f, 0.0f, 1.0f);
+      float intensity = 0.1f + minimal_distance / std::max(offset_u, offset_v);
+      gpucast::math::vec4f color_inside(0.0f, intensity, 0.0f, 1.0f);
+      gpucast::math::vec4f color_outside(intensity, 0.0f, 0.0f, 1.0f);
 
       if (intersections % 2) { 
         add_gl_bbox(ubox, color_inside);
@@ -406,15 +375,124 @@ glwidget::generate_minification_view(gpucast::beziersurface::trimdomain_ptr cons
 }
 
 
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::generate_binary_field(gpucast::beziersurface::trimdomain_ptr const& domain, unsigned resolution)
+{
+  generate_trim_region_vbo(domain);
+
+  initialize_filter();
+
+  _binary_texture = std::make_unique<gpucast::gl::texture2d>();
+  std::vector<float> texture_data;
+
+  unsigned res_u = resolution;
+  unsigned res_v = resolution;
+
+  auto offset_u = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::u]) / res_u;
+  auto offset_v = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::v]) / res_v;
+
+  auto min_u = domain->nurbsdomain().min[gpucast::trimdomain::point_type::u];
+  auto min_v = domain->nurbsdomain().min[gpucast::trimdomain::point_type::v];
+
+  // draw sampled regions
+  for (unsigned v = 0; v < res_v; ++v)
+  {
+    for (unsigned u = 0; u < res_u; ++u)
+    {
+      auto bbox_min = gpucast::trimdomain::point_type(min_u + u*offset_u, min_v + v*offset_v);
+      auto bbox_max = gpucast::trimdomain::point_type(min_u + (u + 1)*offset_u, min_v + (v + 1)*offset_v);
+
+      gpucast::math::bbox2d ubox(bbox_min, bbox_max);
+
+      unsigned intersections = 0;
+      for (auto const& loop : domain->loops()) {
+        intersections += loop.is_inside(ubox.center());
+      }
+
+      if (intersections % 2) {
+        texture_data.push_back(1.0f);
+      }
+      else {
+        texture_data.push_back(-1.0f);
+      }
+    }
+  }
+
+  _binary_texture->teximage(0, GL_R32F, res_u, res_v, 0, GL_RED, GL_FLOAT, (void*)(&texture_data[0]));
+}
+
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::generate_distance_field(gpucast::beziersurface::trimdomain_ptr const& domain, unsigned resolution)
+{
+  generate_trim_region_vbo(domain);
+
+  initialize_filter();
+
+  _distance_field_texture = std::make_unique<gpucast::gl::texture2d>();
+  std::vector<float> texture_data;
+
+  unsigned res_u = resolution;
+  unsigned res_v = resolution;
+
+  auto offset_u = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::u]) / res_u;
+  auto offset_v = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::v]) / res_v;
+
+  auto min_u = domain->nurbsdomain().min[gpucast::trimdomain::point_type::u];
+  auto min_v = domain->nurbsdomain().min[gpucast::trimdomain::point_type::v];
+
+  // draw sampled regions
+  for (unsigned v = 0; v < res_v; ++v)
+  {
+    for (unsigned u = 0; u < res_u; ++u)
+    {
+      auto bbox_min = gpucast::trimdomain::point_type(min_u + u*offset_u, min_v + v*offset_v);
+      auto bbox_max = gpucast::trimdomain::point_type(min_u + (u + 1)*offset_u, min_v + (v + 1)*offset_v);
+
+      gpucast::math::bbox2d ubox(bbox_min, bbox_max);
+
+      unsigned intersections = 0;
+      float minimal_distance = std::numeric_limits<float>::max();
+
+      for (auto const& loop : domain->loops()) {
+        // find out interections ->
+        intersections += loop.is_inside(ubox.center());
+        for (auto const& curve : loop.curves()) 
+        {
+          if (curve->bbox_simple().distance(ubox.center()) < minimal_distance) 
+          {
+            if (!_optimal_distance) {
+              minimal_distance = std::min(float(curve->estimate_closest_distance(ubox.center())), minimal_distance);
+            }
+            else {
+              minimal_distance = std::min(float(curve->closest_distance(ubox.center())), minimal_distance);
+            }
+          }
+        }
+      }
+
+      if (intersections % 2) {
+        texture_data.push_back(1.0f * minimal_distance );
+      }
+      else {
+        texture_data.push_back(-1.0f * minimal_distance );
+      }
+    }
+  }
+
+  _distance_field_texture->teximage(0, GL_R32F, res_u, res_v, 0, GL_RED, GL_FLOAT, (void*)(&texture_data[0]));
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 void                    
 glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
-  if ( !_db_trimdata )   _db_trimdata  = new gpucast::gl::texturebuffer;
-  if ( !_db_celldata )   _db_celldata  = new gpucast::gl::texturebuffer;
-  if ( !_db_curvelist )  _db_curvelist = new gpucast::gl::texturebuffer;
-  if ( !_db_curvedata )  _db_curvedata = new gpucast::gl::texturebuffer;
+  if ( !_db_trimdata )   _db_trimdata  = std::make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_celldata )   _db_celldata  = std::make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_curvelist )  _db_curvelist = std::make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_curvedata )  _db_curvedata = std::make_unique<gpucast::gl::texturebuffer>();
 
   std::unordered_map<gpucast::trimdomain::curve_ptr, gpucast::trimdomain_serializer::address_type>          referenced_curves;
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>  referenced_domains;
@@ -426,17 +504,6 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
 
   gpucast::trimdomain_serializer_double_binary serializer;
   _trimid = serializer.serialize ( domain, referenced_domains, referenced_curves, trimdata, celldata, curvelists, curvedata ) ;
-
-  std::size_t size_bytes = ( ( trimdata.size() - 1 )   * sizeof(gpucast::math::vec4f) +
-                             ( celldata.size() - 1 )   * sizeof(gpucast::math::vec4f) + 
-                             ( curvelists.size() - 1 ) * sizeof(gpucast::math::vec4f) + 
-                             ( curvedata.size() - 1 )  * sizeof(gpucast::math::vec3f) );
-
-  mainwindow* win = dynamic_cast<mainwindow*>(parent());
-  if ( win )
-  {
-    win->show_memusage(size_bytes);
-  }
 
   _db_trimdata->update  ( trimdata.begin(), trimdata.end() );
   _db_celldata->update  ( celldata.begin(), celldata.end() );
@@ -450,17 +517,28 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
 
   _domain_size = gpucast::math::vec2f ( domain->nurbsdomain().size() );
   _domain_min  = gpucast::math::vec2f ( domain->nurbsdomain().min );
+
+  // show memory usage
+  std::size_t size_bytes = ((trimdata.size() - 1)   * sizeof(gpucast::math::vec4f) +
+    (celldata.size() - 1)   * sizeof(gpucast::math::vec4f) +
+    (curvelists.size() - 1) * sizeof(gpucast::math::vec4f) +
+    (curvedata.size() - 1)  * sizeof(gpucast::math::vec3f));
+
+  mainwindow* win = dynamic_cast<mainwindow*>(parent());
+  if (win) {
+    win->show_memusage(size_bytes);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////
 void                    
 glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
-  if ( !_cmb_partition )   _cmb_partition  = new gpucast::gl::texturebuffer;
-  if ( !_cmb_contourlist ) _cmb_contourlist = new gpucast::gl::texturebuffer;
-  if ( !_cmb_curvelist   ) _cmb_curvelist   = new gpucast::gl::texturebuffer;
-  if ( !_cmb_curvedata   ) _cmb_curvedata   = new gpucast::gl::texturebuffer;
-  if ( !_cmb_pointdata   ) _cmb_pointdata   = new gpucast::gl::texturebuffer;
+  if (!_cmb_partition)   _cmb_partition = std::make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_contourlist) _cmb_contourlist = std::make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_curvelist) _cmb_curvelist = std::make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_curvedata) _cmb_curvedata = std::make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_pointdata) _cmb_pointdata = std::make_unique<gpucast::gl::texturebuffer>();
 
   std::unordered_map<gpucast::trimdomain::curve_ptr,         gpucast::trimdomain_serializer::address_type>                                  referenced_curves;
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>                                  referenced_domains;
@@ -483,18 +561,6 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
                                    curvedata,
                                    pointdata );
 
-  std::size_t size_bytes = ( (partition.size()  - 1) * sizeof(gpucast::math::vec4f) + 
-                             (contourlist.size()- 1) * sizeof(gpucast::math::vec2f) + 
-                             (curvelist.size()  - 1) * sizeof(gpucast::math::vec4f) + 
-                             (curvedata.size()  - 1) * sizeof(float) + 
-                             (pointdata.size()  - 1) * sizeof(gpucast::math::vec3f) );
-
-  mainwindow* win = dynamic_cast<mainwindow*>(parent());
-  if ( win )
-  {
-    win->show_memusage(size_bytes);
-  }
-
   _cmb_partition->update   ( partition.begin(), partition.end());
   _cmb_contourlist->update ( contourlist.begin(), contourlist.end());
   _cmb_curvelist->update   ( curvelist.begin(), curvelist.end());
@@ -509,6 +575,18 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
 
   _domain_size = gpucast::math::vec2f ( domain->nurbsdomain().size() );
   _domain_min  = gpucast::math::vec2f ( domain->nurbsdomain().min );
+
+  // show memory usage
+  std::size_t size_bytes = ((partition.size() - 1) * sizeof(gpucast::math::vec4f) +
+    (contourlist.size() - 1) * sizeof(gpucast::math::vec2f) +
+    (curvelist.size() - 1) * sizeof(gpucast::math::vec4f) +
+    (curvedata.size() - 1) * sizeof(float)+
+    (pointdata.size() - 1) * sizeof(gpucast::math::vec3f));
+
+  mainwindow* win = dynamic_cast<mainwindow*>(parent());
+  if (win) {
+    win->show_memusage(size_bytes);
+  }
 }
 
 
@@ -516,10 +594,10 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
 void
 glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr const& domain)
 {
-  if (!_loop_list_loops)    _loop_list_loops = new gpucast::gl::shaderstoragebuffer;
-  if (!_loop_list_contours) _loop_list_contours = new gpucast::gl::shaderstoragebuffer;
-  if (!_loop_list_curves)   _loop_list_curves = new gpucast::gl::shaderstoragebuffer;
-  if (!_loop_list_points)   _loop_list_points = new gpucast::gl::shaderstoragebuffer;
+  if (!_loop_list_loops)    _loop_list_loops = std::make_unique<gpucast::gl::shaderstoragebuffer>();
+  if (!_loop_list_contours) _loop_list_contours = std::make_unique<gpucast::gl::shaderstoragebuffer>();
+  if (!_loop_list_curves)   _loop_list_curves = std::make_unique<gpucast::gl::shaderstoragebuffer>();
+  if (!_loop_list_points)   _loop_list_points = std::make_unique<gpucast::gl::shaderstoragebuffer>();
 
   gpucast::trimdomain_serializer_loop_contour_list::serialization serialization;
   gpucast::trimdomain_serializer_loop_contour_list serializer;
@@ -537,7 +615,49 @@ glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr con
   _domain_size = gpucast::math::vec2f(domain->nurbsdomain().size());
   _domain_min = gpucast::math::vec2f(domain->nurbsdomain().min);
 
+  // show memory usage
+  std::size_t size_bytes = ((serialization.loops.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::loop_t) +
+    (serialization.contours.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::contour_t) +
+    (serialization.curves.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::curve_t) +
+    (serialization.points.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::point_t));
+
+  mainwindow* win = dynamic_cast<mainwindow*>(parent());
+  if (win) {
+    win->show_memusage(size_bytes);
+  }
 }
+
+///////////////////////////////////////////////////////////////////////
+void glwidget::initialize_filter()
+{
+  _bilinear_filter = std::make_unique<gpucast::gl::sampler>();
+  _bilinear_filter->parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  _bilinear_filter->parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  _bilinear_filter->parameter(GL_TEXTURE_WRAP_R, GL_CLAMP);
+  _bilinear_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
+  _bilinear_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
+                              
+  _nearest_filter = std::make_unique<gpucast::gl::sampler>();
+  _nearest_filter->parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  _nearest_filter->parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  _nearest_filter->parameter(GL_TEXTURE_WRAP_R, GL_CLAMP);
+  _nearest_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
+  _nearest_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
+}
+
+///////////////////////////////////////////////////////////////////////
+void glwidget::generate_trim_region_vbo(gpucast::beziersurface::trimdomain_ptr const& domain)
+{
+  gpucast::trimdomain::curve_container curves = domain->curves();
+  for (auto curve = curves.begin(); curve != curves.end(); ++curve)
+  {
+    gpucast::math::vec4f cpolygon_color(1.0f, 1.0f, 1.0f, 1.0f);
+    add_gl_curve(**curve, cpolygon_color);
+  }
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 void                    
@@ -554,7 +674,7 @@ glwidget::add_gl_curve ( gpucast::beziersurface::curve_type const& curve, gpucas
   }
 
   std::vector<gpucast::math::vec4f> curve_colors ( curve_points.size(), color );
-  gpucast::gl::line* gl_curve = new gpucast::gl::line ( curve_points, 0, 1, 2);
+  auto gl_curve = std::make_shared<gpucast::gl::line> ( curve_points, 0, 1, 2);
   gl_curve->set_color ( curve_colors );
   _curve_geometry.push_back ( gl_curve ); 
 
@@ -585,7 +705,7 @@ glwidget::add_gl_bbox (  gpucast::math::bbox2d const& bbox, gpucast::math::vec4f
 
   std::vector<gpucast::math::vec4f> bbox_colors ( bbox_points.size(), color );
 
-  gpucast::gl::line* gl_bbox = new gpucast::gl::line ( bbox_points, 0, 1, 2);
+  auto gl_bbox = std::make_shared<gpucast::gl::line>(bbox_points, 0, 1, 2);
   gl_bbox->set_color ( bbox_colors );
   _curve_geometry.push_back ( gl_bbox );
 }
@@ -634,9 +754,20 @@ glwidget::get_surfaces ( std::string const& name ) const
 
 ///////////////////////////////////////////////////////////////////////
 void
-glwidget::show_texel_fetches(bool enable)
+glwidget::show_texel_fetches(int enable)
 {
-  _show_texel_fetches = enable;
+  _show_texel_fetches = enable != 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::optimal_distance(int enable)
+{
+  _optimal_distance = enable != 0;
+
+  if (dynamic_cast<mainwindow*>(parent())) {
+    dynamic_cast<mainwindow*>(parent())->update_view();
+  }
 }
 
 
@@ -648,6 +779,12 @@ glwidget::recompile()
   _initialize_shader();
 }
 
+///////////////////////////////////////////////////////////////////////
+void                    
+glwidget::texture_filtering(int enable)
+{
+  _linear_filter = enable != 0;
+}
 
 ///////////////////////////////////////////////////////////////////////
 void 
@@ -771,6 +908,53 @@ glwidget::paintGL()
       }
       _loop_list_program->end();
       break;
+
+    case distance_field:
+      _tex_program->begin();
+      {
+        if (_linear_filter) {
+          _bilinear_filter->bind(0);
+        }
+        else {
+          _nearest_filter->bind(0);
+        }
+        _tex_program->set_texture2d("classification_texture", *_distance_field_texture, 0);
+        _tex_program->set_uniform1i("show_costs", int(_show_texel_fetches));
+        _tex_program->set_uniform2f("domain_size", _domain_size[0], _domain_size[1]);
+        _tex_program->set_uniform2f("domain_min", _domain_min[0], _domain_min[1]);
+
+        _quad->draw();
+      }
+      _tex_program->end();
+
+      _partition_program->begin();
+      _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+      std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
+      _partition_program->end();
+
+      break;
+
+    case binary_field:
+      _tex_program->begin();
+      {
+        if (_linear_filter) {
+          _bilinear_filter->bind(0);
+        }
+        else {
+          _nearest_filter->bind(0);
+        }
+        _tex_program->set_texture2d("classification_texture", *_binary_texture, 0);
+        _tex_program->set_uniform1i("show_costs", int(_show_texel_fetches));
+
+        _quad->draw();
+      }
+      _tex_program->end();
+
+      _partition_program->begin();
+      _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+      std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
+      _partition_program->end();
+      break;
     default : 
       break;
   };
@@ -850,12 +1034,12 @@ glwidget::_init()
   glEnable ( GL_DEPTH_TEST );
 
   if ( !_quad ) {
-    _quad = new gpucast::gl::plane(0, -1, -1);
+    _quad = std::make_unique<gpucast::gl::plane>(0, -1, -1);
   }
 
   if ( !_transfertexture )
   {
-    _transfertexture = new gpucast::gl::texture1d;
+    _transfertexture = std::make_unique<gpucast::gl::texture1d>();
     gpucast::gl::transferfunction<gpucast::math::vec4f> tf;
     tf.set ( 0, gpucast::math::vec4f(0.0f, 0.0f, 0.5f, 1.0f) );
     tf.set ( 60, gpucast::math::vec4f(0.0f, 0.7f, 0.5f, 1.0f) );
@@ -880,6 +1064,7 @@ glwidget::_initialize_shader()
 
   _partition_program = program_factory.create_program("./shader/partition.vert.glsl", "./shader/partition.frag.glsl");
   _db_program = program_factory.create_program("./shader/double_binary.vert", "./shader/double_binary.frag");
+  _tex_program = program_factory.create_program("./shader/texture_view.vert.glsl", "./shader/texture_view.frag.glsl");
   _cmb_program = program_factory.create_program("./shader/contour_binary.vert", "./shader/contour_binary.frag");
   _kd_program = program_factory.create_program("./shader/domain.vert.glsl", "./shader/contour.frag.glsl");
   _loop_list_program = program_factory.create_program("./shader/contour_loop_list.vert", "./shader/contour_loop_list.frag");

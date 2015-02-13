@@ -43,8 +43,6 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _glwindow->setFixedWidth(_width);
   this->setCentralWidget(_glwindow);
 
-
-
   /////////////////////////////////////
   // control widget
   /////////////////////////////////////
@@ -54,11 +52,22 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _viewbox          = new QComboBox;
   _label_fps        = new QLabel;
   _label_mem        = new QLabel;
+
   _recompile_button = new QPushButton;
   _recompile_button->setText("Recompile Shaders");
-  _show_texel_fetches = new QCheckBox;
 
-  QGridLayout* layout = new QGridLayout(this);
+  _show_texel_fetches = new QCheckBox;
+  _linear_texture_filter = new QCheckBox;
+  _optimal_distance = new QCheckBox;
+
+  _texture_resolution = new QComboBox;
+  _texture_resolution->insertItem(0, tr("8"), 8);
+  _texture_resolution->insertItem(1, tr("16"), 16);
+  _texture_resolution->insertItem(2, tr("32"), 32);
+  _texture_resolution->insertItem(3, tr("64"), 64);
+  _texture_resolution->insertItem(4, tr("128"), 128);
+
+  QGridLayout* layout = new QGridLayout;
   _controlwidget->setLayout(layout);
 
   _list_object->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -68,9 +77,17 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   layout->addWidget(_list_surface);
   layout->addWidget(_viewbox);
   layout->addWidget(_recompile_button);
+  layout->addWidget(_texture_resolution);
 
   layout->addWidget(_show_texel_fetches);
-  _show_texel_fetches->setText("Show texel fetches");
+  _show_texel_fetches->setText("Show Texel Fetches");
+
+  layout->addWidget(_linear_texture_filter);
+  _linear_texture_filter->setText("Linear Texture Filtering");
+
+  layout->addWidget(_optimal_distance);
+  _optimal_distance->setText("Optimal Distance Field");
+  
 
   layout->addWidget(_label_mem);
   layout->addWidget(_label_fps);
@@ -96,7 +113,10 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _modes.insert(std::make_pair(glwidget::contour_map_loop_list_partition, "contour_map_loop_list_partition"));
   _modes.insert(std::make_pair(glwidget::contour_map_loop_list_classification, "contour_map_loop_list_classification"));
 
-  _modes.insert(std::make_pair(glwidget::minification, "minification"));
+  _modes.insert(std::make_pair(glwidget::minification, "sampling"));
+
+  _modes.insert(std::make_pair(glwidget::binary_field, "binary_texture"));
+  _modes.insert(std::make_pair(glwidget::distance_field, "distance_field_texture"));
 
   std::for_each ( _modes.begin(), _modes.end(), [&] ( std::map<glwidget::view, std::string>::value_type const& p ) { _viewbox->addItem(p.second.c_str()); } );
 
@@ -108,7 +128,10 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   connect(_list_surface, SIGNAL(itemSelectionChanged()), this, SLOT(update_view()));
   connect(_viewbox, SIGNAL(currentIndexChanged(int)), this, SLOT(update_view()));
   connect(_recompile_button, SIGNAL(clicked()), _glwindow, SLOT(recompile()));
-  connect(_show_texel_fetches, SIGNAL(stateChanged(int)), this, SLOT(show_texel_fetches()));
+  connect(_show_texel_fetches, SIGNAL(stateChanged(int)), _glwindow, SLOT(show_texel_fetches(int)));
+  connect(_linear_texture_filter, SIGNAL(stateChanged(int)), _glwindow, SLOT(texture_filtering(int)));
+  connect(_texture_resolution, SIGNAL(currentIndexChanged(int)), SLOT(update_view()));
+  connect(_optimal_distance, SIGNAL(stateChanged(int)), _glwindow, SLOT(optimal_distance(int)));
   
   _controlwidget->show();
   this->show();
@@ -180,15 +203,8 @@ void mainwindow::update_view () const
       if ( mode.second == viewstr ) current_view = mode.first;
     }
 
-    _glwindow->update_view ( objects.front()->text().toStdString(), id, current_view);
+    _glwindow->update_view(objects.front()->text().toStdString(), id, current_view, _texture_resolution->itemData(_texture_resolution->currentIndex()).toUInt() );
   }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void                    
-mainwindow::show_texel_fetches()
-{
-  _glwindow->show_texel_fetches(_show_texel_fetches->isChecked());
 }
 
 ///////////////////////////////////////////////////////////////////////////////

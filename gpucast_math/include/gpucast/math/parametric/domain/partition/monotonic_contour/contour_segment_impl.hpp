@@ -153,12 +153,11 @@ contour_segment<value_t>::right_of(point_type const& origin) const
 
     for (auto const& curve : _curves)
     {
-      contour_segment<value_t>::bbox_type curve_bbox;
-      curve->bbox_simple(curve_bbox);
+      auto curve_bbox = curve->bbox_simple();
 
       // origin in curve's v-interval --> try to intersect
-      if (origin[point_type::v] >= contour_segment_bbox.min[point_type::v] &&
-          origin[point_type::v] <= contour_segment_bbox.max[point_type::v])
+      if (origin[point_type::v] >= curve_bbox.min[point_type::v] &&
+          origin[point_type::v] <= curve_bbox.max[point_type::v] )
       {
         bool curve_on_right = 0;
         std::size_t tmp = 0;

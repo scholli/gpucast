@@ -249,4 +249,36 @@ SUITE (boundingbox_classes)
     CHECK (split2d[3]->max == point2d(3.0, 2.0));
   }
 
+  TEST(distance)
+  {
+    point2d p0(-1.0, 4.0);
+    point2d p1(5.0, 7.0);
+
+    axis_aligned_boundingbox<point2d> b(p0, p1);
+
+    point2d p2(-2.0, 2.0); // 
+    point2d p3(-2.0, 5.0); // 
+    point2d p4(-2.0, 9.0); // 
+
+    point2d p5(2.0, 2.0); // 
+    point2d p6(2.0, 5.0); // 
+    point2d p7(2.0, 9.0); // 
+
+    point2d p8(7.0, 2.0); // 
+    point2d p9(7.0, 5.0); // 
+    point2d p10(7.0, 9.0); // 
+
+    CHECK_CLOSE(b.distance(p2), point2d(1, 2, 1).abs(), 0.000001);
+    CHECK_CLOSE(b.distance(p3), point2d(1, 0, 1).abs(), 0.000001);
+    CHECK_CLOSE(b.distance(p4), point2d(1, 2, 1).abs(), 0.000001);
+
+    CHECK_CLOSE(b.distance(p5), point2d(0, 2, 1).abs(), 0.000001);
+    CHECK_CLOSE(b.distance(p6), point2d(0, 0, 1).abs(), 0.000001);
+    CHECK_CLOSE(b.distance(p7), point2d(0, 2, 1).abs(), 0.000001);
+
+    CHECK_CLOSE(b.distance(p8), point2d(2, 2, 1).abs(), 0.000001);
+    CHECK_CLOSE(b.distance(p9), point2d(2, 0, 1).abs(), 0.000001);
+    CHECK_CLOSE(b.distance(p10), point2d(2, 2, 1).abs(), 0.000001);
+  }
+
 }

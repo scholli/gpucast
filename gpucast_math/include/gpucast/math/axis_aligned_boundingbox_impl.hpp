@@ -196,6 +196,33 @@ namespace gpucast { namespace math {
 
   //////////////////////////////////////////////////////////////////////////////
   template <typename point_t>
+  typename axis_aligned_boundingbox<point_t>::value_type    
+  axis_aligned_boundingbox<point_t>::distance( point_type const& p) const
+  {
+    if (is_inside(p)) {
+      return 0;
+    }
+    else {
+      point_type distance_vector;
+      for (unsigned i = 0; i != point_t::coordinates; ++i)
+      {
+        distance_vector[i] = 0;
+
+        if (p[i] < min[i]) {
+          distance_vector[i] = min[i] - p[i];
+        }
+
+        if (p[i] > max[i]) {
+          distance_vector[i] = p[i] - max[i];
+        }
+      }
+      return distance_vector.abs();
+    }
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
   bool
   axis_aligned_boundingbox<point_t>::valid () const
   {

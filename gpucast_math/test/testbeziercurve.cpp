@@ -14,6 +14,8 @@
 
 #include <vector>
 #include <memory>
+#include <random>
+#include <chrono>
 
 #include <gpucast/math/parametric/point.hpp>
 #include <gpucast/math/parametric/beziercurve.hpp>
@@ -753,6 +755,81 @@ SUITE (beziercurve_classes)
     CHECK ( A1.evaluate(tmax) > A1.evaluate(tmax - 0.001 * tmax) );
   }
 
+  TEST(minimal_distance)
+  {
+    unsigned total_tests = 1000;
+    unsigned smaller_distance_found = 0;
+
+    // allow for max. 10% deviation
+    float    error_threshold = 0.10;
+
+    // for at least 95% of the curves
+    float    error_tolerance = 0.05;
+
+    for (int k = 0; k != total_tests; ++k)
+    {
+      // create a unit circle as rational bezier curve
+      beziercurve2d bc;
+
+      unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+      std::default_random_engine generator(seed);
+
+      std::normal_distribution<double> origin_distribution(0.0, 20.0);
+      std::normal_distribution<double> offset_distribution(0.0, 10.0);
+
+      point2d p0(origin_distribution(generator), origin_distribution(generator), 1.0);
+      point2d p1(p0[0] + offset_distribution(generator), p0[1] + offset_distribution(generator), 1.0);
+      point2d p2(p1[0] + offset_distribution(generator), p1[1] + offset_distribution(generator), 1.0);
+      point2d p3(p2[0] + offset_distribution(generator), p2[1] + offset_distribution(generator), 1.0);
+
+      bc.add(p0);
+      bc.add(p1);
+      bc.add(p2);
+      bc.add(p3);
+
+      point2d px(origin_distribution(generator), origin_distribution(generator), 1.0);
+
+      auto closest_p = bc.estimate_closest_point(px);
+      auto closest_d = bc.estimate_closest_distance(px);
+       
+      //std::cout << bc << std::endl;
+      
+      unsigned samples = 100;
+      for (int i = 0; i <= samples; ++i)
+      {
+        point2d sample = bc.evaluate(double(i) / samples);
+        auto sample_distance = sample.distance(px);
+
+        if (closest_d > sample_distance * (1 + error_threshold))
+        {
+          ++smaller_distance_found;
+          break;
+        }
+      }
+    }
+    std::cout << "Minimal distance errors (error tolerance 10%) found : " << float(100.0*smaller_distance_found) / total_tests << " %" << std::endl;
+  }
+
+  TEST(minimal_distance_linear)
+  {
+    // create a unit circle as rational bezier curve
+    beziercurve2d bc;
+
+    point2d p1(1.0, 3.0, 1.0);
+    point2d p2(4.0, 6.0, 1.0);
+
+    bc.add(p1);
+    bc.add(p2);
+
+    point2d p3(0.0, 1.0, 1.0);
+    point2d p4(9.0, 7.0, 1.0);
+    point2d p5(2.0, 6.0, 1.0);
+    point2d p6(3.0, 5.0, 1.0);
+
+    CHECK_CLOSE ( bc.estimate_closest_point(p3).distance(p1), 0, 0.00001);
+    CHECK_CLOSE ( bc.estimate_closest_point(p4).distance(p2), 0, 0.00001);
+    CHECK_CLOSE ( bc.estimate_closest_point(p5).distance(p6), 0, 0.00001);
+  }
 
 }
 

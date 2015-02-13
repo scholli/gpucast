@@ -699,20 +699,20 @@ namespace gpucast { namespace math {
       evaluate(root, pi, horner<point_t>());
 
       if (point[x] < pi[x]) { // check early intersect
-        if (( inc_dx &&  inc_dy && point[fx] > pi[fx]) ||
-            (!inc_dx &&  inc_dy && point[fx] < pi[fx]) ||
-            ( inc_dx && !inc_dy && point[fx] < pi[fx]) ||
-            (!inc_dx && !inc_dy && point[fx] > pi[fx])){
+        if (( inc_dx &&  inc_dy && point[fx] >= pi[fx]) ||
+            (!inc_dx &&  inc_dy && point[fx] <= pi[fx]) ||
+            ( inc_dx && !inc_dy && point[fx] <= pi[fx]) ||
+            (!inc_dx && !inc_dy && point[fx] >= pi[fx])){
           intersects = true;
           iters = i+1;
           return;
         }
 
       } else { // check early non-intersect
-        if (( inc_dx &&  inc_dy && point[fx] < pi[fx])  ||
-            (!inc_dx &&  inc_dy && point[fx] > pi[fx]) ||
-            ( inc_dx && !inc_dy && point[fx] > pi[fx]) ||
-            (!inc_dx && !inc_dy && point[fx] < pi[fx])){
+        if (( inc_dx &&  inc_dy && point[fx] <= pi[fx])  ||
+            (!inc_dx &&  inc_dy && point[fx] >= pi[fx]) ||
+            ( inc_dx && !inc_dy && point[fx] >= pi[fx]) ||
+            (!inc_dx && !inc_dy && point[fx] <= pi[fx])){
           intersects = false;
           iters = i+1;
           return;
@@ -801,6 +801,96 @@ namespace gpucast { namespace math {
     return (_points.back()[dim] > _points.front()[dim]);
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  template<typename point_t>
+  inline typename beziercurve<point_t>::point_type
+  beziercurve<point_t>::estimate_closest_point(point_type const& p) const
+  {
+    // speecial treatment for linear curves
+    if (order() == 2)
+    {
+      point_type ab = _points[1] - _points[0];
+      auto lab = ab.abs();
+      ab.weight(0);
+
+      point_type d = p - _points[0];
+      ab.normalize();
+      auto l = dot(d, ab);
+
+      if (l < 0) {
+        return _points[0];
+      }
+
+      if (l > lab) {
+        return _points[1];
+      }
+
+      return _points[0] + l * ab;
+    }
+
+    beziercurve2d distance_curve;
+    value_type equidistant_offset = 0;
+
+    for (auto const& cp : _points) {
+      auto distance = cp.distance(p);
+      distance_curve.add(beziercurve2d::point_type(equidistant_offset, distance));
+      equidistant_offset += value_type(1) / order();
+    }
+
+    // potentially closest points are start and end point as well as minima
+    std::set<value_type> potential_minima;
+    distance_curve.extrema(point_type::v, potential_minima);
+    potential_minima.insert(0);
+    potential_minima.insert(1);
+
+    std::map<value_type, point_type> distance_point_map;
+    for (auto t : potential_minima) {
+      auto pt = evaluate(t);
+      distance_point_map.insert(std::make_pair(pt.distance(p), pt));
+    }
+
+    return distance_point_map.begin()->second;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  template<typename point_t>
+  inline typename beziercurve<point_t>::value_type
+  beziercurve<point_t>::estimate_closest_distance(point_type const& p) const
+  {
+    return estimate_closest_point(p).distance(p);
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////
+  template<typename point_t>
+  inline typename beziercurve<point_t>::point_type
+  beziercurve<point_t>::closest_point(point_type const& p, unsigned samples) const
+  {
+    value_type minimal_distance = std::numeric_limits<value_type>::max();
+    point_type closest_point;
+
+    for (unsigned i = 0; i <= samples; ++i)
+    {
+      auto pt = evaluate(value_type(i)/samples);
+      auto pt_distance = pt.distance(p);
+
+      if (pt_distance < minimal_distance) {
+        minimal_distance = pt_distance;
+        closest_point = pt;
+      }
+    }
+
+    return closest_point;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  template<typename point_t>
+  inline typename beziercurve<point_t>::value_type
+  beziercurve<point_t>::closest_distance(point_type const& p, unsigned samples) const
+  {
+    return closest_point(p, samples).distance(p);
+  }
+
 
   //////////////////////////////////////////////////////////////////////////////
   template <typename point_t>
@@ -887,6 +977,24 @@ namespace gpucast { namespace math {
     }
 
     extrempoint_curve.bbox_simple(bbox);
+  }
+  
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
+  inline axis_aligned_boundingbox<point_t> beziercurve<point_t>::bbox_simple() const
+  {
+    axis_aligned_boundingbox<point_t> bbox;
+    bbox_simple(bbox);
+    return bbox;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
+  inline axis_aligned_boundingbox<point_t> beziercurve<point_t>::bbox_tight() const
+  {
+    axis_aligned_boundingbox<point_t> bbox;
+    bbox_tight(bbox);
+    return bbox;
   }
 
   //////////////////////////////////////////////////////////////////////////////

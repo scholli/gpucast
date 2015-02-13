@@ -151,6 +151,11 @@ namespace gpucast { namespace math {
 
     bool                  is_increasing ( std::size_t dimension ) const;
 
+    point_type            estimate_closest_point ( point_type const& p ) const;
+    value_type            estimate_closest_distance ( point_type const& p ) const;
+
+    point_type            closest_point(point_type const& p, unsigned samples = 500) const;
+    value_type            closest_distance(point_type const& p, unsigned samples = 500) const;
 
     // transformations
     void                  elevate     ();
@@ -159,6 +164,9 @@ namespace gpucast { namespace math {
     // bounding volume
     void                  bbox_simple (axis_aligned_boundingbox<point_t>& bb) const;
     void                  bbox_tight  (axis_aligned_boundingbox<point_t>& bb) const;
+
+    axis_aligned_boundingbox<point_t> bbox_simple() const;
+    axis_aligned_boundingbox<point_t> bbox_tight() const;
 
     // iterator interface for control points
     point_iterator        begin       ();

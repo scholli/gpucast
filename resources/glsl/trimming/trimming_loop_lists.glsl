@@ -315,7 +315,7 @@ trimming_loop_list (in vec2 uv, in int index)
 
   for (unsigned int i = 0; i < loops[index].nchildren; ++i) {
     //is_trimmed = is_trimmed && classify_loop(uv, int(loops[index].child_index + i));
-    is_trimmed = is_trimmed != classify_loop(uv, int(loops[index].child_index + i));
+    is_trimmed = is_trimmed == classify_loop(uv, int(loops[index].child_index + i));
   }
   return is_trimmed;
 }
