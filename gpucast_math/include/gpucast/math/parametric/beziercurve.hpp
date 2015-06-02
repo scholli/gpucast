@@ -118,6 +118,8 @@ namespace gpucast { namespace math {
                                         std::set<value_type>&        roots,
                                         std::size_t                  iterations = MAX_BINARY_SPLITS ) const;
 
+    std::vector<beziercurve> monotonize(typename point_type::coordinate_type c) const;
+
     bool                  weak_monotonic  ( std::size_t dim ) const;
 
     bool                  assert_extremum ( std::size_t               dim,
@@ -148,7 +150,7 @@ namespace gpucast { namespace math {
                                         value_type   tolerance = 0) const;
 
     bool                  is_rational () const;
-
+    bool                  is_monotonic(std::size_t dim) const;
     bool                  is_increasing ( std::size_t dimension ) const;
 
     point_type            estimate_closest_point ( point_type const& p ) const;

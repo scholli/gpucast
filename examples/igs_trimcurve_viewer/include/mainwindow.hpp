@@ -27,6 +27,9 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
+#include <QtWidgets/QSlider>
+
+#include <slidergroup.hpp>
 
 #include <gpucast/core/nurbssurfaceobject.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
@@ -59,6 +62,8 @@ public Q_SLOTS: // slot events
   void                    update_objectlist  ();
   void                    update_surfacelist ();
   void                    update_view        () const;
+  void                    pixel_size_changed () const;
+  void                    zoom_changed       (int);
 
 private: // methods
 
@@ -78,12 +83,17 @@ private: // attributes
   QLabel*                 _label_fps;
   QLabel*                 _label_mem;
   QPushButton*            _recompile_button;
+  QPushButton*            _resetview_button;
 
   QCheckBox*              _show_texel_fetches;
   QCheckBox*              _linear_texture_filter;
   QCheckBox*              _optimal_distance;
+  QCheckBox*              _antialiasing;
 
   QComboBox*              _texture_resolution;
+  QComboBox*              _pixel_size;
+
+  SlidersGroup*           _zoom_control;
 
   bezierobject_map        _objects;
   QListWidget*            _list_object;

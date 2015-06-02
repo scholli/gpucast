@@ -168,56 +168,14 @@ void contour<value_t>::monotonize ()
 {
   std::vector<curve_type> contour_of_bimonotonic_curves;
 
-  // helper function to correct derivatives at split points
-
-  auto correct_derivatives_at_split_points = [](typename point_type::coordinate_type c, std::vector<curve_type>& curves) {
-    if (curves.size() < 2) return;
-
-    // make sure neighboring curves have same value after split -> derivative for c == 0
-    for (std::size_t i = 0; i < curves.size() - 1; ++i) {
-      auto d = curves[i].degree();
-      auto extrema_value = curves[i][d][c];
-      curves[i][d-1][c] = extrema_value;
-      curves[i+1][0][c] = extrema_value;
-      curves[i+1][1][c] = extrema_value;
-    }
-  };
-
   // split contour at all extremas
   for ( auto const& c : _curves )
   {
-    // identify extrema
-    std::vector<curve_type> u_monotonic_curves;
-    std::set<value_type> t_extrema_u;
-    c->extrema(point_type::u, t_extrema_u);
-    
-    // split at extrema if there are any - else push original curve
-    if (t_extrema_u.empty())
-    {
-      u_monotonic_curves.push_back(*c);
-    } else {
-      c->split(t_extrema_u, u_monotonic_curves);
-      correct_derivatives_at_split_points(point_type::u, u_monotonic_curves);
-    }
+    std::vector<curve_type> u_monotonic_curves = c->monotonize(point_type::u);
 
-    // do the same for v
-    for (auto const& cu : u_monotonic_curves) 
-    {
-      std::vector<curve_type> v_monotonic_curves;
-      std::set<value_type> t_extrema_v;
-      cu.extrema(point_type::v, t_extrema_v);
-
-      if (t_extrema_v.empty())
-      {
-        v_monotonic_curves.push_back(cu);
-      }
-      else {
-        cu.split(t_extrema_v, v_monotonic_curves);
-        correct_derivatives_at_split_points(point_type::v, v_monotonic_curves);
-      }
-
-      // copy bimonotonic segments to curve container
-      std::copy(v_monotonic_curves.begin(), v_monotonic_curves.end(), std::back_inserter(contour_of_bimonotonic_curves));
+    for (auto const& c_um : u_monotonic_curves) {
+      auto bi_monotonic = c_um.monotonize(point_type::v);
+      std::copy(bi_monotonic.begin(), bi_monotonic.end(), std::back_inserter(contour_of_bimonotonic_curves));
     }
   }
 

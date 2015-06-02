@@ -32,10 +32,10 @@ namespace gpucast { namespace math {
     {
       polar_to_euclid<vec2_t> r2e;
 
-      vec2_t gradient            = r2e(angle_radius);
-      vec2_t normalized_gradient = gradient/gradient.abs();
+      vec2_t gradient = r2e(angle_radius);
+      vec2_t normalized_gradient = gradient / gradient.abs();
 
-      value_type distance        = dot(normalized_gradient, sample - gradient);
+      value_type distance = dot(normalized_gradient, sample - gradient);
 
       return (distance < 0) ^ (angle_radius[1] < 0);
     }

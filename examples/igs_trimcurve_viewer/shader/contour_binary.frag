@@ -28,7 +28,7 @@ void main(void)
                                                 sampler_curvelist,
                                                 sampler_curvedata,
                                                 sampler_pointdata,
-                                                uv_coord, 
+                                                uv_coord,
                                                 trimid, 
                                                 1, 
                                                 iterations, 
@@ -40,9 +40,11 @@ void main(void)
   } else {
     if ( trimmed ) 
     {
-      outcolor = vec4(1.0, 0.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
+      //outcolor = vec4(1.0, 0.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
+      outcolor = vec4(0.0);
     } else {
-      outcolor = vec4(0.0, 1.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
+      //outcolor = vec4(0.0, 1.0, 0.0, 1.0 ) * (float(gpucast_texel_fetches)/64.0 + 0.1);
+      outcolor = vec4(1.0);
     }
   }  
 }

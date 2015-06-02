@@ -53,17 +53,22 @@ namespace gpucast { namespace math {
     value_type
     operator()( vec2_t const& angle_radius) const
     {
-      value_type integral(0);
-      classify_sample_by_signed_gradient<vec2_t> insidetest;
-
-      typename std::vector<value_type>::const_iterator w = _weights.begin();
-      for ( typename std::vector<vec2_t>::const_iterator  s = _samples.begin(); s != _samples.end(); ++s, ++w)
-      {
-        bool is_inside = insidetest(angle_radius, *s);
-        integral += (*w) * value_type(is_inside);
+      if (angle_radius[1] == 0) {
+        return 0.5;
       }
+      else {
+        value_type integral(0);
+        classify_sample_by_signed_gradient<vec2_t> insidetest;
 
-      return integral/_maxintegral;
+        typename std::vector<value_type>::const_iterator w = _weights.begin();
+        for (typename std::vector<vec2_t>::const_iterator s = _samples.begin(); s != _samples.end(); ++s, ++w)
+        {
+          bool is_inside = insidetest(angle_radius, *s);
+          integral += (*w) * value_type(is_inside);
+        }
+
+        return integral / _maxintegral;
+      }
     }
 
   private :

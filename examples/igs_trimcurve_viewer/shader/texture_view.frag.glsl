@@ -6,8 +6,6 @@ in vec2 uv_coord;
 uniform sampler2D classification_texture;
 
 uniform int show_costs;
-uniform vec2 domain_size;
-uniform vec2 domain_min;
 
 layout(location = 0) out vec4 outcolor;
 
@@ -16,9 +14,15 @@ layout(location = 0) out vec4 outcolor;
 
 void main(void)
 {
-  vec4 lookup = texture(classification_texture, uv_coord.xy);
+  vec2 uv = uv_coord;
+  vec4 lookup = texture(classification_texture, uv);
 
-  bool trimmed = lookup.x < 0.0;
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+    outcolor = vec4(1.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  bool trimmed = lookup.x < 0.0;   
 
   if (show_costs != 0)
   {

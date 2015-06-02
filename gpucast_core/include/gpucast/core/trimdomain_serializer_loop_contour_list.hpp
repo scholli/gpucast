@@ -163,23 +163,6 @@ trimdomain_serializer_loop_contour_list::serialize(trimdomain_ptr const&        
   else {
 
     address_type root_index = serialize(loop_list.root(), loop_list, result, true);
-
-    for (auto const&i : result.loops) {
-      std::cout << i << std::endl;
-    }
-
-    for (auto const&i : result.contours) {
-      std::cout << i << std::endl;
-    }
-
-    for (auto const&i : result.curves) {
-      std::cout << i << std::endl;
-    }
-
-    for (auto const&i : result.points) {
-      std::cout << i << std::endl;
-    }
-
     return root_index;
     /*
     serialization::loop_t parent_loop{ loop_list.loops().size() - 1,

@@ -54,18 +54,31 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _label_mem        = new QLabel;
 
   _recompile_button = new QPushButton;
-  _recompile_button->setText("Recompile Shaders");
+  _resetview_button = new QPushButton;
+  _resetview_button->setText("Reset View");
+  _recompile_button->setText("Recompile");
 
   _show_texel_fetches = new QCheckBox;
   _linear_texture_filter = new QCheckBox;
-  _optimal_distance = new QCheckBox;
+  _optimal_distance   = new QCheckBox;
+  _antialiasing       = new QCheckBox;
+
+  _zoom_control = new SlidersGroup(Qt::Horizontal, tr("Zoom"), this);
+  _zoom_control->setMinimum(0);
+  _zoom_control->setMaximum(_width);
+  _zoom_control->setValue(0);
 
   _texture_resolution = new QComboBox;
-  _texture_resolution->insertItem(0, tr("8"), 8);
-  _texture_resolution->insertItem(1, tr("16"), 16);
-  _texture_resolution->insertItem(2, tr("32"), 32);
-  _texture_resolution->insertItem(3, tr("64"), 64);
-  _texture_resolution->insertItem(4, tr("128"), 128);
+  std::vector<unsigned> texture_resolutions = { 8, 16, 32, 64, 128 };
+  for (auto i = 0; i != texture_resolutions.size(); ++i) {
+    _texture_resolution->insertItem(i, tr(std::to_string(texture_resolutions[i]).c_str()), texture_resolutions[i]);
+  }
+
+  _pixel_size = new QComboBox;
+  std::vector<unsigned> pixel_sizes = { 1, 2, 4, 8, 16, 32, 64, 128, 256 };
+  for (auto i = 0; i != pixel_sizes.size(); ++i) { 
+    _pixel_size->insertItem(i, tr(std::to_string(pixel_sizes[i]).c_str()), pixel_sizes[i]);
+  }
 
   QGridLayout* layout = new QGridLayout;
   _controlwidget->setLayout(layout);
@@ -73,30 +86,52 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _list_object->setSelectionMode(QAbstractItemView::SingleSelection);
   _list_surface->setSelectionMode(QAbstractItemView::SingleSelection);
 
-  layout->addWidget(_list_object);
-  layout->addWidget(_list_surface);
-  layout->addWidget(_viewbox);
-  layout->addWidget(_recompile_button);
-  layout->addWidget(_texture_resolution);
+  unsigned row = 0;
 
-  layout->addWidget(_show_texel_fetches);
+  layout->setAlignment(Qt::AlignRight);
+
+  layout->addWidget(_list_object, row, 0);
+  layout->addWidget(_list_surface, row++, 1);
+
+  layout->addWidget(new QLabel("View Mode:"), row, 0);
+  layout->addWidget(_viewbox, row++, 1);
+
+  layout->addWidget(new QLabel("Compile Shaders:"), row, 0);
+  layout->addWidget(_recompile_button, row++, 1);
+
+  layout->addWidget(new QLabel("Reset View:"), row, 0);
+  layout->addWidget(_resetview_button, row++, 1);
+
+  layout->addWidget(new QLabel("Texture Resolution:"), row, 0);
+  layout->addWidget(_texture_resolution, row++, 1);
+
+  layout->addWidget(new QLabel("Pixel Size:"), row, 0);
+  layout->addWidget(_pixel_size, row++, 1);
+
+  layout->addWidget(_show_texel_fetches, row++, 1);
   _show_texel_fetches->setText("Show Texel Fetches");
 
-  layout->addWidget(_linear_texture_filter);
+  layout->addWidget(_linear_texture_filter, row++, 1);
   _linear_texture_filter->setText("Linear Texture Filtering");
 
-  layout->addWidget(_optimal_distance);
+  layout->addWidget(_optimal_distance, row++, 1);
   _optimal_distance->setText("Optimal Distance Field");
+
+  layout->addWidget(_antialiasing, row++, 1);
+  _antialiasing->setText("Enable Anti-Aliasing");
+
+  layout->addWidget(_zoom_control, row++, 1);
   
 
-  layout->addWidget(_label_mem);
-  layout->addWidget(_label_fps);
+  layout->addWidget(_label_mem, row++, 0);
+  layout->addWidget(_label_fps, row++, 0);
 
   /////////////////////////////////////
   // file menu
   /////////////////////////////////////
   _file_menu = menuBar()->addMenu(tr("File"));
-  _action_loadfile = new QAction(tr("Open"), _controlwidget);
+
+  _action_loadfile = new QAction(tr("Open"), _glwindow);
   _file_menu->addAction(_action_loadfile);
 
   /////////////////////////////////////
@@ -118,6 +153,8 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _modes.insert(std::make_pair(glwidget::binary_field, "binary_texture"));
   _modes.insert(std::make_pair(glwidget::distance_field, "distance_field_texture"));
 
+  _modes.insert(std::make_pair(glwidget::prefilter, "prefilter"));
+
   std::for_each ( _modes.begin(), _modes.end(), [&] ( std::map<glwidget::view, std::string>::value_type const& p ) { _viewbox->addItem(p.second.c_str()); } );
 
   /////////////////////////////////////
@@ -128,11 +165,15 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   connect(_list_surface, SIGNAL(itemSelectionChanged()), this, SLOT(update_view()));
   connect(_viewbox, SIGNAL(currentIndexChanged(int)), this, SLOT(update_view()));
   connect(_recompile_button, SIGNAL(clicked()), _glwindow, SLOT(recompile()));
+  connect(_resetview_button, SIGNAL(clicked()), _glwindow, SLOT(resetview()));
   connect(_show_texel_fetches, SIGNAL(stateChanged(int)), _glwindow, SLOT(show_texel_fetches(int)));
   connect(_linear_texture_filter, SIGNAL(stateChanged(int)), _glwindow, SLOT(texture_filtering(int)));
   connect(_texture_resolution, SIGNAL(currentIndexChanged(int)), SLOT(update_view()));
   connect(_optimal_distance, SIGNAL(stateChanged(int)), _glwindow, SLOT(optimal_distance(int)));
-  
+  connect(_pixel_size, SIGNAL(currentIndexChanged(int)), this, SLOT(pixel_size_changed()));
+  connect(_antialiasing, SIGNAL(stateChanged(int)), _glwindow, SLOT(antialiasing(int)));
+  connect(_zoom_control, SIGNAL(valueChanged(int)), this, SLOT(zoom_changed(int)));
+
   _controlwidget->show();
   this->show();
 
@@ -187,11 +228,11 @@ void mainwindow::update_view () const
   auto objects  = _list_object->selectedItems();
   auto surfaces = _list_surface->selectedItems();
 
-  if ( !objects.empty() )
+  if (!objects.empty() && !surfaces.empty())
   {
     std::string surface_str = surfaces.front()->text().toStdString();
     std::stringstream sstr ( surface_str );
-    std::string id_str;
+    std::string id_str; 
     sstr >> id_str;
     unsigned id = boost::lexical_cast<unsigned>(id_str.c_str());
 
@@ -205,6 +246,20 @@ void mainwindow::update_view () const
 
     _glwindow->update_view(objects.front()->text().toStdString(), id, current_view, _texture_resolution->itemData(_texture_resolution->currentIndex()).toUInt() );
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::pixel_size_changed() const
+{
+  _glwindow->pixel_size(_pixel_size->itemData(_pixel_size->currentIndex()).toUInt());
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void                    
+mainwindow::zoom_changed(int value)
+{
+  auto normalized_zoom = float(value) / (float(_zoom_control->getMaximum()) - float(_zoom_control->getMinimum()));
+  _glwindow->zoom(normalized_zoom);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

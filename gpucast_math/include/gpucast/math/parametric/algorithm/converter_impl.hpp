@@ -330,7 +330,7 @@ converter<point_t>::knot_insertion(point_container_t& P, std::multiset<typename 
   //typedef typename point_t::value_type value_type;
   std::set<value_type> unique(knots.begin(), knots.end());
 
-  for (typename std::set<value_type>::const_iterator i = unique.begin(); i != unique.end(); ++i)
+  for (auto i = unique.begin(); i != unique.end(); ++i)
   {
     if (knots.count(*i) < order - 1)
     {
@@ -390,7 +390,7 @@ converter<point_t>::knot_insertion(point_container_t& P, std::multiset<value_typ
     for (std::size_t i = 0; i <= p - j - s; ++i)
     {
       value_type alpha = (t - kv_cpy[L+i-1]) / (kv_cpy[i+k] - kv_cpy[L+i-1]);
-      Rw[i] = alpha * Rw[i+1] + value_type(1.0 - alpha) * Rw[i];
+      Rw[i] = alpha * Rw[i + 1] + (value_type(1) - value_type(alpha)) * Rw[i];
     }
     Qw[L-1] = Rw[0];
     Qw[k+r-j-s-1] = Rw[p-j-s];

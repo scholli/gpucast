@@ -32,11 +32,15 @@
 #include <gpucast/gl/util/contextinfo.hpp>
 #include <gpucast/gl/util/timer.hpp>
 
+#include <gpucast/math/vec2.hpp>
+#include <gpucast/math/vec4.hpp>
+#include <gpucast/math/util/prefilter2d.hpp>
+
 #include <gpucast/core/config.hpp>
+
 #include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/arraybuffer.hpp>
-#include <gpucast/math/vec4.hpp>
 #include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/transferfunction.hpp>
@@ -138,6 +142,9 @@ glwidget::update_view(std::string const& name, std::size_t const index, view cur
 
   clear();
 
+  initialize_sampler();
+  _initialize_prefilter();
+
   // create new polygons
   if ( _objects.count( name ) )
   {
@@ -149,6 +156,12 @@ glwidget::update_view(std::string const& name, std::size_t const index, view cur
     
       // set projection
       auto domain = (**surface).domain();
+
+      _domain_size = gpucast::math::vec2f(domain->nurbsdomain().size());
+      _domain_min = gpucast::math::vec2f(domain->nurbsdomain().min);
+
+      std::cout << _domain_size << std::endl;
+      std::cout << _domain_min << std::endl;
 
       switch ( _view )
       {
@@ -182,6 +195,9 @@ glwidget::update_view(std::string const& name, std::size_t const index, view cur
         case binary_field:
           generate_binary_field(domain, resolution);
           break;
+        case prefilter:
+          
+          break;
         default : 
           break;
       };
@@ -202,6 +218,7 @@ void
 glwidget::generate_original_view ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
   gpucast::trimdomain::curve_container curves = domain->curves();
+
   for ( auto curve = curves.begin(); curve != curves.end(); ++curve )
   {
     gpucast::math::vec4f cpolygon_color ( 1.0f, 1.0f, 1.0f, 1.0f );
@@ -223,7 +240,8 @@ glwidget::generate_double_binary_view ( gpucast::beziersurface::trimdomain_ptr c
 {
   generate_trim_region_vbo(domain);
 
-  gpucast::math::domain::partition<gpucast::beziersurface::curve_point_type>  partition(domain->curves().begin(), domain->curves().end());
+  auto curves = domain->curves();
+  gpucast::math::domain::partition<gpucast::beziersurface::curve_point_type>  partition(curves.begin(), curves.end());
   partition.initialize();
 
   for ( auto v = partition.begin(); v != partition.end(); ++v )
@@ -381,7 +399,7 @@ glwidget::generate_binary_field(gpucast::beziersurface::trimdomain_ptr const& do
 {
   generate_trim_region_vbo(domain);
 
-  initialize_filter();
+  initialize_sampler();
 
   _binary_texture = std::make_unique<gpucast::gl::texture2d>();
   std::vector<float> texture_data;
@@ -428,7 +446,7 @@ glwidget::generate_distance_field(gpucast::beziersurface::trimdomain_ptr const& 
 {
   generate_trim_region_vbo(domain);
 
-  initialize_filter();
+  initialize_sampler();
 
   _distance_field_texture = std::make_unique<gpucast::gl::texture2d>();
   std::vector<float> texture_data;
@@ -515,9 +533,6 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
   _db_curvelist->format ( GL_RGBA32F );
   _db_curvedata->format ( GL_RGB32F );
 
-  _domain_size = gpucast::math::vec2f ( domain->nurbsdomain().size() );
-  _domain_min  = gpucast::math::vec2f ( domain->nurbsdomain().min );
-
   // show memory usage
   std::size_t size_bytes = ((trimdata.size() - 1)   * sizeof(gpucast::math::vec4f) +
     (celldata.size() - 1)   * sizeof(gpucast::math::vec4f) +
@@ -573,9 +588,6 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
   _cmb_curvedata->format   ( GL_R32F );
   _cmb_pointdata->format   ( GL_RGB32F );
 
-  _domain_size = gpucast::math::vec2f ( domain->nurbsdomain().size() );
-  _domain_min  = gpucast::math::vec2f ( domain->nurbsdomain().min );
-
   // show memory usage
   std::size_t size_bytes = ((partition.size() - 1) * sizeof(gpucast::math::vec4f) +
     (contourlist.size() - 1) * sizeof(gpucast::math::vec2f) +
@@ -612,9 +624,6 @@ glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr con
   _loop_list_curves->update(serialization.curves.begin(), serialization.curves.end());
   _loop_list_points->update(serialization.points.begin(), serialization.points.end());
 
-  _domain_size = gpucast::math::vec2f(domain->nurbsdomain().size());
-  _domain_min = gpucast::math::vec2f(domain->nurbsdomain().min);
-
   // show memory usage
   std::size_t size_bytes = ((serialization.loops.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::loop_t) +
     (serialization.contours.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::contour_t) +
@@ -628,23 +637,37 @@ glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr con
 }
 
 ///////////////////////////////////////////////////////////////////////
-void glwidget::initialize_filter()
+void glwidget::initialize_sampler()
 {
-  _bilinear_filter = std::make_unique<gpucast::gl::sampler>();
-  _bilinear_filter->parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  _bilinear_filter->parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  if (!_bilinear_filter) {
+    _bilinear_filter = std::make_unique<gpucast::gl::sampler>();
+    _bilinear_filter->parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    _bilinear_filter->parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  _bilinear_filter->parameter(GL_TEXTURE_WRAP_R, GL_CLAMP);
-  _bilinear_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
-  _bilinear_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
-                              
-  _nearest_filter = std::make_unique<gpucast::gl::sampler>();
-  _nearest_filter->parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  _nearest_filter->parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //_bilinear_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
+    //_bilinear_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
+    //_bilinear_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    //_bilinear_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    _bilinear_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    _bilinear_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //_bilinear_filter->parameter(GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    //_bilinear_filter->parameter(GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+  } 
 
-  _nearest_filter->parameter(GL_TEXTURE_WRAP_R, GL_CLAMP);
-  _nearest_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
-  _nearest_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
+  if (!_nearest_filter) {
+    _nearest_filter = std::make_unique<gpucast::gl::sampler>();
+    _nearest_filter->parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    _nearest_filter->parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    //_nearest_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
+    //_nearest_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
+    //_nearest_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    //_nearest_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    _nearest_filter->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    _nearest_filter->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //_nearest_filter->parameter(GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    //_nearest_filter->parameter(GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -753,6 +776,13 @@ glwidget::get_surfaces ( std::string const& name ) const
 }
 
 ///////////////////////////////////////////////////////////////////////
+void                    
+glwidget::pixel_size(unsigned s)
+{
+  _pixel_size = s;
+}
+
+///////////////////////////////////////////////////////////////////////
 void
 glwidget::show_texel_fetches(int enable)
 {
@@ -770,6 +800,18 @@ glwidget::optimal_distance(int enable)
   }
 }
 
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::antialiasing(int enable)
+{
+  _antialiasing = enable != 0;
+}
+
+///////////////////////////////////////////////////////////////////////
+void                    
+glwidget::zoom(float scale) {
+  _zoom = scale;
+}
 
 ///////////////////////////////////////////////////////////////////////
 void                    
@@ -777,6 +819,15 @@ glwidget::recompile()
 {
   std::cout << "Recompiling shader code." << std::endl;
   _initialize_shader();
+}
+
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::resetview()
+{
+  _shift_x = 0.0f;
+  _shift_y = 0.0f;
+  _zoom = 1.0f;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -816,6 +867,12 @@ glwidget::paintGL()
   gpucast::gl::timer gtimer;
   gtimer.start();
 
+  auto view_center = gpucast::math::vec2f(_domain_min[0] + _shift_x*_domain_size[0], _domain_min[1] + _shift_y*_domain_size[1]);
+  auto view_size = gpucast::math::vec2f(_domain_size[0], _domain_size[1]);
+  auto view_shift = gpucast::math::vec2f(_shift_x, _shift_y);
+
+  std::cout << _zoom << std::endl;
+
   switch ( _view )
   {
     // simply draw gl lines
@@ -824,15 +881,18 @@ glwidget::paintGL()
     case minification:
     case contour_map_binary_partition :
     case contour_map_loop_list_partition :
-      {
+      { 
         _partition_program->begin();
         _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]); 
+        _partition_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+        _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+        _partition_program->set_uniform1f("domain_zoom", _zoom);
         std::for_each ( _curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
         _partition_program->end();
         break;
       }
     // per-pixel classification
-    case double_binary_classification :
+    case double_binary_classification : 
       {
         _db_program->begin();
         {
@@ -840,16 +900,21 @@ glwidget::paintGL()
           _db_program->set_uniform1i ( "width",  _width );
           _db_program->set_uniform1i ( "height", _height );
           _db_program->set_uniform1i ( "show_costs", int(_show_texel_fetches) );
+          _db_program->set_uniform1i ( "antialiasing", int(_antialiasing) );
                                                   
-          _db_program->set_uniform2f ( "domain_size", _domain_size[0], _domain_size[1] );
-          _db_program->set_uniform2f ( "domain_min",  _domain_min[0], _domain_min[1] );
+          _db_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+          _db_program->set_uniform2f ("domain_min", view_center[0], view_center[1]);
+          _db_program->set_uniform1f("domain_zoom", _zoom);
 
           unsigned texunit = 0;
           _db_program->set_texturebuffer ( "trimdata",         *_db_trimdata,        texunit++ );
           _db_program->set_texturebuffer ( "celldata",         *_db_celldata,        texunit++ );
           _db_program->set_texturebuffer ( "curvelist",        *_db_curvelist,       texunit++ );
           _db_program->set_texturebuffer ( "curvedata",        *_db_curvedata,       texunit++ );
-          _db_program->set_texture1d     ( "transfertexture",  *_transfertexture, texunit++ );
+          _db_program->set_texture1d     ( "transfertexture",  *_transfertexture,    texunit++ );
+
+          _bilinear_filter->bind(texunit);
+          _db_program->set_texture2d("prefilter_texture", *_prefilter_texture, texunit++);
 
           _quad->draw();
         }
@@ -865,9 +930,11 @@ glwidget::paintGL()
           _cmb_program->set_uniform1i ( "width",  _width );
           _cmb_program->set_uniform1i ( "height", _height );
           _cmb_program->set_uniform1i ( "show_costs", int(_show_texel_fetches) );
+          _cmb_program->set_uniform1i("antialiasing", int(_antialiasing));
                                                   
-          _cmb_program->set_uniform2f ( "domain_size", _domain_size[0], _domain_size[1] );
-          _cmb_program->set_uniform2f ( "domain_min",  _domain_min[0], _domain_min[1] );
+          _cmb_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+          _cmb_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+          _cmb_program->set_uniform1f("domain_zoom", _zoom);
 
           unsigned texunit = 0;
           _cmb_program->set_texturebuffer ( "sampler_partition",   *_cmb_partition,  texunit++ );
@@ -876,6 +943,9 @@ glwidget::paintGL()
           _cmb_program->set_texturebuffer ( "sampler_curvedata",   *_cmb_curvedata,   texunit++ );
           _cmb_program->set_texturebuffer ( "sampler_pointdata",   *_cmb_pointdata,   texunit++ );
           _cmb_program->set_texture1d     ( "transfertexture",     *_transfertexture, texunit++ );
+
+          _bilinear_filter->bind(texunit);
+          _cmb_program->set_texture2d("prefilter_texture", *_prefilter_texture, texunit++);
 
           _quad->draw();
         }
@@ -888,9 +958,11 @@ glwidget::paintGL()
         _loop_list_program->set_uniform1i("width", _width);
         _loop_list_program->set_uniform1i("height", _height);
         _loop_list_program->set_uniform1i("show_costs", int(_show_texel_fetches));
-
-        _loop_list_program->set_uniform2f("domain_size", _domain_size[0], _domain_size[1]);
-        _loop_list_program->set_uniform2f("domain_min", _domain_min[0], _domain_min[1]);
+        _loop_list_program->set_uniform1i("antialiasing", int(_antialiasing));
+        
+        _loop_list_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+        _loop_list_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+        _loop_list_program->set_uniform1f("domain_zoom", _zoom);
 
         _loop_list_loops->bind_buffer_base(0);
         _loop_list_program->set_shaderstoragebuffer("loop_buffer", *_loop_list_loops, 0);
@@ -903,6 +975,9 @@ glwidget::paintGL()
 
         _loop_list_points->bind_buffer_base(3);
         _loop_list_program->set_shaderstoragebuffer("point_buffer", *_loop_list_points, 3);
+
+        _bilinear_filter->bind(4);
+        _loop_list_program->set_texture2d("prefilter_texture", *_prefilter_texture, 4);
 
         _quad->draw();
       }
@@ -920,22 +995,24 @@ glwidget::paintGL()
         }
         _tex_program->set_texture2d("classification_texture", *_distance_field_texture, 0);
         _tex_program->set_uniform1i("show_costs", int(_show_texel_fetches));
-        _tex_program->set_uniform2f("domain_size", _domain_size[0], _domain_size[1]);
-        _tex_program->set_uniform2f("domain_min", _domain_min[0], _domain_min[1]);
-
+        _tex_program->set_uniform2f("domain_shift", view_shift[0], view_shift[1]);
+        _tex_program->set_uniform1f("domain_zoom", _zoom);
         _quad->draw();
       }
       _tex_program->end();
 
       _partition_program->begin();
       _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+      _partition_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+      _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+      _partition_program->set_uniform1f("domain_zoom", _zoom);
       std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
       _partition_program->end();
 
       break;
 
     case binary_field:
-      _tex_program->begin();
+      _tex_program->begin(); 
       {
         if (_linear_filter) {
           _bilinear_filter->bind(0);
@@ -944,6 +1021,8 @@ glwidget::paintGL()
           _nearest_filter->bind(0);
         }
         _tex_program->set_texture2d("classification_texture", *_binary_texture, 0);
+        _tex_program->set_uniform2f("domain_shift", view_shift[0], view_shift[1]);
+        _tex_program->set_uniform1f("domain_zoom", _zoom);
         _tex_program->set_uniform1i("show_costs", int(_show_texel_fetches));
 
         _quad->draw();
@@ -952,9 +1031,25 @@ glwidget::paintGL()
 
       _partition_program->begin();
       _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+      _partition_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+      _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+      _partition_program->set_uniform1f("domain_zoom", _zoom);
       std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
       _partition_program->end();
       break;
+    case prefilter:
+      _prefilter_program->begin();
+      {
+        if (_linear_filter) {
+          _bilinear_filter->bind(0);
+        }
+        else {
+          _nearest_filter->bind(0);
+        }
+        _prefilter_program->set_texture2d("prefilter_texture", *_prefilter_texture, 0);
+        _quad->draw();
+      }
+      _prefilter_program->end();
     default : 
       break;
   };
@@ -1001,7 +1096,52 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   };
 }
 
+///////////////////////////////////////////////////////////////////////
+/* virtual */ void glwidget::mouseDoubleClickEvent(QMouseEvent * event)
+{}
 
+///////////////////////////////////////////////////////////////////////
+/* virtual */ void glwidget::mouseMoveEvent(QMouseEvent * event)
+{
+  if ( _shift_mode ) {
+    _shift_x += float(_last_x - event->x()) / _width;
+    _shift_y -= float(_last_y - event->y()) / _height;
+    _last_x = event->x();
+    _last_y = event->y();
+  }
+
+  if (_zoom_mode) {
+    _zoom *= float(_height - (_last_y - event->y())) / _height;
+    _last_y = event->y();
+  }
+}
+
+///////////////////////////////////////////////////////////////////////
+/* virtual */ void glwidget::mousePressEvent(QMouseEvent * event)
+{
+  switch (event->button()) {
+    case Qt::LeftButton : 
+    case Qt::MidButton:
+      _shift_mode = true;
+      _zoom_mode = false;
+      _last_x = event->x();
+      _last_y = event->y();
+      break;
+    case Qt::RightButton : 
+      _zoom_mode = true;
+      _shift_mode = false;
+      _last_x = event->x();
+      _last_y = event->y();
+      break;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////
+/* virtual */ void glwidget::mouseReleaseEvent(QMouseEvent * event)
+{
+  _zoom_mode = false;
+  _shift_mode = false;
+}
 
 ///////////////////////////////////////////////////////////////////////
 void
@@ -1068,6 +1208,35 @@ glwidget::_initialize_shader()
   _cmb_program = program_factory.create_program("./shader/contour_binary.vert", "./shader/contour_binary.frag");
   _kd_program = program_factory.create_program("./shader/domain.vert.glsl", "./shader/contour.frag.glsl");
   _loop_list_program = program_factory.create_program("./shader/contour_loop_list.vert", "./shader/contour_loop_list.frag");
+  _prefilter_program = program_factory.create_program("./shader/prefilter_view.vert.glsl", "./shader/prefilter_view.frag.glsl");
 }
 
+///////////////////////////////////////////////////////////////////////
+void glwidget::_initialize_prefilter()
+{
+  if (!_prefilter_texture) {
 
+    _prefilter_texture = std::make_unique<gpucast::gl::texture2d>();
+
+    gpucast::math::util::prefilter2d<gpucast::math::vec2d> pre_integrator(32, 0.5);
+
+    unsigned prefilter_resolution = 64;
+    std::vector<float> texture_data;
+
+    auto distance_offset = std::sqrt(2) / prefilter_resolution;
+    auto angle_offset = (2.0 * M_PI) / prefilter_resolution;
+
+    for (unsigned d = 0; d != prefilter_resolution; ++d) {
+      for (unsigned a = 0; a != prefilter_resolution; ++a) {
+
+        auto angle = a * angle_offset;
+        auto distance = -1.0 / std::sqrt(2) + distance_offset * d;
+        auto alpha = pre_integrator(gpucast::math::vec2d(angle, distance));
+
+        texture_data.push_back(alpha);
+      }
+    }
+
+    _prefilter_texture->teximage(0, GL_R32F, prefilter_resolution, prefilter_resolution, 0, GL_RED, GL_FLOAT, (void*)(&texture_data[0]));
+  }
+}

@@ -191,7 +191,7 @@ void main(void)
 
   bool is_trimmed = false;
 
-#if 0
+#if 1
   is_trimmed = trimming_double_binary ( bp_trimdata, 
                                         bp_celldata, 
                                         bp_curvelist, 
@@ -209,7 +209,7 @@ void main(void)
                                                cmb_curvedata,
                                                cmb_pointdata,
                                                uv, 
-                                               1, 
+                                               trim_index_cmb,
                                                trimtype, 
                                                iters, 
                                                0.00001, 

@@ -22,7 +22,6 @@
 
 // header, project
 #include <gpucast/math/parametric/algorithm/horner.hpp>
-
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
 #include <gpucast/math/interval.hpp>
 
@@ -178,8 +177,8 @@ namespace gpucast { namespace math {
   inline void
   beziercurve<point_t>::print(std::ostream& os, std::string const& add) const
   {
-    os << "degree " <<  _deg << " beziercurve : ";
-    std::copy(_points.begin(), _points.end(), std::ostream_iterator<point_t>(os, ", "));
+    os << "degree " <<  _deg << " beziercurve : \n";
+    std::copy(_points.begin(), _points.end(), std::ostream_iterator<point_t>(os, ",\n"));
     os << add;
   }
 
@@ -306,7 +305,6 @@ namespace gpucast { namespace math {
   beziercurve<point_t>::clip_left(value_type t)
   {
     assert(t >= value_type(0) && t <= value_type(1));
-
     for (point_iterator i = _points.begin(); i < _points.end(); ++i) {
       *i = i->as_homogenous();
     }
@@ -342,7 +340,6 @@ namespace gpucast { namespace math {
   beziercurve<point_t>::clip_right(value_type t)
   {
     assert(t >= value_type(0) && t <= value_type(1));
-
     for (point_iterator i = _points.begin(); i < _points.end(); ++i) {
       *i = i->as_homogenous();
     }
@@ -373,12 +370,15 @@ namespace gpucast { namespace math {
   inline void
   beziercurve<point_t>::clip_lr(value_type l, value_type r)
   {
+    if (l == 0 && r == 1) return;
+    assert(l != 1 && r != 0);
+
     if (l < r) {
       clip_left(l);
-      clip_right((r - l) / (value_type(1.0) - l));
+      clip_right((r - l) / (value_type(1) - l));
     } else {
       clip_left(r);
-      clip_right((l - r) / (value_type(1.0) - r));
+      clip_right((l - r) / (value_type(1) - r));
     }
   }
 
@@ -460,6 +460,7 @@ namespace gpucast { namespace math {
           }
         }
     }
+
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -527,6 +528,62 @@ namespace gpucast { namespace math {
       std::swap(intervals, new_intervals);
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
+  std::vector<beziercurve<point_t>>
+  beziercurve<point_t>::monotonize(typename point_type::coordinate_type dim) const {
+
+    auto correct_derivatives_at_split_points = [](typename point_type::coordinate_type c, std::vector<beziercurve>& curves) {
+      if (curves.size() < 2) return;
+
+      // make sure neighboring curves have same value after split -> derivative for c == 0
+      for (std::size_t i = 0; i < curves.size() - 1; ++i) {
+        auto d = curves[i].degree();
+        auto extrema_value = curves[i][d][c];
+        curves[i][d - 1][c] = extrema_value;
+        curves[i + 1][0][c] = extrema_value;
+        curves[i + 1][1][c] = extrema_value;
+      }
+    };
+
+    std::vector<beziercurve> input = { *this };
+    std::vector<beziercurve> output;
+    std::vector<beziercurve> monotonic_segments;
+
+    bool continue_splitting = true;
+    while (continue_splitting)
+    {
+      continue_splitting = false;
+
+      for (auto const& curve : input) {
+        // determine if curve has extrema
+        std::set<value_type> extrema;
+        curve.extrema(dim, extrema);
+
+        if (extrema.empty()) {
+          monotonic_segments.push_back(curve);
+        }
+        else {
+          std::vector<beziercurve> split_curves;
+          curve.split(extrema, split_curves);
+          correct_derivatives_at_split_points(dim, split_curves);
+          for (auto const& c : split_curves) {
+            if (c.is_monotonic(dim)) {
+              monotonic_segments.push_back(c);
+            }
+            else {
+              continue_splitting = true;
+              output.push_back(c);
+            }
+          }
+        }
+      }
+      input = output;
+    }
+    return monotonic_segments;
+  }
+
 
 
   //////////////////////////////////////////////////////////////////////////////
@@ -658,11 +715,24 @@ namespace gpucast { namespace math {
                                   std::size_t fx,
                                   std::size_t x,
                                   bool& intersects,
-                                  std::size_t& iters,
+                                  std::size_t& iters, 
                                   interval<value_type> const& para_rng,
                                   std::size_t max_iters ) const
   {
-    assert(weak_monotonic(fx));
+#if 0
+    assert(is_monotonic(x) && is_monotonic(fx));
+#else
+    if (!is_monotonic(x) || !is_monotonic(fx)) {
+      print(std::cout);
+      std::set<value_type> xtrema;
+      extrema(point_type::u, xtrema);
+      extrema(point_type::v, xtrema);
+      std::cout << " extrema : " << std::endl;
+      for (auto t : xtrema) {
+        std::cout << std::setprecision << t << std::endl;
+      }
+    }
+#endif
 
     // determine pmin and pmax
     point_t pmin;
@@ -792,6 +862,27 @@ namespace gpucast { namespace math {
     return false;
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
+  bool                    
+  beziercurve<point_t>::is_monotonic(std::size_t dim) const{
+    if (weak_monotonic(dim)) {
+      // first/easiest case : all points are in in- or decresing order
+      return true;
+    }
+    else {
+      std::set<value_type> ext_t;
+      extrema(dim, ext_t);
+
+      // second case: no extrema found
+      if (ext_t.empty()) {
+        return true;
+      } else {
+        // third case: extrema conincide with end or start of curve
+        return (*ext_t.begin() == 0) || (*ext_t.begin() == 1);
+      } 
+    }
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   template<typename point_t>

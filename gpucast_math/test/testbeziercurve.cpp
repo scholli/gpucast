@@ -761,10 +761,10 @@ SUITE (beziercurve_classes)
     unsigned smaller_distance_found = 0;
 
     // allow for max. 10% deviation
-    float    error_threshold = 0.10;
+    float    error_threshold = 0.10f;
 
     // for at least 95% of the curves
-    float    error_tolerance = 0.05;
+    float    error_tolerance = 0.05f;
 
     for (int k = 0; k != total_tests; ++k)
     {

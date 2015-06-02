@@ -5,12 +5,9 @@ in vec4 vertex_position;
 
 layout(location = 0) out vec2 uv_coord;
 
-uniform vec2 domain_shift;
-uniform float domain_zoom;
-
 void main(void)
 {
   gl_Position = vertex_position;
-  uv_coord = ((vertex_position.xy / vec2(2) + vec2(0.5)) * domain_zoom + domain_shift);
+  uv_coord =  ((vertex_position.xy + vec2(1.0)) / 2.0);
 }
 

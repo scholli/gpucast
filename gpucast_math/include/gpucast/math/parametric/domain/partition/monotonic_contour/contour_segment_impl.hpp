@@ -62,12 +62,12 @@ contour_segment<value_t>::is_monotonic(typename point_type::coordinate_type cons
     return true;
   }
 
-  bool monotony = _curves.front()->weak_monotonic(c);
+  bool monotony = _curves.front()->is_monotonic(c);
   bool increase = _curves.front()->is_increasing(c);
 
   for (auto const& curve : _curves)
   {
-    if (monotony != curve->weak_monotonic(c) ||
+    if (monotony != curve->is_monotonic(c) ||
         increase != curve->is_increasing(c)) {
       return false;
     }
