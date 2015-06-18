@@ -51,6 +51,7 @@ public: // c'tor / d'tor
 
   void                    show_drawtime      ( double ms );
   void                    show_memusage      ( std::size_t bytes ) const;
+  void                    show_domainsize    ( float umin, float vmin, float umax, float vmax) const;
 
 protected:
 
@@ -62,6 +63,7 @@ public Q_SLOTS: // slot events
   void                    update_objectlist  ();
   void                    update_surfacelist ();
   void                    update_view        () const;
+  void                    antialiasing       () const;
   void                    pixel_size_changed () const;
   void                    zoom_changed       (int);
 
@@ -73,6 +75,7 @@ private: // attributes
   unsigned                _height;
 
   std::map<glwidget::view, std::string> _modes;
+  std::map<glwidget::aamode, std::string> _aamodes;
   std::list<double>       _fps;
 
   // menubar and menubar actions
@@ -82,13 +85,15 @@ private: // attributes
   QComboBox*              _viewbox;
   QLabel*                 _label_fps;
   QLabel*                 _label_mem;
+  QLabel*                 _label_size;
   QPushButton*            _recompile_button;
   QPushButton*            _resetview_button;
 
   QCheckBox*              _show_texel_fetches;
   QCheckBox*              _linear_texture_filter;
   QCheckBox*              _optimal_distance;
-  QCheckBox*              _antialiasing;
+  QComboBox*              _antialiasing;
+
 
   QComboBox*              _texture_resolution;
   QComboBox*              _pixel_size;

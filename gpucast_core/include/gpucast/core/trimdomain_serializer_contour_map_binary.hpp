@@ -34,13 +34,13 @@ class trimdomain_serializer_contour_map_binary : public trimdomain_serializer
 
   public : // methods
 
-    template <typename float4_type, typename float3_type, typename float2_type>
+    template <typename float4_type, typename float3_type>
     address_type     serialize  ( trimdomain_ptr const&                                     input_domain, 
                                   std::unordered_map<trimdomain_ptr, address_type>&       referenced_trimdomains,
                                   std::unordered_map<curve_ptr, address_type>&            referenced_curves,
                                   std::unordered_map<contour_segment_ptr, address_type>&  referenced_contour_segments,
                                   std::vector<float4_type>&                                 output_partition,
-                                  std::vector<float2_type>&                                 output_contourlist,
+                                  std::vector<float4_type>&                                 output_contourlist,
                                   std::vector<float4_type>&                                 output_curvelist,
                                   std::vector<float>&                                       output_curvedata,
                                   std::vector<float3_type>&                                 output_pointdata ) const;
@@ -57,14 +57,14 @@ class trimdomain_serializer_contour_map_binary : public trimdomain_serializer
 };
 
 /////////////////////////////////////////////////////////////////////////////
-template <typename float4_type, typename float3_type, typename float2_type>
+template <typename float4_type, typename float3_type>
 trimdomain_serializer::address_type  
 trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&                                   input_domain, 
                                                       std::unordered_map<trimdomain_ptr, address_type>&       referenced_trimdomains,
                                                       std::unordered_map<curve_ptr, address_type>&            referenced_curves,
                                                       std::unordered_map<contour_segment_ptr, address_type>&  referenced_contour_segments,
                                                       std::vector<float4_type>&                               output_partition,
-                                                      std::vector<float2_type>&                               output_contourlist,
+                                                      std::vector<float4_type>&                               output_contourlist,
                                                       std::vector<float4_type>&                               output_curvelist,
                                                       std::vector<float>&                                     output_curvedata,
                                                       std::vector<float3_type>&                               output_pointdata ) const
@@ -131,8 +131,10 @@ trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&     
         
         address_type curvelist_id = serialize_contour_segment ( contour_segment, referenced_contour_segments, referenced_curves, output_curvelist, output_curvedata, output_pointdata );
 
-        output_contourlist.push_back ( float2_type ( unsigned_bits_as_float ( ncurves_uincreasing ), 
-                                                     unsigned_bits_as_float ( curvelist_id ) ) );
+        output_contourlist.push_back ( float4_type ( unsigned_bits_as_float ( ncurves_uincreasing ), 
+                                                     unsigned_bits_as_float ( curvelist_id ),
+                                                     unsigned_bits_as_float ( float2_to_unsigned(contour_segment->bbox().min[point_type::u], contour_segment->bbox().min[point_type::v])), 
+                                                     unsigned_bits_as_float ( float2_to_unsigned(contour_segment->bbox().max[point_type::u], contour_segment->bbox().max[point_type::v]))));
       }
     }
   }

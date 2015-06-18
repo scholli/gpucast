@@ -19,6 +19,7 @@
 
 #include <boost/bind.hpp>
 #include <algorithm>
+#include <chrono>
 
 
 using namespace gpucast::math;
@@ -27,7 +28,7 @@ SUITE (beziervolume_class)
 {
   TEST(check_evaluation)
   {
-    srand(7);
+    srand(std::chrono::system_clock::now().time_since_epoch().count());
 
     std::size_t width  = 3;
     std::size_t height = 3;

@@ -3,14 +3,20 @@
 
 #include "resources/glsl/common/config.glsl"
 #include "resources/glsl/common/conversion.glsl"
+#include "resources/glsl/common/constants.glsl"
 
 #include "resources/glsl/math/horner_curve.glsl"
+#include "resources/glsl/math/adjoint.glsl.frag"
+#include "resources/glsl/math/transfer_function.glsl"
 
 #include "resources/glsl/trimming/binary_search.glsl"
 #include "resources/glsl/trimming/bisect_curve.glsl"
 #include "resources/glsl/trimming/bisect_contour.glsl"
 #include "resources/glsl/trimming/linear_search_contour.glsl"
 
+////////////////////////////////////////////////////////////////////////////////
+// returns classfication using pixel center
+////////////////////////////////////////////////////////////////////////////////
 bool
 trimming_contour_double_binary ( in samplerBuffer domainpartition,
                                  in samplerBuffer contourlist,
@@ -73,7 +79,8 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
     uvec2 ncurves_uincreasing = intToUInt2(floatBitsToUint(contour.x));
     bool contour_uincreasing  = ncurves_uincreasing.y > 0;
     int curves_in_contour     = int(ncurves_uincreasing.x);
-    int  curvelist_id         = int(floatBitsToUint(contour.y));
+    int curvelist_id          = int(floatBitsToUint(contour.y));
+    vec4 curve_bbox           = vec4(0);
     int curveid               = 0;
 
     bool process_curve = bisect_contour(curvelist,
@@ -105,8 +112,165 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
     }
   }
   
-  return ( (mod(total_intersections, 2) == 1) != bool(trim_outer) );
+  return ((mod(total_intersections, 2) == 1) != bool(trim_outer));
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// returns coverage of pixel
+////////////////////////////////////////////////////////////////////////////////
+float
+trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
+                                        in samplerBuffer contourlist,
+                                        in samplerBuffer curvelist,
+                                        in samplerBuffer curvedata,
+                                        in samplerBuffer pointdata,
+                                        in sampler2D     prefilter,
+                                        in vec2          uv,
+                                        in vec2          duvdx,
+                                        in vec2          duvdy,
+                                        in int           id,
+                                        in int           trim_outer,
+                                        inout int        iters,
+                                        in float         tolerance,
+                                        in int           max_iterations)
+{
+  int total_intersections = 0;
+  int v_intervals = int(floatBitsToUint(texelFetch(domainpartition, id).x));
+  gpucast_count_texel_fetch();
+
+  // if there is no partition in vertical(v) direction -> return
+  if (v_intervals == 0)
+  {
+    return 1.0;
+  }
+  vec4 domaininfo2 = texelFetch(domainpartition, id + 1);
+  gpucast_count_texel_fetch();
+
+  // classify against whole domain
+  if (uv[0] > domaininfo2[1] || uv[0] < domaininfo2[0] ||
+    uv[1] > domaininfo2[3] || uv[1] < domaininfo2[2])
+  {
+    return float(!bool(trim_outer));
+  }
+
+  vec4 vinterval = vec4(0.0);
+  bool vinterval_found = binary_search(domainpartition, uv[1], id + 2, v_intervals, vinterval);
+
+  int celllist_id = int(floatBitsToUint(vinterval[2]));
+  int ncells = int(floatBitsToUint(vinterval[3]));
+
+  vec4 celllist_info = texelFetch(domainpartition, int(celllist_id));
+  gpucast_count_texel_fetch();
+
+  vec4 cell = vec4(0.0);
+
+  bool cellfound = binary_search(domainpartition, uv[0], celllist_id + 1, int(ncells), cell);
+
+  uvec4 type_ncontours = intToUInt4(floatBitsToUint(cell[2]));
+  total_intersections = int(type_ncontours.y);
+  int overlapping_contours = int(type_ncontours.z);
+  int contourlist_id = int(floatBitsToUint(cell[3]));
+
+  bool found_curve_estimate = false;
+
+  vec2 closest_gradient = vec2(1);
+  vec2 closest_point_on_curve = vec2(0);
+  float closest_distance = 1.0 / 0.0;
+
+  for (int i = 0; i < overlapping_contours; ++i)
+  {
+    vec2 gradient = vec2(0);
+    vec2 point_on_curve = vec2(0.0);
+    vec4 contour = texelFetch(contourlist, contourlist_id + i);
+    gpucast_count_texel_fetch();
+
+    uvec2 ncurves_uincreasing = intToUInt2(floatBitsToUint(contour.x));
+    bool contour_uincreasing = ncurves_uincreasing.y > 0;
+    int curves_in_contour = int(ncurves_uincreasing.x);
+    int curvelist_id = int(floatBitsToUint(contour.y));
+    int curveid = 0;
+
+    vec4 remaining_bbox = vec4(unpackHalf2x16(floatBitsToUint(contour.z)), unpackHalf2x16(floatBitsToUint(contour.w)));
+
+    bool process_curve = bisect_contour_coverage(curvelist,
+      uv,
+      curvelist_id,
+      curves_in_contour,
+      contour_uincreasing,
+      total_intersections,
+      curveid,
+      remaining_bbox,
+      point_on_curve,
+      gradient);
+
+    if (process_curve)
+    {
+      int iterations = 0;
+      float curveinfo = texelFetch(curvedata, curveid).x;
+      gpucast_count_texel_fetch();
+
+      uint pointid = 0;
+      uint curveorder = 0;
+      intToUint8_24(floatBitsToUint(curveinfo), curveorder, pointid);
+      bisect_curve_coverage(pointdata, uv, int(pointid), int(curveorder), contour_uincreasing, 0.0f, 1.0f, total_intersections, iterations, point_on_curve, gradient, tolerance, max_iterations, remaining_bbox);
+
+      float distance = length(point_on_curve - uv);
+      if (distance < closest_distance) 
+      {
+        closest_distance = distance;
+        closest_point_on_curve = point_on_curve;
+        closest_gradient = gradient;
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  // coverage estimation
+  /////////////////////////////////////////////////////////////////////////////////////
+  bool covered = bool((mod(total_intersections, 2) == 1) == bool(trim_outer));
+
+  //mat2 J = mat2(duvdx.x, duvdy.x, duvdx.y, duvdy.y);
+  mat2 J = mat2(duvdx, duvdy);
+  //mat2 Jinv = inverse(J);
+  mat2 Jinv = J / determinant(J); // should be the adjoint/determinant -> somehow leads to artifacts
+  //mat2 Jinv = mat2(5.0, 0.0, 0.0, 5.0);
+
+  vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient);
+  vec2 uv_pixel_coords = Jinv*uv;
+  vec2 point_pixel_coords = Jinv*closest_point_on_curve;
+
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  // debug
+  /////////////////////////////////////////////////////////////////////////////////////
+  if (true)
+  {
+    vec2 ngrad = normalize(closest_gradient.xy);
+    if (ngrad.y > 0.0) {
+      debug_out = transfer_function(-ngrad.x);
+    }
+    else {
+      debug_out = transfer_function(1.0+ngrad.y);
+    }
+  }
+  /////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////
+
+
+  float distance_pixel_coords = abs(dot(gradient_pixel_coords, uv_pixel_coords - point_pixel_coords));
+  const float sqrt2 = sqrt(2.0);
+
+  if (!covered) {
+    distance_pixel_coords = -distance_pixel_coords;
+  }
+  
+  const float gradient_angle = gradient_pixel_coords.y > 0.0 ? gradient_pixel_coords.y : -gradient_pixel_coords.y;
+  const float normalized_signed_distance = clamp((distance_pixel_coords + sqrt2 / 2.0) / sqrt2, 0.0, 1.0);
+  return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+}
+
 
 #endif
 

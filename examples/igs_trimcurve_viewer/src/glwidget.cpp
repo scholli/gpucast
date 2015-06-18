@@ -160,8 +160,10 @@ glwidget::update_view(std::string const& name, std::size_t const index, view cur
       _domain_size = gpucast::math::vec2f(domain->nurbsdomain().size());
       _domain_min = gpucast::math::vec2f(domain->nurbsdomain().min);
 
-      std::cout << _domain_size << std::endl;
-      std::cout << _domain_min << std::endl;
+      mainwindow* win = dynamic_cast<mainwindow*>(parent());
+      if (win) {
+        win->show_domainsize(_domain_min[0], _domain_min[1], _domain_min[0] + _domain_size[0], _domain_min[1] + _domain_size[1]);
+      }
 
       switch ( _view )
       {
@@ -315,8 +317,7 @@ glwidget::generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& 
 
   gpucast::math::domain::contour_map_loop_list<double> looplist;
 
-  for (auto const& loop : domain->loops())
-  {
+  for (auto const& loop : domain->loops()) {
     looplist.add(gpucast::math::domain::contour<double>(loop.begin(), loop.end()));
   }
 
@@ -326,6 +327,7 @@ glwidget::generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& 
     gpucast::math::vec4f loop_color(1.0f, 0.0f, 0.0f, 1.0f);
     gpucast::math::bbox2d ubox = contour.first->bbox();
     add_gl_bbox(ubox, loop_color);
+
     for (auto const& segment : contour.second) {
       gpucast::math::vec4f segment_color(0.0f, 1.0f, 0.0f, 1.0f);
       gpucast::math::bbox2d ubox = segment->bbox();
@@ -533,6 +535,11 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
   _db_curvelist->format ( GL_RGBA32F );
   _db_curvedata->format ( GL_RGB32F );
 
+  // overdraw outer box
+  gpucast::math::vec4f loop_color(1.0f, 1.0f, 0.0f, 1.0f);
+  auto box = domain->nurbsdomain();
+  add_gl_bbox(box, loop_color);
+
   // show memory usage
   std::size_t size_bytes = ((trimdata.size() - 1)   * sizeof(gpucast::math::vec4f) +
     (celldata.size() - 1)   * sizeof(gpucast::math::vec4f) +
@@ -560,7 +567,7 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
   std::unordered_map<gpucast::trimdomain_serializer_contour_map_binary::contour_segment_ptr, gpucast::trimdomain_serializer::address_type>  referenced_contours;
 
   std::vector<gpucast::math::vec4f> partition(1);
-  std::vector<gpucast::math::vec2f> contourlist(1);
+  std::vector<gpucast::math::vec4f> contourlist(1);
   std::vector<gpucast::math::vec4f> curvelist(1);
   std::vector<float> curvedata(1);
   std::vector<gpucast::math::vec3f> pointdata(1);
@@ -583,10 +590,15 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
   _cmb_pointdata->update   ( pointdata.begin(), pointdata.end());
 
   _cmb_partition->format   ( GL_RGBA32F );
-  _cmb_contourlist->format ( GL_RG32F );
+  _cmb_contourlist->format ( GL_RGBA32F );
   _cmb_curvelist->format   ( GL_RGBA32F );
   _cmb_curvedata->format   ( GL_R32F );
   _cmb_pointdata->format   ( GL_RGB32F );
+
+  // overdraw outer box
+  gpucast::math::vec4f loop_color(1.0f, 1.0f, 0.0f, 1.0f);
+  auto box = domain->nurbsdomain();
+  add_gl_bbox(box, loop_color);
 
   // show memory usage
   std::size_t size_bytes = ((partition.size() - 1) * sizeof(gpucast::math::vec4f) +
@@ -623,6 +635,11 @@ glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr con
   _loop_list_contours->update(serialization.contours.begin(), serialization.contours.end());
   _loop_list_curves->update(serialization.curves.begin(), serialization.curves.end());
   _loop_list_points->update(serialization.points.begin(), serialization.points.end());
+
+  // overdraw outer box
+  gpucast::math::vec4f loop_color(1.0f, 1.0f, 0.0f, 1.0f);
+  auto box = domain->nurbsdomain();
+  add_gl_bbox(box, loop_color);
 
   // show memory usage
   std::size_t size_bytes = ((serialization.loops.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::loop_t) +
@@ -676,7 +693,7 @@ void glwidget::generate_trim_region_vbo(gpucast::beziersurface::trimdomain_ptr c
   gpucast::trimdomain::curve_container curves = domain->curves();
   for (auto curve = curves.begin(); curve != curves.end(); ++curve)
   {
-    gpucast::math::vec4f cpolygon_color(1.0f, 1.0f, 1.0f, 1.0f);
+    gpucast::math::vec4f cpolygon_color(1.0f, 1.0f, 0.0f, 1.0f);
     add_gl_curve(**curve, cpolygon_color);
   }
 }
@@ -802,9 +819,9 @@ glwidget::optimal_distance(int enable)
 
 ///////////////////////////////////////////////////////////////////////
 void
-glwidget::antialiasing(int enable)
+glwidget::antialiasing(enum aamode mode)
 {
-  _antialiasing = enable != 0;
+  _aamode = mode;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -871,7 +888,10 @@ glwidget::paintGL()
   auto view_size = gpucast::math::vec2f(_domain_size[0], _domain_size[1]);
   auto view_shift = gpucast::math::vec2f(_shift_x, _shift_y);
 
-  std::cout << _zoom << std::endl;
+  float offset_x = _domain_min[0];
+  float offset_y = _domain_min[1];
+
+  std::cout << offset_x << " : " << offset_y << std::endl;
 
   switch ( _view )
   {
@@ -884,8 +904,8 @@ glwidget::paintGL()
       { 
         _partition_program->begin();
         _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]); 
-        _partition_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
         _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+        _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
         _partition_program->set_uniform1f("domain_zoom", _zoom);
         std::for_each ( _curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
         _partition_program->end();
@@ -900,7 +920,7 @@ glwidget::paintGL()
           _db_program->set_uniform1i ( "width",  _width );
           _db_program->set_uniform1i ( "height", _height );
           _db_program->set_uniform1i ( "show_costs", int(_show_texel_fetches) );
-          _db_program->set_uniform1i ( "antialiasing", int(_antialiasing) );
+          _db_program->set_uniform1i ( "antialiasing", int(_aamode) );
                                                   
           _db_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
           _db_program->set_uniform2f ("domain_min", view_center[0], view_center[1]);
@@ -919,6 +939,14 @@ glwidget::paintGL()
           _quad->draw();
         }
         _db_program->end();
+
+        _partition_program->begin();
+        _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+        _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
+        _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+        _partition_program->set_uniform1f("domain_zoom", _zoom);
+        std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
+        _partition_program->end();
         break;
       }
       // per-pixel classification contour search
@@ -930,7 +958,7 @@ glwidget::paintGL()
           _cmb_program->set_uniform1i ( "width",  _width );
           _cmb_program->set_uniform1i ( "height", _height );
           _cmb_program->set_uniform1i ( "show_costs", int(_show_texel_fetches) );
-          _cmb_program->set_uniform1i("antialiasing", int(_antialiasing));
+          _cmb_program->set_uniform1i("antialiasing", int(_aamode));
                                                   
           _cmb_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
           _cmb_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
@@ -950,6 +978,14 @@ glwidget::paintGL()
           _quad->draw();
         }
         _cmb_program->end();
+
+        _partition_program->begin();
+        _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+        _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
+        _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+        _partition_program->set_uniform1f("domain_zoom", _zoom);
+        std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
+        _partition_program->end();
         break;
     case contour_map_loop_list_classification:
       _loop_list_program->begin();
@@ -958,7 +994,7 @@ glwidget::paintGL()
         _loop_list_program->set_uniform1i("width", _width);
         _loop_list_program->set_uniform1i("height", _height);
         _loop_list_program->set_uniform1i("show_costs", int(_show_texel_fetches));
-        _loop_list_program->set_uniform1i("antialiasing", int(_antialiasing));
+        _loop_list_program->set_uniform1i("antialiasing", int(_aamode));
         
         _loop_list_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
         _loop_list_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
@@ -982,6 +1018,14 @@ glwidget::paintGL()
         _quad->draw();
       }
       _loop_list_program->end();
+
+      _partition_program->begin();
+      _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+      _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
+      _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+      _partition_program->set_uniform1f("domain_zoom", _zoom);
+      std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
+      _partition_program->end();
       break;
 
     case distance_field:
@@ -1003,7 +1047,7 @@ glwidget::paintGL()
 
       _partition_program->begin();
       _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
-      _partition_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+      _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
       _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
       _partition_program->set_uniform1f("domain_zoom", _zoom);
       std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
@@ -1031,7 +1075,7 @@ glwidget::paintGL()
 
       _partition_program->begin();
       _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
-      _partition_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+      _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
       _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
       _partition_program->set_uniform1f("domain_zoom", _zoom);
       std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));

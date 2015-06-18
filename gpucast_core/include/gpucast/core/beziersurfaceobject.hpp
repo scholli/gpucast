@@ -130,7 +130,7 @@ public : // data members
 
   // trim approach 1 : contour based trimming
   std::vector<gpucast::math::vec4f>    _cmb_partition;    
-  std::vector<gpucast::math::vec2f>    _cmb_contourlist;     
+  std::vector<gpucast::math::vec4f>    _cmb_contourlist;     
   std::vector<gpucast::math::vec4f>    _cmb_curvelist;    
   std::vector<float>                   _cmb_curvedata;    
   std::vector<gpucast::math::vec3f>    _cmb_pointdata;    

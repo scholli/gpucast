@@ -52,6 +52,7 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _viewbox          = new QComboBox;
   _label_fps        = new QLabel;
   _label_mem        = new QLabel;
+  _label_size       = new QLabel;
 
   _recompile_button = new QPushButton;
   _resetview_button = new QPushButton;
@@ -61,7 +62,7 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _show_texel_fetches = new QCheckBox;
   _linear_texture_filter = new QCheckBox;
   _optimal_distance   = new QCheckBox;
-  _antialiasing       = new QCheckBox;
+  _antialiasing       = new QComboBox;
 
   _zoom_control = new SlidersGroup(Qt::Horizontal, tr("Zoom"), this);
   _zoom_control->setMinimum(0);
@@ -118,13 +119,11 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _optimal_distance->setText("Optimal Distance Field");
 
   layout->addWidget(_antialiasing, row++, 1);
-  _antialiasing->setText("Enable Anti-Aliasing");
-
   layout->addWidget(_zoom_control, row++, 1);
   
-
   layout->addWidget(_label_mem, row++, 0);
   layout->addWidget(_label_fps, row++, 0);
+  layout->addWidget(_label_size, row++, 0);
 
   /////////////////////////////////////
   // file menu
@@ -133,6 +132,18 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
 
   _action_loadfile = new QAction(tr("Open"), _glwindow);
   _file_menu->addAction(_action_loadfile);
+
+  /////////////////////////////////////
+  // anti-aliasing modes
+  /////////////////////////////////////
+  _aamodes.insert(std::make_pair(glwidget::disabled, "No Anti-Aliasing"));
+  _aamodes.insert(std::make_pair(glwidget::prefiltered_edge_estimation, "Prefiltered Edge Estimation"));
+  _aamodes.insert(std::make_pair(glwidget::supersampling2x2, "Supersampling(2x2)"));
+  _aamodes.insert(std::make_pair(glwidget::supersampling3x3, "Supersampling(3x3)"));
+  _aamodes.insert(std::make_pair(glwidget::supersampling4x4, "Supersampling(4x4)"));
+  _aamodes.insert(std::make_pair(glwidget::supersampling8x8, "Supersampling(8x8)"));
+
+  std::for_each(_aamodes.begin(), _aamodes.end(), [&](std::map<glwidget::aamode, std::string>::value_type const& p) { _antialiasing->addItem(p.second.c_str()); });
 
   /////////////////////////////////////
   // view modes
@@ -171,7 +182,7 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   connect(_texture_resolution, SIGNAL(currentIndexChanged(int)), SLOT(update_view()));
   connect(_optimal_distance, SIGNAL(stateChanged(int)), _glwindow, SLOT(optimal_distance(int)));
   connect(_pixel_size, SIGNAL(currentIndexChanged(int)), this, SLOT(pixel_size_changed()));
-  connect(_antialiasing, SIGNAL(stateChanged(int)), _glwindow, SLOT(antialiasing(int)));
+  connect(_antialiasing, SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
   connect(_zoom_control, SIGNAL(valueChanged(int)), this, SLOT(zoom_changed(int)));
 
   _controlwidget->show();
@@ -213,10 +224,11 @@ mainwindow::update_surfacelist ()
     std::size_t nsurfaces = _glwindow->get_surfaces(objectname);
     for ( std::size_t i = 0; i != nsurfaces; ++i )
     {
-      std::size_t trimcurves = _glwindow->get_domain(objectname, i)->size();
-      std::size_t trimloops  = _glwindow->get_domain(objectname, i)->loop_count();
+      std::size_t trimcurves  = _glwindow->get_domain(objectname, i)->size();
+      std::size_t trimloops   = _glwindow->get_domain(objectname, i)->loop_count();
+      std::size_t max_degree  = _glwindow->get_domain(objectname, i)->max_degree();
       std::string surfacename = boost::lexical_cast<std::string>(i) + " (" 
-        + boost::lexical_cast<std::string>(trimloops) + " loops, " + boost::lexical_cast<std::string>(trimcurves) + " curves)";
+        + boost::lexical_cast<std::string>(trimloops)+" loops, " + boost::lexical_cast<std::string>(trimcurves)+" curves), max. degree: " + boost::lexical_cast<std::string>(max_degree);
       _list_surface->addItem ( surfacename.c_str() );
     }
   }
@@ -246,6 +258,17 @@ void mainwindow::update_view () const
 
     _glwindow->update_view(objects.front()->text().toStdString(), id, current_view, _texture_resolution->itemData(_texture_resolution->currentIndex()).toUInt() );
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::antialiasing() const
+{
+  for (auto const& mode : _aamodes) {
+    if (mode.second == _antialiasing->currentText().toStdString()) {
+      _glwindow->antialiasing(mode.first);
+    }
+  }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -284,6 +307,12 @@ void
 mainwindow::show_memusage ( std::size_t bytes ) const
 {
   _label_mem->setText("Mem: " + QString::number(bytes) + " Bytes" );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void                    
+mainwindow::show_domainsize(float umin, float vmin, float umax, float vmax) const {
+  _label_size->setText("min: [" + QString::number(umin) + "," + QString::number(vmin) + "], [" + QString::number(umax) + ", " + QString::number(vmax) + "]");
 }
 
 

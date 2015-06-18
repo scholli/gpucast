@@ -12,9 +12,11 @@
 
 #include <unittest++/UnitTest++.h>
 
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <gpucast/math/util/prefilter3d.hpp>
+#include <gpucast/math/util/prefilter2d.hpp>
 #include <gpucast/math/parametric/point.hpp>
 
 using namespace gpucast::math;
@@ -36,6 +38,29 @@ SUITE (functions_pixel_coverage)
           //std::cout << "coverage : " << pre3d(point3d(angle, d1, d2)) << std::endl;
         }
       }
+    }
+  }
+
+  TEST(polar_to_euclid)
+  {
+    std::srand(std::chrono::system_clock::now().time_since_epoch().count());
+    int const MAX_TESTS = 100;
+
+    for (int i = 0; i != MAX_TESTS; ++i) {
+
+      float x = 2.0*(std::rand() / RAND_MAX) - 1.0;
+      float y = 2.0*(std::rand() / RAND_MAX) - 1.0;
+
+      point2f euclid(x, y);
+      
+      euclid_to_polar<point2f> conv;
+      polar_to_euclid<point2f> backconv;
+
+      point2f polar = conv(euclid);
+      point2f euclid2 = backconv(polar);
+
+      CHECK_CLOSE(euclid2[0], euclid[0], 0.0001);
+      CHECK_CLOSE(euclid2[1], euclid[1], 0.0001);
     }
   }
   

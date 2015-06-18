@@ -58,6 +58,14 @@ public:
               prefilter                            = 10,
               count                                = 11 };
 
+  enum aamode {
+    disabled = 0,
+    prefiltered_edge_estimation = 1,
+    supersampling2x2 = 2,
+    supersampling3x3 = 3,
+    supersampling4x4 = 4,
+    supersampling8x8 = 5 
+  };
 public : 
 
   glwidget                                              ( int argc, char** argv, QGLFormat const& format, QWidget *parent = 0 );
@@ -98,7 +106,7 @@ public Q_SLOTS :
   void                    resetview                     ();
   void                    texture_filtering             (int);
   void                    optimal_distance              (int);
-  void                    antialiasing                  (int);
+  void                    antialiasing                  (enum aamode);
 
   void                    zoom                          (float scale);
 
@@ -157,8 +165,9 @@ private : // attributes
 
   bool                                              _optimal_distance = false;
   bool                                              _linear_filter = false;
-  bool                                              _antialiasing = false;
+  enum aamode                                       _aamode = disabled;
   unsigned                                          _pixel_size = 1;
+  
 
   float                                             _zoom = 1.0f;
   float                                             _shift_x = 0.0f;

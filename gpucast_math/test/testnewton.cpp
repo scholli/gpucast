@@ -123,7 +123,7 @@ SUITE (class_newton_raphson)
       point3d conv_point = b.evaluate(uvw1[0], uvw1[1], uvw1[2]);
 
       double error = (conv_point - bbox_center).abs();
-      double deps  = 10*epsilon;
+      double deps  = 100*epsilon;
 
       CHECK_CLOSE( error, 0.0, deps );
     }

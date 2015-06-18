@@ -59,6 +59,7 @@ namespace gpucast { namespace gl {
     public:
 
       void             frame(std::ostream& os = std::cout, double integration_time_in_s = 1.0);
+
       void             time(time_duration& time_duration);
 
       void             start();

@@ -79,6 +79,7 @@ class GPUCAST_CORE trimdomain
 
     curve_container           curves        () const;
     std::size_t               loop_count    () const;
+    std::size_t               max_degree    () const;
 
     trimloop_container const& loops         () const;
 

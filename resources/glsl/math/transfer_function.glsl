@@ -1,3 +1,6 @@
+#ifndef GPUCAST_TRANSFER_FUNCTION
+#define GPUCAST_TRANSFER_FUNCTION
+
 vec4 transfer_function(in float relative_input)
 {
   vec4 low = vec4(0.0, 0.0, 1.0, 1.0);
@@ -16,3 +19,5 @@ vec4 transfer_function(in float relative_input)
   }
   return vec4(0.0);
 }
+
+#endif

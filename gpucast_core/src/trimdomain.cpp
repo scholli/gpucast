@@ -129,6 +129,20 @@ namespace gpucast {
     return _trimloops.size();
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  std::size_t               
+  trimdomain::max_degree() const {
+    std::size_t maxdegree = 0;
+
+    curve_container curves;
+    for (contour_type const& loop : _trimloops) {
+      for (auto curve = loop.begin(); curve != loop.end(); ++curve) {
+        maxdegree = std::max(maxdegree, (*curve)->degree());
+      }
+    }
+    return maxdegree;
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   trimdomain::trimloop_container const& 

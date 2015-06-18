@@ -32,10 +32,12 @@ void main(void)
     float border = 0.001 / max(abs(lookup.r), 0.00001);
     if (trimmed)
     {
-      outcolor = vec4(-lookup.r, 0.0, border, 1.0);
+      //outcolor = vec4(-lookup.r, 0.0, border, 1.0);
+      outcolor = vec4(0.0);
     }
     else {
-      outcolor = vec4(0.0, lookup.r, border, 1.0);
+      //outcolor = vec4(0.0, lookup.r, border, 1.0);
+      outcolor = vec4(1.0);
     }
   }
 }
