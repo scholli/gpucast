@@ -30,6 +30,8 @@
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/sampler.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
+#include <gpucast/gl/util/timer.hpp>
+#include <gpucast/gl/timer_query.hpp>
 #include <gpucast/gl/util/trackball.hpp>
 #include <gpucast/gl/framebufferobject.hpp>
 #include <gpucast/gl/renderbuffer.hpp>
@@ -50,6 +52,22 @@ class glwidget : public QGLWidget
    Q_OBJECT        // must include this if you use Qt signals/slots
 
 public : 
+
+  enum antialiasing_mode {
+    disabled = 0,
+    prefiltered_edge_estimation = 1,
+    supersampling2x2 = 2,
+    supersampling3x3 = 3,
+    supersampling4x4 = 4,
+    supersampling8x8 = 5
+  };
+
+  enum trimming_mode {
+    untrimmed = 0,
+    double_binary = 1,
+    contour = 2,
+    loop_list = 3
+  };
 
   glwidget                                              ( int argc, char** argv, QGLFormat const& format, QWidget *parent = 0 );
   ~glwidget                                             ();
@@ -109,13 +127,18 @@ private : // attributes
   std::shared_ptr<gpucast::gl::trackball>                                     _trackball;
 
   gpucast::math::axis_aligned_boundingbox<gpucast::math::point3d>             _boundingbox;
-  gpucast::math::vec3f                                                          _background;
+  gpucast::math::vec3f                                                        _background;
   
   bool                                                                        _ambient_occlusion;
   bool                                                                        _fxaa;
   
+  
+  std::shared_ptr<gpucast::gl::timer_query>                                   _gputimer;
+  std::shared_ptr<gpucast::gl::timer>                                         _cputimer;
   unsigned                                                                    _frames;
-  double                                                                      _time;
+  double                                                                      _cputime = 0.0;
+  double                                                                      _gputime = 0.0;
+  double                                                                      _postprocess = 0.0;
 
   std::shared_ptr<gpucast::gl::program>                                       _fbo_program;
   std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo;

@@ -70,7 +70,7 @@ bisect_curve(in samplerBuffer curvedata_buffer,
 
 /////////////////////////////////////////////////////////////////////////////
 vec2 tangent_to_gradient(vec2 tangent) {
-  return normalize(vec2(-tangent.y, tangent.x));
+  return vec2(tangent.y, -tangent.x);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -89,8 +89,8 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
                       in float         tmax,
                       inout int        intersections,
                       inout int        iterations,
-                      out vec2         point_on_curve,
-                      out vec2         gradient,
+                      inout vec2       point_on_curve,
+                      inout vec2       gradient,
                       in float         tolerance,
                       in int           max_iterations,
                       in vec4          curve_bbox)
@@ -98,6 +98,7 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
   // initialize search 
   point_on_curve = vec2(0.0);
   gradient = vec2(0.0);
+
   vec4 remaining_bbox = curve_bbox;
 
   // evaluate curve to determine if uv is on left or right of curve
@@ -110,7 +111,8 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
     evaluateCurve(curvedata_buffer, index, order, t, p);
 
     if (!horizontally_increasing) {
-      vec2 sekant = remaining_bbox.xw - remaining_bbox.zy;
+      //vec2 sekant = remaining_bbox.xw - remaining_bbox.zy;
+      vec2 sekant = remaining_bbox.zy - remaining_bbox.xw;
       gradient = tangent_to_gradient(sekant);
     }
     else {
@@ -137,8 +139,6 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
     //  |                --_ |
     //  | __________________\|
     if (!horizontally_increasing && uv[0] > p[0] && uv[1] > p[1]) {
-      vec2 sekant = remaining_bbox.xw - remaining_bbox.zy;
-      //gradient = tangent_to_gradient(sekant);
       point_on_curve = p.xy;
       break;
     }
@@ -152,8 +152,6 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
     // | /        xxxxxxxx|
     // |__________xxxxxxxx|
     if (horizontally_increasing && uv[0] > p[0] && uv[1] < p[1]) {
-      vec2 sekant = remaining_bbox.zw - remaining_bbox.xy;
-      //gradient = tangent_to_gradient(sekant);
       point_on_curve = p.xy;
       break;
     }
@@ -168,8 +166,6 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
     // |__________________|
     if (horizontally_increasing && uv[0] < p[0] && uv[1] > p[1]) {
       ++intersections;
-      vec2 sekant = remaining_bbox.zw - remaining_bbox.xy;
-      //gradient = tangent_to_gradient(sekant);
       point_on_curve = p.xy;
       break;
     }
@@ -184,8 +180,6 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
     //  |xxxxxxxxxx_______\|  
     if (!horizontally_increasing && uv[0] < p[0] && uv[1] < p[1]) {
       ++intersections;
-      vec2 sekant = remaining_bbox.xw - remaining_bbox.zy;
-      //gradient = tangent_to_gradient(sekant);
       point_on_curve = p.xy;
       break;
     }

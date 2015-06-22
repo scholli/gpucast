@@ -37,10 +37,12 @@ public : // friends
 public : // enums, typedefs
 
   enum trim_approach_t {
-    double_binary   = 0,
-    contours_binary = 1,
-    contours_kd     = 2,
-    count           = 3
+    no_trimming     = 0,
+    double_binary   = 1,
+    contours_binary = 2,
+    contours_kd     = 3,
+    loop_list       = 4,
+    count           = 5
   };
 
   typedef beziersurface::value_type         value_type;

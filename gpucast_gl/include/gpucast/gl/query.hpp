@@ -4,13 +4,13 @@
 *
 *********************************************************************************
 *
-*  module     : texture1d.hpp
+*  module     : query.hpp
 *  project    : glpp
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_GL_TEXTURE_HPP
-#define GPUCAST_GL_TEXTURE_HPP
+#ifndef GPUCAST_GL_QUERY_HPP
+#define GPUCAST_GL_QUERY_HPP
 
 // header system
 #include <string>
@@ -21,44 +21,27 @@
 
 namespace gpucast { namespace gl {
 
-  struct GPUCAST_GL texture_format 
-  {
-    texture_format();
-    texture_format(GLenum internal_fmt, GLenum base_fmt, std::size_t components_size, GLenum value_type, std::string const& as_string);
-    GLenum        internal_format;
-    GLenum        base_format;
-    std::size_t   size;
-    GLenum        type;
-    std::string   name;
-  };
-
-  class GPUCAST_GL texture
+  class GPUCAST_GL query
   {
   public :
 
-    texture                                       ( );
-    ~texture                                      ( );
-
-    std::size_t             size_of_format        ( GLenum internal_format );
-    GLenum                  base_format           ( GLenum internal_format );
-    GLenum                  value_type_of_format  ( GLenum internal_format );
-    std::string             name                  ( GLenum internal_format );
+    query();
+    ~query();
 
   public : // methods
 
-    virtual void            bind                  ( GLint texunit ) = 0;
-    virtual void            unbind                ( ) = 0;
-    virtual GLuint const    id                    ( ) const = 0;
+    unsigned id() const;
 
-  private : // methods
-
-    void                    _init                 ();
+    virtual void begin() const = 0;
+    virtual void end() const = 0;
+    virtual bool is_available() const = 0;
 
   private : // member
 
+    unsigned _id;
 };
 
 } } // namespace gpucast / namespace gl
 
 
-#endif // GPUCAST_GL_TEXTURE1D_HPP
+#endif // GPUCAST_GL_QUERY_HPP

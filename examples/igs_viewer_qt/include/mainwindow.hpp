@@ -40,7 +40,7 @@ public: // c'tor / d'tor
   ~mainwindow           ();
 
   void update_interface               ();
-  void show_fps                       ( double fps );
+  void show_fps                       ( double cputime, double gputime, double postprocess );
 
 protected:
 
@@ -64,6 +64,9 @@ private: // attributes
   unsigned              _width;
   unsigned              _height;
 
+  std::map<glwidget::trimming_mode, std::string> _trimming_modes;
+  std::map<glwidget::antialiasing_mode, std::string> _antialiasing_modes;
+
   // menubar and menubar actions
   QMenu*                _file_menu;
   QToolBar*             _file_toolbar;
@@ -77,6 +80,9 @@ private: // attributes
   QCheckBox*            _checkbox_sao;
   QCheckBox*            _checkbox_diffusemap;
   QCheckBox*            _checkbox_spheremap;
+
+  QComboBox*            _combobox_antialiasing;
+  QComboBox*            _combobox_trimming;
 
   QPushButton*          _button_recompile;
   QPushButton*          _button_set_diffusemap;

@@ -24,6 +24,7 @@
 #include <gpucast/gl/primitives/cube.hpp>
 #include <gpucast/gl/util/trackball.hpp>
 #include <gpucast/gl/error.hpp>
+#include <gpucast/gl/timer_query.hpp>
 #include <gpucast/math/matrix4x4.hpp>
 
 
@@ -115,6 +116,8 @@ public :
 
   void draw()
   {
+    _query.begin();
+
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -130,6 +133,8 @@ public :
     gpucast::math::matrix4f mvp  = proj * mv;
     gpucast::math::matrix4f nm   = mv.normalmatrix();
 
+    
+    
     _program.begin();
 
     _program.set_uniform_matrix4fv("modelviewprojectionmatrix", 1, false, &mvp[0]);
@@ -139,6 +144,10 @@ public :
     _cube.draw();
 
     _program.end();
+    _query.end();
+
+    // query draw time
+    std::cout << "fps: " << double(1000) / _query.result_wait() << "\r";
   }
   
 
@@ -153,6 +162,7 @@ public :
   gpucast::gl::program                     _program;
   gpucast::gl::cube                        _cube;
   std::shared_ptr<gpucast::gl::trackball>  _trackball;
+  gpucast::gl::timer_query                 _query;
 };
 
 

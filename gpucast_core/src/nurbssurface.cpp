@@ -72,6 +72,53 @@ namespace gpucast {
     _trimloops.push_back(tc);
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  void                      
+  nurbssurface::normalize()
+  {
+    auto urange = umax() - umin();
+    auto vrange = vmax() - vmin();
+
+    if (urange > vrange) { // rescale v to u
+      auto factor = urange / vrange;
+
+      // normalize knotvector
+      knotvector_type scaled_knotvector_v;
+      for (auto k : knotvector_v()) {
+        scaled_knotvector_v.push_back(vmin() + (k - vmin()) * factor);
+      }
+      knotvector_v(scaled_knotvector_v.begin(), scaled_knotvector_v.end());
+
+      // normalize trim curves 
+      for (auto& tl : _trimloops) {
+        for (auto& c : tl) {
+          for (auto& p : c) {
+            p[point_type::v] = vmin() + (p[point_type::v] - vmin()) * factor;
+          }
+        }
+      }
+    }
+    else { // rescale u to v
+      auto factor = vrange / urange;
+
+      // normalize knotvector
+      knotvector_type scaled_knotvector_u;
+      for (auto k : knotvector_u()) {
+        scaled_knotvector_u.push_back(umin() + (k - umin()) * factor);
+      }
+      knotvector_u(scaled_knotvector_u.begin(), scaled_knotvector_u.end());
+
+      // normalize trim curves 
+      for (auto& tl : _trimloops) {
+        for (auto& c : tl) {
+          for (auto& p : c) {
+            p[point_type::u] = umin() + (p[point_type::u] - umin()) * factor;
+          }
+        }
+      }
+    }
+
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   nurbssurface::trimloop_container const&

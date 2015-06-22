@@ -881,8 +881,12 @@ glwidget::paintGL()
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClear ( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-  gpucast::gl::timer gtimer;
-  gtimer.start();
+  if (!_gputimer) {
+    std::cout << "create timer query" << std::endl;
+    _gputimer.reset(new gpucast::gl::timer_query);
+  }
+
+  _gputimer->begin();
 
   auto view_center = gpucast::math::vec2f(_domain_min[0] + _shift_x*_domain_size[0], _domain_min[1] + _shift_y*_domain_size[1]);
   auto view_size = gpucast::math::vec2f(_domain_size[0], _domain_size[1]);
@@ -890,8 +894,6 @@ glwidget::paintGL()
 
   float offset_x = _domain_min[0];
   float offset_y = _domain_min[1];
-
-  std::cout << offset_x << " : " << offset_y << std::endl;
 
   switch ( _view )
   {
@@ -1098,14 +1100,14 @@ glwidget::paintGL()
       break;
   };
 
-  glFinish();
-  gtimer.stop();
-  double drawtime_ms = gtimer.result().as_seconds() * 1000.0;
+  // end query
+  _gputimer->end();
 
+  // try to get query result
+  double time_ms = _gputimer->result_wait();
   mainwindow* win = dynamic_cast<mainwindow*>(parent());
-  if ( win )
-  {
-    win->show_drawtime(drawtime_ms);
+  if (win) {
+    win->show_drawtime(time_ms);
   }
 
   // redraw

@@ -19,6 +19,8 @@
 #include <QtWidgets/QStatusBar>  
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QAction>
+#include <QtWidgets/QGridLayout>
+#include <QtWidgets/QBoxLayout>
 #include <QtCore/QString>
 
 #include <iostream>
@@ -31,6 +33,27 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   : _width ( width ),
     _height ( height )
 {
+  /////////////////////////////////////
+  // anti-aliasing modes
+  /////////////////////////////////////
+  _antialiasing_modes.insert(std::make_pair(glwidget::disabled, "No Anti-Aliasing"));
+  _antialiasing_modes.insert(std::make_pair(glwidget::prefiltered_edge_estimation, "Prefiltered Edge Estimation"));
+  _antialiasing_modes.insert(std::make_pair(glwidget::supersampling2x2, "Supersampling(2x2)"));
+  _antialiasing_modes.insert(std::make_pair(glwidget::supersampling3x3, "Supersampling(3x3)"));
+  _antialiasing_modes.insert(std::make_pair(glwidget::supersampling4x4, "Supersampling(4x4)"));
+  _antialiasing_modes.insert(std::make_pair(glwidget::supersampling8x8, "Supersampling(8x8)"));
+
+  /////////////////////////////////////
+  // trimming modes
+  /////////////////////////////////////
+  _trimming_modes.insert(std::make_pair(glwidget::untrimmed, "No Trimming"));
+  _trimming_modes.insert(std::make_pair(glwidget::double_binary, "Double Binary"));
+  _trimming_modes.insert(std::make_pair(glwidget::contour, "Contour"));
+  _trimming_modes.insert(std::make_pair(glwidget::loop_list, "Loop Lists"));
+
+  /////////////////////////////////////
+  // create GUI
+  /////////////////////////////////////
   _create_widgets( argc, argv );
   _create_menus();
   _create_statusbar();
@@ -73,14 +96,15 @@ mainwindow::update_interface ( )
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
-mainwindow::show_fps ( double fps )
+mainwindow::show_fps ( double cputime, double gputime, double postprocess )
 {
   QString message = "fps : ";
   message.append(QString("%1").arg(_glwindow->width()));
   message.append("x");
   message.append(QString("%1").arg(_glwindow->height()));
-  message.append(" @ ");
-  message.append(QString("%1").arg(fps));
+  message.append(QString(" ||| CPU=%1 ms ").arg(cputime));
+  message.append(QString(" ||| Draw=%1 ms ").arg(gputime));
+  message.append(QString(" ||| Postprocess=%1 ms ").arg(postprocess));
   statusBar()->showMessage(message);
 }
 
@@ -148,7 +172,7 @@ mainwindow::_create_widgets( int argc, char** argv )
   /////////////////////////////////////
   QGLFormat context_options;
 
-  context_options.setVersion ( 4, 2 );
+  context_options.setVersion ( 4, 4 );
   //context_options.setProfile ( QGLFormat::CompatibilityProfile );
   context_options.setProfile ( QGLFormat::CoreProfile );
   context_options.setRgba    ( true );
@@ -167,32 +191,50 @@ mainwindow::_create_menus()
   _file_menu = menuBar()->addMenu(tr("File"));
   
   _menu = new QDockWidget(this);
-  _menu->setFixedWidth(120);
+
+  auto widget = new QWidget{ _menu };
+  _menu->setWidget(widget);
+  _menu->setFixedWidth(240);
   this->addDockWidget(Qt::RightDockWidgetArea, _menu);
 
-  _button_recompile  = new QPushButton("Compile Shaders", _menu);
-  _button_recompile->move  (5, 30);
+  auto layout = new QGridLayout;
+  layout->setAlignment(Qt::AlignTop);
+  widget->setLayout(layout);
 
-  _button_set_spheremap  = new QPushButton("Spheremap", _menu);
-  _button_set_spheremap->move  (5, 60);
-
+  _button_recompile      = new QPushButton("Recompile Shaders", _menu);
+  _button_set_spheremap  = new QPushButton("Choose Spheremap", _menu);
+  _button_set_diffusemap = new QPushButton("Choose Diffusemap", _menu);
   _checkbox_spheremap    = new QCheckBox("Enable Spheremapping", _menu);
-  _checkbox_spheremap->move    (5, 90);
-
-  _button_set_diffusemap = new QPushButton("Diffusemap", _menu);
-  _button_set_diffusemap->move (5, 120);
-  
   _checkbox_diffusemap   = new QCheckBox("Enable Diffusemapping", _menu);
-  _checkbox_diffusemap->move   (5, 150);
+  _checkbox_fxaa         = new QCheckBox("Enable FXAA", _menu);
+  _checkbox_vsync        = new QCheckBox("Enable VSync", _menu);
+  _checkbox_sao          = new QCheckBox("Enable Ambient Occlusion", _menu);
+  
+  _combobox_antialiasing = new QComboBox;
+  _combobox_trimming     = new QComboBox;
 
-  _checkbox_fxaa   = new QCheckBox("Enable FXAA", _menu);
-  _checkbox_fxaa->move   (5, 180);
+  std::for_each(_antialiasing_modes.begin(), _antialiasing_modes.end(), [&](std::map<glwidget::antialiasing_mode, std::string>::value_type const& p) { _combobox_antialiasing->addItem(p.second.c_str()); });
+  std::for_each(_trimming_modes.begin(), _trimming_modes.end(), [&](std::map<glwidget::trimming_mode, std::string>::value_type const& p) { _combobox_trimming->addItem(p.second.c_str()); });
 
-  _checkbox_vsync   = new QCheckBox("Enable VSync", _menu);
-  _checkbox_vsync->move   (5, 210);
+  // apply widget into layout
+  unsigned row = 0;
+  layout->addWidget(new QLabel("==========System=========="), row++, 0);
+  layout->addWidget(_button_recompile, row++, 0);
+  layout->addWidget(_checkbox_vsync, row++, 0);
 
-  _checkbox_sao   = new QCheckBox("Enable Ambient Occlusion", _menu);
-  _checkbox_sao->move   (5, 240);
+  layout->addWidget(new QWidget, row++, 0);
+  layout->addWidget(new QLabel("=======Anti-Aliasing======="), row++, 0);
+  layout->addWidget(_checkbox_fxaa, row++, 0);
+  layout->addWidget(_combobox_antialiasing, row++, 0);
+
+  layout->addWidget(new QLabel("=========Rendering========="), row++, 0);
+
+  layout->addWidget(new QLabel("==========Shading=========="), row++, 0);
+  layout->addWidget(_checkbox_spheremap, row++, 0);
+  layout->addWidget(_button_set_spheremap, row++, 0);
+  layout->addWidget(_checkbox_diffusemap, row++, 0);
+  layout->addWidget(_button_set_diffusemap, row++, 0);
+  layout->addWidget(_checkbox_sao, row++, 0);
 }
 
 

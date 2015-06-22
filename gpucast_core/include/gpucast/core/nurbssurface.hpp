@@ -54,7 +54,8 @@ public : // c'tor / d'tor
 
 public : // methods
 
-  void                      add         ( curve_container const& tc );
+  void                      add         ( curve_container const& trimloop );
+  void                      normalize   ();
 
   trimloop_container const& trimloops   () const;
   

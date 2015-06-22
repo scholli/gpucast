@@ -110,7 +110,11 @@ uniform int   trimapproach;
 uniform int   spheremapping;
 uniform int   diffusemapping;
 
-uniform int   trimming_enabled;
+/* trimming */
+uniform sampler2D prefilter_texture;
+uniform int   antialiasing;
+uniform int   trimming;
+
 uniform int   raycasting_enabled;
 
 /* material definition */
@@ -216,7 +220,7 @@ void main(void)
                                                16 );
 #endif
 
-  if ( bool(trimming_enabled) && is_trimmed)
+  if ( trimming != 0 && is_trimmed )
   {
     discard;
   }
@@ -233,6 +237,7 @@ void main(void)
    ********************************************************************/
   if (bool(raycasting_enabled)) 
   {
+#if 1
     out_color = shade_phong_fresnel(p_world, 
                                     normalize((normalmatrix * vec4(normal, 0.0)).xyz), 
                                     vec4(1.0, 1.0, 1.0, 1.0),
@@ -243,10 +248,33 @@ void main(void)
                                     spheremap,
                                     bool(diffusemapping),
                                     diffusemap);
+#else 
+
+    float width = 1800.0;
+    float height = 1200.0;
+
+    vec4 dx = vec4(1.0/width, 0.0, 0.0, 0.0);
+    vec4 dy = vec4(0.0, 1.0/height, 0.0, 0.0);
+
+    vec4 dx_os = inverse(modelviewprojectionmatrix) * dx;
+    vec4 dy_os = inverse(modelviewprojectionmatrix) * dy;
+
+    //dx_os /= dx_os.w;
+    //dy_os /= dy_os.w;
+
+    vec2 dun = du.xy;
+    vec2 dvn = dv.xy;
+
+    vec2 duvdx = vec2(dot(dx_os.xy, dun), dot(dx_os.xy, dvn));
+    vec2 duvdy = vec2(dot(dy_os.xy, dun), dot(dy_os.xy, dvn));
+
+    out_color = vec4(dx_os.xy, 0.0, 1.0);
+#endif
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }
 }
+
 
 
 

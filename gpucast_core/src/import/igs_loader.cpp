@@ -87,7 +87,7 @@ namespace gpucast {
 
   ////////////////////////////////////////////////////////////////////////////////
   std::shared_ptr<nurbssurfaceobject>
-  igs_loader::load( std::string const& file )
+  igs_loader::load( std::string const& file, bool normalize )
   {
     _result = (std::make_shared<nurbssurfaceobject>());
 
@@ -108,6 +108,13 @@ namespace gpucast {
     }
 
     fstr.close();
+
+    // normalize 
+    if (normalize) {
+      for (std::vector<nurbssurface>::iterator s = _result->begin(); s != _result->end(); ++s) {
+        s->normalize();
+      }
+    }
 
     return _result;
   }

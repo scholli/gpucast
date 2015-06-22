@@ -1,3 +1,6 @@
+#ifndef GPUCAST_ADJOINT_GLSL
+#define GPUCAST_ADJOINT_GLSL
+
 /*********************************************************************
  * adjunct of matrix
  *********************************************************************/
@@ -10,3 +13,5 @@ adjoint(in mat2 a) {
   b[1][1] =  a[0][0];
   return b;
 }
+
+#endif

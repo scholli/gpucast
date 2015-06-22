@@ -29,6 +29,7 @@
 #include <gpucast/gl/texture1d.hpp>
 #include <gpucast/gl/texture2d.hpp>
 #include <gpucast/gl/sampler.hpp>
+#include <gpucast/gl/timer_query.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>
 #include <gpucast/math/matrix4x4.hpp>
 
@@ -210,7 +211,9 @@ private : // attributes
   std::unique_ptr<gpucast::gl::shaderstoragebuffer> _loop_list_curves;
   std::unique_ptr<gpucast::gl::shaderstoragebuffer> _loop_list_points;
 
-  view                                           _view;
+  std::unique_ptr<gpucast::gl::timer_query>         _gputimer;
+
+  view                                              _view;
 };
 
 

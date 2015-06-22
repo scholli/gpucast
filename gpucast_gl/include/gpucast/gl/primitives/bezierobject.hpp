@@ -22,6 +22,7 @@
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
+#include <gpucast/gl/shaderstoragebuffer.hpp>
 
 
 namespace gpucast { namespace gl {
@@ -32,6 +33,15 @@ class GPUCAST_GL bezierobject
 {
 public : 
 
+  enum anti_aliasing_mode {
+    no_anti_aliasing,
+    prefiltered_edge_estimation,
+    supersampling2x2,
+    supersampling3x3,
+    supersampling4x4,
+    supersampling8x8,
+  };
+
   bezierobject (gpucast::beziersurfaceobject const&);
 
   bezierobject(bezierobject const&) = delete;
@@ -40,29 +50,29 @@ public :
   ~bezierobject();
 
   // draw methods
-  void            draw();
+  void                draw();
 
   // configuration
-  void            max_newton_iterations ( unsigned n );
-  unsigned        max_newton_iterations() const;
+  void                max_newton_iterations ( unsigned n );
+  unsigned            max_newton_iterations() const;
 
-  void            newton_epsilon ( float epsilon );
-  float           newton_epsilon() const;
+  void                newton_epsilon ( float epsilon );
+  float               newton_epsilon() const;
 
-  void            culling ( bool enable );
-  bool            culling () const;
+  void                culling ( bool enable );
+  bool                culling () const;
 
-  void            trimming(bool enable);
-  bool            trimming() const;
+  void                raycasting(bool enable);
+  bool                raycasting() const;
 
-  void            raycasting(bool enable);
-  bool            raycasting() const;
+  beziersurfaceobject::trim_approach_t trimming() const;
+  void                trimming(beziersurfaceobject::trim_approach_t type);
 
-  beziersurfaceobject::trim_approach_t trim_approach() const;
-  void            trim_approach(beziersurfaceobject::trim_approach_t type);
+  void                antialiasing(enum anti_aliasing_mode);
+  anti_aliasing_mode  antialiasing() const;
 
-  void            set_material(material const& m);
-  material const& get_material() const;
+  void                set_material(material const& m);
+  material const&     get_material() const;
 
 private :
 
@@ -74,9 +84,9 @@ private :
   unsigned                              _iterations    = 6;
   float                                 _epsilon       = 0.001f;
   bool                                  _culling       = true;
-  bool                                  _trimming      = true;
   bool                                  _raycasting    = true;
-  beziersurfaceobject::trim_approach_t  _trim_approach = beziersurfaceobject::double_binary;
+  anti_aliasing_mode                    _antialiasing  = no_anti_aliasing;
+  beziersurfaceobject::trim_approach_t  _trimming      = beziersurfaceobject::double_binary;
   
   // object properties
   material                              _material;
@@ -103,6 +113,11 @@ private :
   gpucast::gl::texturebuffer            _db_celldata;
   gpucast::gl::texturebuffer            _db_curvelist;
   gpucast::gl::texturebuffer            _db_curvedata;
+
+  gpucast::gl::shaderstoragebuffer      _loop_list_loops;
+  gpucast::gl::shaderstoragebuffer      _loop_list_contours;
+  gpucast::gl::shaderstoragebuffer      _loop_list_curves;
+  gpucast::gl::shaderstoragebuffer      _loop_list_points;
 
   gpucast::gl::vertexarrayobject        _vao;
 };
@@ -156,6 +171,7 @@ public: // methods
 private : // methods
 
   void _init_program();
+  void _init_prefilter(unsigned prefilter_resolution = 128);
 
 private: // attributes
 
@@ -178,6 +194,7 @@ private: // attributes
   std::shared_ptr<program>      _program;
   std::shared_ptr<texture2d>    _spheremap;
   std::shared_ptr<texture2d>    _diffusemap;
+  std::shared_ptr<texture2d>    _prefilter_texture;
 };
 
 

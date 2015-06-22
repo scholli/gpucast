@@ -196,10 +196,6 @@ public:
         o->raycasting(!o->raycasting());
         std::cout << "Raycasting set to " << o->raycasting() << std::endl;
         break;
-      case 't':
-        o->trimming(!o->trimming());
-        std::cout << "Trimming set to " << o->trimming() << std::endl;
-        break;
       }
     }
   }

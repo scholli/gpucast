@@ -4,14 +4,14 @@
 *
 *********************************************************************************
 *
-*  module     : vertexshader.cpp
+*  module     : query.cpp
 *  project    : glpp
 *  description:
 *
 ********************************************************************************/
 
 // header i/f
-#include "gpucast/gl/vertexshader.hpp"
+#include "gpucast/gl/query.hpp"
 
 // header system
 #include <GL/glew.h>
@@ -19,15 +19,21 @@
 namespace gpucast { namespace gl {
 
 ////////////////////////////////////////////////////////////////////////////////
-vertexshader::vertexshader()
-  : shader()
+query::query()
+: _id(0U)
 {
-  id_ = glCreateShader(GL_VERTEX_SHADER);
+  glGenQueries(1, &_id);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+query::~query()
+{
+  glDeleteQueries(1, &_id);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
-vertexshader::~vertexshader()
-{}
+unsigned query::id() const {
+  return _id;
+}
 
 } } // namespace gpucast / namespace gl

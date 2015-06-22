@@ -60,12 +60,11 @@ glwidget::glwidget( int argc, char** argv, QGLFormat const& context_format, QWid
     _argv             ( argv ),
     _initialized      ( false ),
     _frames           ( 0 ),
-    _time             ( 0.0 ),
     _background       ( 0.2f, 0.2f, 0.2f ),
     _fxaa             ( false ),
     _ambient_occlusion( false ),
     _aoradius         ( 30.0f ),
-    _aosamples        ( 500 ) 
+    _aosamples        ( 500 )
 {
   setFocusPolicy(Qt::StrongFocus);
 }
@@ -190,8 +189,10 @@ glwidget::paintGL()
     }
   }
 
-  gpucast::gl::timer t;
-  t.start();
+  if (!_gputimer) _gputimer = std::make_shared<gpucast::gl::timer_query>();
+  if (!_cputimer) _cputimer = std::make_shared<gpucast::gl::timer>();
+
+  _gputimer->begin();
 
 #if FBO
   _fbo->bind();
@@ -233,8 +234,6 @@ glwidget::paintGL()
     o->draw();
   }
 
-  glFinish(); 
-
 #if FBO
 
   _fbo->unbind();
@@ -242,22 +241,19 @@ glwidget::paintGL()
   ++_frames;
 
   // pass fps to window
-  t.stop();
-  gpucast::gl::time_duration elapsed = t.result();
-  double drawtime_seconds = elapsed.fractional_seconds + elapsed.seconds; // discard minutes
-  _time += drawtime_seconds;
+  _gputimer->end();
 
-  // show message and reset counter if more than 1s passed
-  if ( _time > 0.5 || _frames > 20 ) 
-  {
-    mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
-    if (mainwin) 
-    {
-      mainwin->show_fps ( double(_frames) / _time );
-    }
-    _frames = 0;
-    _time   = 0.0;
-  }
+  _cputimer->stop();
+
+  gpucast::gl::time_duration cpu_elapsed = _cputimer->result();
+  double cputime_seconds = cpu_elapsed.fractional_seconds + cpu_elapsed.seconds; // discard minutes
+  _cputime += cputime_seconds;
+  _gputime += _gputimer->result_wait();
+
+
+  _cputimer->start();
+
+  _gputimer->begin();
 
   // render into drawbuffer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -286,6 +282,23 @@ glwidget::paintGL()
   
   _fbo_program->end();
 #endif
+
+  _gputimer->end();
+  double postprocess = _gputimer->result_wait();
+
+  // show message and reset counter if more than 1s passed
+  if (_gputime > 500 || _frames > 10)
+  {
+    mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
+    if (mainwin)
+    {
+      mainwin->show_fps(_cputime / (1000.0*_frames), _gputime / _frames, postprocess / _frames);
+    }
+    _frames = 0;
+
+    _cputime = 0.0;
+    _gputime = 0.0;
+  }
 
   // redraw
   this->update();
@@ -364,13 +377,13 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
     switch (key)
     {
       case 'q':
-        if (gpucast::beziersurfaceobject::double_binary == o->trim_approach()) {
-          o->trim_approach(gpucast::beziersurfaceobject::contours_binary);
+        if (gpucast::beziersurfaceobject::double_binary == o->trimming()) {
+          o->trimming(gpucast::beziersurfaceobject::contours_binary);
           std::cout << "Switching trim approach to: contours_binary" << std::endl;
         }
         else {
-          if (gpucast::beziersurfaceobject::contours_binary == o->trim_approach()) {
-            o->trim_approach(gpucast::beziersurfaceobject::double_binary);
+          if (gpucast::beziersurfaceobject::contours_binary == o->trimming()) {
+            o->trimming(gpucast::beziersurfaceobject::double_binary);
             std::cout << "Switching trim approach to: double_binary" << std::endl;
           }
         }
@@ -381,9 +394,6 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
         break;
       case 'i':
         o->max_newton_iterations(std::max(1U, o->max_newton_iterations() - 1));
-        break;
-      case 't':
-        o->trimming(!o->trimming());
         break;
       case 'n':
         o->raycasting(!o->raycasting());

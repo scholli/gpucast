@@ -42,7 +42,7 @@ public: // non-copyable
 
 public : // methods
 
-  nurbsobject_ptr     load (std::string const& file);
+  nurbsobject_ptr     load(std::string const& file, bool normalize_domain = true);
   std::string         error_message () const;
 
 private: // methods

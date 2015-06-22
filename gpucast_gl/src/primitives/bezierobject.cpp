@@ -18,6 +18,8 @@
 #include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/util/resource_factory.hpp>
 
+#include <gpucast/math/util/prefilter2d.hpp>
+
 #include <gpucast/core/config.hpp>
 
 #include <boost/filesystem.hpp>
@@ -93,18 +95,6 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::trimming(bool enable)
-    {
-      _trimming = enable;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    bool bezierobject::trimming() const
-    {
-      return _trimming;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     void bezierobject::raycasting(bool enable)
     {
       _raycasting = enable;
@@ -117,15 +107,27 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    beziersurfaceobject::trim_approach_t bezierobject::trim_approach() const
+    beziersurfaceobject::trim_approach_t bezierobject::trimming() const
     {
-      return _trim_approach;
+      return _trimming;
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::trim_approach(beziersurfaceobject::trim_approach_t type)
+    void bezierobject::trimming(beziersurfaceobject::trim_approach_t type)
     {
-      _trim_approach = type;
+      _trimming = type;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::antialiasing(bezierobject::anti_aliasing_mode mode)
+    {
+      _antialiasing = mode;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    bezierobject::anti_aliasing_mode bezierobject::antialiasing() const
+    {
+      return _antialiasing;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -146,10 +148,9 @@ namespace gpucast {
     {
       // render parameters
       p.set_uniform1i("iterations", _iterations);
-      p.set_uniform1i("trimming_enabled", _trimming);
+      p.set_uniform1i("trimming", int(_trimming) );
       p.set_uniform1i("raycasting_enabled", _raycasting);
       p.set_uniform1f("epsilon_object_space", _epsilon);
-      p.set_uniform1i("trimapproach", int(_trim_approach));
 
       // material properties
       p.set_uniform3f("mat_ambient", _material.ambient[0], _material.ambient[1], _material.ambient[2]);
@@ -198,7 +199,7 @@ namespace gpucast {
       _cmb_pointdata.update(b._cmb_pointdata.begin(), b._cmb_pointdata.end());
 
       _cmb_partition.format(GL_RGBA32F);
-      _cmb_contourlist.format(GL_RG32F);
+      _cmb_contourlist.format(GL_RGBA32F);
       _cmb_curvelist.format(GL_RGBA32F);
       _cmb_curvedata.format(GL_R32F);
       _cmb_pointdata.format(GL_RGB32F);
@@ -246,6 +247,7 @@ namespace gpucast {
       _pathlist.insert("");
 
       _init_program();
+      _init_prefilter();
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -372,6 +374,10 @@ namespace gpucast {
         _program->set_uniform1i("diffusemapping", 0);
       }
 
+      if (_prefilter_texture) {
+        _program->set_texture2d("prefilter_texture", *_prefilter_texture, next_texunit());
+      }
+
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -380,6 +386,33 @@ namespace gpucast {
       gpucast::gl::resource_factory factory;
 
       _program = factory.create_program("resources/glsl/trimmed_surface/raycast_surface.glsl.vert", "resources/glsl/trimmed_surface/raycast_surface.glsl.frag");
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::_init_prefilter(unsigned prefilter_resolution) 
+    {
+      _prefilter_texture = std::make_shared<gpucast::gl::texture2d>();
+
+      gpucast::math::util::prefilter2d<gpucast::math::vec2d> pre_integrator(32, 0.5);
+
+      
+      std::vector<float> texture_data;
+
+      auto distance_offset = std::sqrt(2) / prefilter_resolution;
+      auto angle_offset = (2.0 * M_PI) / prefilter_resolution;
+
+      for (unsigned d = 0; d != prefilter_resolution; ++d) {
+        for (unsigned a = 0; a != prefilter_resolution; ++a) {
+
+          auto angle = a * angle_offset;
+          auto distance = -1.0 / std::sqrt(2) + distance_offset * d;
+          auto alpha = pre_integrator(gpucast::math::vec2d(angle, distance));
+
+          texture_data.push_back(alpha);
+        }
+      }
+
+      _prefilter_texture->teximage(0, GL_R32F, prefilter_resolution, prefilter_resolution, 0, GL_RED, GL_FLOAT, (void*)(&texture_data[0]));
     }
 
   } // namespace gl

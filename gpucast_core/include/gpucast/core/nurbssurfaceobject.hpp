@@ -59,6 +59,9 @@ public : // methods
   const_iterator      begin   () const;
   const_iterator      end     () const;
 
+  iterator            begin   ();
+  iterator            end     ();
+
   std::size_t         surfaces   () const;
   std::size_t         trimcurves () const;
 

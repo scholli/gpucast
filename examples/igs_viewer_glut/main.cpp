@@ -19,6 +19,7 @@
 #include <gpucast/gl/util/init_glew.hpp>
 
 #include <gpucast/gl/error.hpp>
+#include <gpucast/gl/timer_query.hpp>
 #include <gpucast/glut/window.hpp>
 #include <gpucast/math/matrix4x4.hpp> 
 #include <gpucast/gl/primitives/bezierobject.hpp>
@@ -38,7 +39,7 @@ private :
 
   typedef std::shared_ptr<gpucast::gl::bezierobject> surfaceobject_ptr;
   std::vector<surfaceobject_ptr>                    _objects;
-
+  gpucast::gl::timer_query                          _query;
   gpucast::math::bbox3f                             _bbox;
 
 public:
@@ -121,6 +122,8 @@ public:
 
   void draw()
   {
+    _query.begin();
+
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -144,11 +147,13 @@ public:
     renderer.projectionmatrix(proj);
     renderer.modelviewmatrix(mv);
 
-    for (auto const& o : _objects)
-    {
+    for (auto const& o : _objects) {
       o->draw();
     }
 
+    _query.end();
+
+    std::cout << "fps: " << double(1000) / _query.result_wait() << "\r";
   }
 
   void resize(int w, int h)
@@ -191,10 +196,6 @@ public:
       case 'r':
         o->raycasting(!o->raycasting());
         std::cout << "Raycasting set to " << o->raycasting() << std::endl;
-        break;
-      case 't':
-        o->trimming(!o->trimming());
-        std::cout << "Trimming set to " << o->trimming() << std::endl;
         break;
       }
     }

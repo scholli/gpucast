@@ -1,16 +1,16 @@
 /********************************************************************************
 *
-* Copyright (C) 1009 Bauhaus-Universitaet Weimar
+* Copyright (C) 2015 Bauhaus-Universitaet Weimar
 *
 *********************************************************************************
 *
-*  module     : texture1d.hpp
+*  module     : timer_query.hpp
 *  project    : glpp
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_GL_TEXTURE_HPP
-#define GPUCAST_GL_TEXTURE_HPP
+#ifndef GPUCAST_GL_TIMER_QUERY_HPP
+#define GPUCAST_GL_TIMER_QUERY_HPP
 
 // header system
 #include <string>
@@ -18,41 +18,20 @@
 
 // header project
 #include <gpucast/gl/glpp.hpp>
+#include <gpucast/gl/query.hpp>
 
 namespace gpucast { namespace gl {
 
-  struct GPUCAST_GL texture_format 
+  class GPUCAST_GL timer_query : public query
   {
-    texture_format();
-    texture_format(GLenum internal_fmt, GLenum base_fmt, std::size_t components_size, GLenum value_type, std::string const& as_string);
-    GLenum        internal_format;
-    GLenum        base_format;
-    std::size_t   size;
-    GLenum        type;
-    std::string   name;
-  };
-
-  class GPUCAST_GL texture
-  {
-  public :
-
-    texture                                       ( );
-    ~texture                                      ( );
-
-    std::size_t             size_of_format        ( GLenum internal_format );
-    GLenum                  base_format           ( GLenum internal_format );
-    GLenum                  value_type_of_format  ( GLenum internal_format );
-    std::string             name                  ( GLenum internal_format );
-
   public : // methods
 
-    virtual void            bind                  ( GLint texunit ) = 0;
-    virtual void            unbind                ( ) = 0;
-    virtual GLuint const    id                    ( ) const = 0;
+    /*virtual*/ void begin() const override;
+    /*virtual*/ void end() const override;
+    /*virtual*/ bool is_available() const override;
 
-  private : // methods
-
-    void                    _init                 ();
+    double result_no_wait() const; // in ms
+    double result_wait() const; // in ms
 
   private : // member
 
@@ -61,4 +40,4 @@ namespace gpucast { namespace gl {
 } } // namespace gpucast / namespace gl
 
 
-#endif // GPUCAST_GL_TEXTURE1D_HPP
+#endif // GPUCAST_GL_QUERY_HPP
