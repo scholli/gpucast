@@ -60,7 +60,7 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
 		      ${FREEIMAGEPLUS_LIBRARY}
 		      ${GLEW_LIBRARY}
 		      ${QHULL_LIBRARY}
-          boost_filesystem
+          boost_filesystem boost_regex
           GL GLU
           )
 ENDIF (MSVC)

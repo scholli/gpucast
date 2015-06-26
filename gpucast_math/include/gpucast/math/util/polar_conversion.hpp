@@ -43,7 +43,7 @@ namespace gpucast { namespace math {
       if (euclid[1] < 0) {
         angle_radius[0] = acos(euclid[0]/angle_radius[1]);
       } else {
-        angle_radius[0] = vec2_t::value_type(2) * M_PI - acos(euclid[0]/angle_radius[1]);
+        angle_radius[0] = typename vec2_t::value_type(2) * M_PI - acos(euclid[0]/angle_radius[1]);
       }
 
       return angle_radius;

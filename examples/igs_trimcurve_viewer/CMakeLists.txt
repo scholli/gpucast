@@ -78,6 +78,7 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
 	              ${QT_QTMAIN_LIBRARY}
                       boost_system 
                       boost_filesystem
+                      boost_regex
 )
 ENDIF (MSVC)
 

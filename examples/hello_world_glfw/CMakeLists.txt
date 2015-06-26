@@ -61,6 +61,7 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
 		                  ${FREEIMAGE_LIBRARY}
 		                  ${FREEIMAGEPLUS_LIBRARY}
 		                  boost_filesystem
+                      boost_regex
 		                  ${GLEW_LIBRARY}
 		                  X11 Xxf86vm Xrandr pthread m Xi GL GLU
 )

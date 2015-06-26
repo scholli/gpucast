@@ -27,18 +27,17 @@ namespace gpucast {
       public: // typedef / enums
 
         typedef contour_map_base<value_t> base_type;
-        using typename contour_map_base<value_t>::interval_type;
-        
-        using typename contour_map_base<value_t>::value_type;
-        using typename contour_map_base<value_t>::point_type;
-        using typename contour_map_base<value_t>::bbox_type;
 
-        using typename contour_map_base<value_t>::contour_segment_type;
-        using typename contour_map_base<value_t>::contour_segment_ptr;
-        using typename contour_map_base<value_t>::contour_segment_container;
-
-        using typename contour_map_base<value_t>::contour_type;
-        using typename contour_map_base<value_t>::contour_ptr;
+        using typename base_type::interval_type;
+        using typename base_type::value_type;
+        using typename base_type::point_type;
+        using typename base_type::bbox_type;
+        using typename base_type::contour_segment_type;
+        using typename base_type::contour_segment_ptr;
+        using typename base_type::contour_segment_container;
+        using typename base_type::contour_container;
+        using typename base_type::contour_type;
+        using typename base_type::contour_ptr;
         
         struct trimloop {
           contour_ptr           contour;

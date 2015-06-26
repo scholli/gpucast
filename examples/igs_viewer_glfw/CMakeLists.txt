@@ -60,7 +60,7 @@ ELSEIF (UNIX)
             ${FREEIMAGE_LIBRARY}
             ${FREEIMAGEPLUS_LIBRARY}
             ${FREEGLUT_LIBRARY}
-            boost_thread boost_filesystem
+            boost_thread boost_filesystem boost_regex
             GL GLU X11 Xi Xxf86vm Xrandr pthread
   )
 ENDIF (MSVC)

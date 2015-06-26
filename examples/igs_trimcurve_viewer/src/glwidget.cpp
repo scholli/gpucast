@@ -63,6 +63,8 @@
 #include <gpucast/math/parametric/domain/partition/double_binary/partition.hpp>
 
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////////////////
 glwidget::glwidget( int argc, char** argv, QGLFormat const& context_format, QWidget *parent)
  :  QGLWidget                 ( context_format, parent),
@@ -403,7 +405,7 @@ glwidget::generate_binary_field(gpucast::beziersurface::trimdomain_ptr const& do
 
   initialize_sampler();
 
-  _binary_texture = std::make_unique<gpucast::gl::texture2d>();
+  _binary_texture = make_unique<gpucast::gl::texture2d>();
   std::vector<float> texture_data;
 
   unsigned res_u = resolution;
@@ -450,7 +452,7 @@ glwidget::generate_distance_field(gpucast::beziersurface::trimdomain_ptr const& 
 
   initialize_sampler();
 
-  _distance_field_texture = std::make_unique<gpucast::gl::texture2d>();
+  _distance_field_texture = make_unique<gpucast::gl::texture2d>();
   std::vector<float> texture_data;
 
   unsigned res_u = resolution;
@@ -509,10 +511,10 @@ glwidget::generate_distance_field(gpucast::beziersurface::trimdomain_ptr const& 
 void                    
 glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
-  if ( !_db_trimdata )   _db_trimdata  = std::make_unique<gpucast::gl::texturebuffer>();
-  if ( !_db_celldata )   _db_celldata  = std::make_unique<gpucast::gl::texturebuffer>();
-  if ( !_db_curvelist )  _db_curvelist = std::make_unique<gpucast::gl::texturebuffer>();
-  if ( !_db_curvedata )  _db_curvedata = std::make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_trimdata )   _db_trimdata  = make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_celldata )   _db_celldata  = make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_curvelist )  _db_curvelist = make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_curvedata )  _db_curvedata = make_unique<gpucast::gl::texturebuffer>();
 
   std::unordered_map<gpucast::trimdomain::curve_ptr, gpucast::trimdomain_serializer::address_type>          referenced_curves;
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>  referenced_domains;
@@ -556,11 +558,11 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
 void                    
 glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
-  if (!_cmb_partition)   _cmb_partition = std::make_unique<gpucast::gl::texturebuffer>();
-  if (!_cmb_contourlist) _cmb_contourlist = std::make_unique<gpucast::gl::texturebuffer>();
-  if (!_cmb_curvelist) _cmb_curvelist = std::make_unique<gpucast::gl::texturebuffer>();
-  if (!_cmb_curvedata) _cmb_curvedata = std::make_unique<gpucast::gl::texturebuffer>();
-  if (!_cmb_pointdata) _cmb_pointdata = std::make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_partition)   _cmb_partition = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_contourlist) _cmb_contourlist = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_curvelist) _cmb_curvelist = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_curvedata) _cmb_curvedata = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_pointdata) _cmb_pointdata = make_unique<gpucast::gl::texturebuffer>();
 
   std::unordered_map<gpucast::trimdomain::curve_ptr,         gpucast::trimdomain_serializer::address_type>                                  referenced_curves;
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>                                  referenced_domains;
@@ -618,10 +620,10 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
 void
 glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr const& domain)
 {
-  if (!_loop_list_loops)    _loop_list_loops = std::make_unique<gpucast::gl::shaderstoragebuffer>();
-  if (!_loop_list_contours) _loop_list_contours = std::make_unique<gpucast::gl::shaderstoragebuffer>();
-  if (!_loop_list_curves)   _loop_list_curves = std::make_unique<gpucast::gl::shaderstoragebuffer>();
-  if (!_loop_list_points)   _loop_list_points = std::make_unique<gpucast::gl::shaderstoragebuffer>();
+  if (!_loop_list_loops)    _loop_list_loops = make_unique<gpucast::gl::shaderstoragebuffer>();
+  if (!_loop_list_contours) _loop_list_contours = make_unique<gpucast::gl::shaderstoragebuffer>();
+  if (!_loop_list_curves)   _loop_list_curves = make_unique<gpucast::gl::shaderstoragebuffer>();
+  if (!_loop_list_points)   _loop_list_points = make_unique<gpucast::gl::shaderstoragebuffer>();
 
   gpucast::trimdomain_serializer_loop_contour_list::serialization serialization;
   gpucast::trimdomain_serializer_loop_contour_list serializer;
@@ -657,7 +659,7 @@ glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr con
 void glwidget::initialize_sampler()
 {
   if (!_bilinear_filter) {
-    _bilinear_filter = std::make_unique<gpucast::gl::sampler>();
+    _bilinear_filter = make_unique<gpucast::gl::sampler>();
     _bilinear_filter->parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     _bilinear_filter->parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -672,7 +674,7 @@ void glwidget::initialize_sampler()
   } 
 
   if (!_nearest_filter) {
-    _nearest_filter = std::make_unique<gpucast::gl::sampler>();
+    _nearest_filter = make_unique<gpucast::gl::sampler>();
     _nearest_filter->parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     _nearest_filter->parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -1220,12 +1222,12 @@ glwidget::_init()
   glEnable ( GL_DEPTH_TEST );
 
   if ( !_quad ) {
-    _quad = std::make_unique<gpucast::gl::plane>(0, -1, -1);
+    _quad = make_unique<gpucast::gl::plane>(0, -1, -1);
   }
 
   if ( !_transfertexture )
   {
-    _transfertexture = std::make_unique<gpucast::gl::texture1d>();
+    _transfertexture = make_unique<gpucast::gl::texture1d>();
     gpucast::gl::transferfunction<gpucast::math::vec4f> tf;
     tf.set ( 0, gpucast::math::vec4f(0.0f, 0.0f, 0.5f, 1.0f) );
     tf.set ( 60, gpucast::math::vec4f(0.0f, 0.7f, 0.5f, 1.0f) );
@@ -1262,7 +1264,7 @@ void glwidget::_initialize_prefilter()
 {
   if (!_prefilter_texture) {
 
-    _prefilter_texture = std::make_unique<gpucast::gl::texture2d>();
+    _prefilter_texture = make_unique<gpucast::gl::texture2d>();
 
     gpucast::math::util::prefilter2d<gpucast::math::vec2d> pre_integrator(32, 0.5);
 

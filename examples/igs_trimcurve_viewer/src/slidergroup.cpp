@@ -40,10 +40,10 @@
 
 #include <QtGui>
 #include <QtWidgets/QSlider>
-#include <QtWidgets/QScrollbar>
+#include <QtWidgets/QScrollBar>
 #include <QtWidgets/QDial>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QBoxlayout>
+#include <QtWidgets/QBoxLayout>
 
 #include <slidergroup.hpp>
 #include <string>

@@ -86,7 +86,8 @@ ELSEIF (UNIX)
                         ${FREEIMAGE_LIBRARY}
                         ${FREEIMAGEPLUS_LIBRARY}
                         boost_filesystem
-	                boost_system
+	                      boost_system
+                        boost_regex
   )
 ENDIF (MSVC)
 

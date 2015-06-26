@@ -53,7 +53,7 @@ void
 contour_map_binary<value_t>::initialize ()
 {
   // make sure bi-monotonic contour segments are v-monotonic increasing
-  for (auto const& c : _contour_segments)
+  for (auto const& c : this->_contour_segments)
   {
     if (!c->is_increasing(point_type::v))
     {

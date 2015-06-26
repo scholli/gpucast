@@ -28,7 +28,7 @@ contour_map_loop_list<value_t>::initialize()
 {
   // extract loops
   std::vector<contour_ptr> unclassified_loops;
-  for (auto const& segmented_loop : _segmented_loops) {
+  for (auto const& segmented_loop : this->_segmented_loops) {
     unclassified_loops.push_back(segmented_loop.first);
   }
 
@@ -148,7 +148,7 @@ contour_map_loop_list<value_t>::_determine_contour_segments_parity()
   value_t epsilon_offset = 0.0001f;
 
   // classifiy segments
-  for (auto const& segment_to_classify : _contour_segments) {
+  for (auto const& segment_to_classify : this->_contour_segments) {
 
     auto const& bbox = segment_to_classify->bbox();
 
@@ -170,7 +170,8 @@ contour_map_loop_list<value_t>::_determine_contour_segments_parity()
       }
 
       unsigned intersections = 0;
-      for (auto const& segment_to_test : _contour_segments) {
+      for (auto const& segment_to_test : this->_contour_segments) {
+
         intersections += segment_to_test->right_of(ray_origin);
       }
 
@@ -190,11 +191,11 @@ void
 contour_map_loop_list<value_t>::_determine_contour_segments_priority()
 {
   // classifiy segments
-  for (auto const& segment_to_classify : _contour_segments) {
+  for (auto const& segment_to_classify : this->_contour_segments) {
     unsigned priority = 0;
     auto bbox = segment_to_classify->bbox();
 
-    for (auto const& segment_to_test : _contour_segments) {
+    for (auto const& segment_to_test : this->_contour_segments) {
 
       if (segment_to_test->bbox().is_inside(bbox.center()) &&
           segment_to_classify->bbox().volume() <= segment_to_test->bbox().volume()) {

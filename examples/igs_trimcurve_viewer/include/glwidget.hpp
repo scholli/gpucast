@@ -36,6 +36,11 @@
 #include <gpucast/math/axis_aligned_boundingbox.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
 
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
 class glwidget : public QGLWidget
 {
