@@ -62,6 +62,7 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _show_texel_fetches = new QCheckBox;
   _linear_texture_filter = new QCheckBox;
   _optimal_distance   = new QCheckBox;
+  _show_gradient      = new QCheckBox;
   _antialiasing       = new QComboBox;
 
   _zoom_control = new SlidersGroup(Qt::Horizontal, tr("Zoom"), this);
@@ -115,6 +116,9 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   layout->addWidget(_linear_texture_filter, row++, 1);
   _linear_texture_filter->setText("Linear Texture Filtering");
 
+  layout->addWidget(_show_gradient, row++, 1);
+  _show_gradient->setText("Show Edge Gradient");
+
   layout->addWidget(_optimal_distance, row++, 1);
   _optimal_distance->setText("Optimal Distance Field");
 
@@ -138,6 +142,8 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   /////////////////////////////////////
   _aamodes.insert(std::make_pair(glwidget::disabled, "No Anti-Aliasing"));
   _aamodes.insert(std::make_pair(glwidget::prefiltered_edge_estimation, "Prefiltered Edge Estimation"));
+  _aamodes.insert(std::make_pair(glwidget::prefiltered_curve_estimation, "Prefiltered Curve Estimation"));
+  _aamodes.insert(std::make_pair(glwidget::pixel_distance_estimation, "Pixel Distance Estimation"));
   _aamodes.insert(std::make_pair(glwidget::supersampling2x2, "Supersampling(2x2)"));
   _aamodes.insert(std::make_pair(glwidget::supersampling3x3, "Supersampling(3x3)"));
   _aamodes.insert(std::make_pair(glwidget::supersampling4x4, "Supersampling(4x4)"));

@@ -133,7 +133,8 @@ trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
                                         in int           trim_outer,
                                         inout int        iters,
                                         in float         tolerance,
-                                        in int           max_iterations)
+                                        in int           max_iterations,
+                                        in int           coverage_estimation_type)
 {
   int total_intersections = 0;
   int v_intervals = int(floatBitsToUint(texelFetch(domainpartition, id).x));
@@ -228,34 +229,15 @@ trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
   /////////////////////////////////////////////////////////////////////////////////////
   // coverage estimation
   /////////////////////////////////////////////////////////////////////////////////////
+  
   bool covered = bool((mod(total_intersections, 2) == 1) == bool(trim_outer));
 
-  //mat2 J = mat2(duvdx.x, duvdy.x, duvdx.y, duvdy.y);
   mat2 J = mat2(duvdx, duvdy);
   mat2 Jinv = inverse(J);
-  //mat2 Jinv = J / determinant(J); // should be the adjoint/determinant -> somehow leads to artifacts
-  //mat2 Jinv = mat2(5.0, 0.0, 0.0, 5.0);
 
   vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient);
   vec2 uv_pixel_coords = Jinv*uv;
   vec2 point_pixel_coords = Jinv*closest_point_on_curve;
-
-  /////////////////////////////////////////////////////////////////////////////////////
-  // debug
-  /////////////////////////////////////////////////////////////////////////////////////
-  //if (true)
-  //{
-  //  vec2 ngrad = normalize(closest_gradient.xy);
-  //  if (ngrad.y > 0.0) {
-  //    debug_out = transfer_function(-ngrad.x);
-  //  }
-  //  else {
-  //    debug_out = transfer_function(1.0+ngrad.y);
-  //  }
-  //}
-  /////////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////////////
 
   float distance_pixel_coords = abs(dot(gradient_pixel_coords, uv_pixel_coords - point_pixel_coords));
   const float sqrt2 = sqrt(2.0);
@@ -263,10 +245,19 @@ trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
   if (!covered) {
     distance_pixel_coords = -distance_pixel_coords;
   }
-  
+
   const float gradient_angle = gradient_pixel_coords.y > 0.0 ? gradient_pixel_coords.y : -gradient_pixel_coords.y;
   const float normalized_signed_distance = clamp((distance_pixel_coords + sqrt2 / 2.0) / sqrt2, 0.0, 1.0);
-  return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+
+  switch (coverage_estimation_type) 
+  { 
+    case 1: // edge estimation
+      return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+    case 2: // curve estimation -> TODO: not implemented yet
+      return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+    case 3: // distance estimation
+      return min(1.0, distance_pixel_coords + sqrt(2.0) / 2.0);
+  };
 }
 
 

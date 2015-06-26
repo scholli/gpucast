@@ -64,7 +64,9 @@ void main(void)
       break;
 
       ///////////////////////////////////////////////////////////////////////////
-      case 1: // edge-estimate
+      case 1: // coverage estimate
+      case 2: 
+      case 3: 
         float coverage = trimming_contour_double_binary_coverage(sampler_partition,
                                                                  sampler_contourlist,
                                                                  sampler_curvelist,
@@ -78,30 +80,31 @@ void main(void)
                                                                  trim_outer,
                                                                  iterations,
                                                                  epsilon,
-                                                                 max_iterations);
+                                                                 max_iterations,
+                                                                 antialiasing);
         outcolor = debug_out * vec4(coverage);
         break;
 
         ///////////////////////////////////////////////////////////////////////////
-        case 2: // 2x2 supersampling
+        case 4: // 2x2 supersampling
           sample_rows = 2;
           sample_cols = 2;
           break;
 
         ///////////////////////////////////////////////////////////////////////////
-        case 3: // 3x3 supersampling
+        case 5: // 3x3 supersampling
           sample_rows = 3;
           sample_cols = 3;
           break;
 
         ///////////////////////////////////////////////////////////////////////////
-        case 4: // 4x4 supersampling
+        case 6: // 4x4 supersampling
           sample_rows = 4;
           sample_cols = 4;
           break;
 
         ///////////////////////////////////////////////////////////////////////////
-        case 5: // 8x8 supersampling
+        case 7: // 8x8 supersampling
           sample_rows = 8;
           sample_cols = 8;
           break;

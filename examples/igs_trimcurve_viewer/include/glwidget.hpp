@@ -62,15 +62,17 @@ public:
   enum aamode {
     disabled = 0,
     prefiltered_edge_estimation = 1,
-    supersampling2x2 = 2,
-    supersampling3x3 = 3,
-    supersampling4x4 = 4,
-    supersampling8x8 = 5 
+    prefiltered_curve_estimation = 2,
+    pixel_distance_estimation = 3,
+    supersampling2x2 = 4,
+    supersampling3x3 = 5,
+    supersampling4x4 = 6,
+    supersampling8x8 = 7 
   };
 public : 
 
-  glwidget                                              ( int argc, char** argv, QGLFormat const& format, QWidget *parent = 0 );
-  ~glwidget                                             ();
+  glwidget                ( int argc, char** argv, QGLFormat const& format, QWidget *parent = 0 );
+  ~glwidget               ();
 
   void                    generate_original_view(gpucast::beziersurface::trimdomain_ptr const& domain);
   void                    generate_double_binary_view(gpucast::beziersurface::trimdomain_ptr const& domain);

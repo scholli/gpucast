@@ -92,6 +92,8 @@ private: // attributes
   QCheckBox*              _show_texel_fetches;
   QCheckBox*              _linear_texture_filter;
   QCheckBox*              _optimal_distance;
+  QCheckBox*              _show_gradient;
+
   QComboBox*              _antialiasing;
 
 

@@ -41,32 +41,34 @@ void main(void)
 
     ///////////////////////////////////////////////////////////////////////////
     case 1: // edge-estimate
+    case 2: 
+    case 3: 
 
-      float coverage = trimming_loop_list_coverage(uv_coord, dFdx(uv_coord), dFdy(uv_coord), prefilter_texture, trim_index);
+      float coverage = trimming_loop_list_coverage(uv_coord, dFdx(uv_coord), dFdy(uv_coord), prefilter_texture, trim_index, antialiasing);
 
       outcolor = debug_out * vec4(coverage);
       break;
 
     ///////////////////////////////////////////////////////////////////////////
-    case 2: // 2x2 supersampling
+    case 4: // 2x2 supersampling
       sample_rows = 2;
       sample_cols = 2;
       break;
 
       ///////////////////////////////////////////////////////////////////////////
-    case 3: // 3x3 supersampling
+    case 5: // 3x3 supersampling
       sample_rows = 3;
       sample_cols = 3;
       break;
 
       ///////////////////////////////////////////////////////////////////////////
-    case 4: // 4x4 supersampling
+    case 6: // 4x4 supersampling
       sample_rows = 4;
       sample_cols = 4;
       break;
 
       ///////////////////////////////////////////////////////////////////////////
-    case 5: // 8x8 supersampling
+    case 7: // 8x8 supersampling
       sample_rows = 8;
       sample_cols = 8;
       break;

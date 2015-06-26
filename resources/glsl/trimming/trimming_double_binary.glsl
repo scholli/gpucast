@@ -102,7 +102,8 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
                                 in int     trim_outer,
                                 inout int  iters,
                                 in float   tolerance,
-                                in int     max_iterations)
+                                in int     max_iterations,
+                                in int     coverage_estimation_type)
 {
   vec4 domaininfo1 = texelFetch(partition_buffer, id);
   gpucast_count_texel_fetch();
@@ -181,28 +182,35 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
     return float(!is_trimmed);
   }
 
-  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////
   // coverage estimation
-  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////
   mat2 J = mat2(duvdx, duvdy);
   mat2 Jinv = inverse(J);
-  //mat2 Jinv = adjoint(J) / determinant(J);
 
   vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient_on_curve);
   vec2 uv_pixel_coords = Jinv*uv;
   vec2 point_pixel_coords = Jinv*closest_point_on_curve;
 
   float distance_pixel_coords = abs(dot(gradient_pixel_coords, uv_pixel_coords - point_pixel_coords));
+  const float sqrt2 = sqrt(2.0);
 
   if (is_trimmed) {
     distance_pixel_coords = -distance_pixel_coords;
   }
 
-  const float sqrt2 = sqrt(2.0);
   const float gradient_angle = gradient_pixel_coords.y > 0.0 ? gradient_pixel_coords.y : -gradient_pixel_coords.y;
-  const float normalized_signed_distance = (distance_pixel_coords + sqrt2 / 2.0) / sqrt2;
+  const float normalized_signed_distance = clamp((distance_pixel_coords + sqrt2 / 2.0) / sqrt2, 0.0, 1.0);
 
-  return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+  switch (coverage_estimation_type)
+  {
+  case 1: // edge estimation
+    return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+  case 2: // curve estimation -> TODO: not implemented yet
+    return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+  case 3: // distance estimation
+    return min(1.0, distance_pixel_coords + sqrt(2.0) / 2.0);
+  };
 }
 
 

@@ -408,7 +408,7 @@ namespace gpucast {
           auto distance = -1.0 / std::sqrt(2) + distance_offset * d;
           auto alpha = pre_integrator(gpucast::math::vec2d(angle, distance));
 
-          texture_data.push_back(alpha);
+          texture_data.push_back(float(alpha));
         }
       }
 

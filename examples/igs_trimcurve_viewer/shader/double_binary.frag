@@ -24,6 +24,10 @@ layout (location = 0) out vec4 outcolor;
 
 void main(void) 
 { 
+  const float epsilon = 0.00001;
+  const int max_iterations = 16;
+  const int trim_outer = 1;
+
   int iterations = 0;
   vec4 debug = vec4(0.0);
   int sample_rows = 0;
@@ -33,7 +37,7 @@ void main(void)
 
     ///////////////////////////////////////////////////////////////////////////
   case 0: // no anti-aliasing
-    bool trimmed = trimming_double_binary(trimdata, celldata, curvelist, curvedata, uv_coord, trimid, 1, iterations, 0.00001, 16);
+    bool trimmed = trimming_double_binary(trimdata, celldata, curvelist, curvedata, uv_coord, trimid, trim_outer, iterations, epsilon, max_iterations);
 
     if (trimmed) {
       outcolor = vec4(0.0);
@@ -44,40 +48,43 @@ void main(void)
     break;
 
     ///////////////////////////////////////////////////////////////////////////
-  case 1: // edge-estimate
+  case 1: // coverage estimate
+  case 2:
+  case 3:
     float coverage = trimming_double_binary_coverage(trimdata, celldata, curvelist, curvedata,
       prefilter_texture,
       uv_coord,
       dFdx(uv_coord),
       dFdy(uv_coord),
       trimid,
-      1,
+      trim_outer,
       iterations,
-      0.000001,
-      16);
+      epsilon,
+      max_iterations,
+      antialiasing);
     outcolor = debug_out * vec4(coverage);
     break;
 
     ///////////////////////////////////////////////////////////////////////////
-  case 2: // 2x2 supersampling
+  case 4: // 2x2 supersampling
     sample_rows = 2;
     sample_cols = 2;
     break;
 
     ///////////////////////////////////////////////////////////////////////////
-  case 3: // 3x3 supersampling
+  case 5: // 3x3 supersampling
     sample_rows = 3;
     sample_cols = 3;
     break;
 
     ///////////////////////////////////////////////////////////////////////////
-  case 4: // 4x4 supersampling
+  case 6: // 4x4 supersampling
     sample_rows = 4;
     sample_cols = 4;
     break;
 
     ///////////////////////////////////////////////////////////////////////////
-  case 5: // 8x8 supersampling
+  case 7: // 8x8 supersampling
     sample_rows = 8;
     sample_cols = 8;
     break;
@@ -93,7 +100,7 @@ void main(void)
 
     for (int c = 1; c <= sample_cols; ++c) {
       for (int r = 1; r <= sample_rows; ++r) {
-        sample_coverage += float(!trimming_double_binary(trimdata, celldata, curvelist, curvedata, uv_base + r * dx + c * dy, trimid, 1, iterations, 0.00001, 16));
+        sample_coverage += float(!trimming_double_binary(trimdata, celldata, curvelist, curvedata, uv_base + r * dx + c * dy, trimid, trim_outer, iterations, epsilon, max_iterations));
       }
     }
     outcolor = debug_out * vec4(sample_coverage / (sample_rows*sample_cols));

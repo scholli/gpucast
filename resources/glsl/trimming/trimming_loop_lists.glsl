@@ -679,7 +679,8 @@ trimming_loop_list_coverage(in vec2 uv,
                             in vec2 duvdx, 
                             in vec2 duvdy, 
                             in sampler2D prefilter,
-                            in int index)
+                            in int index,
+                            in int coverage_estimation_type)
 {
   float coverage = 0.0;
   bool is_trimmed;
@@ -701,6 +702,11 @@ trimming_loop_list_coverage(in vec2 uv,
     }
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  // coverage estimation
+  /////////////////////////////////////////////////////////////////////////////
+
   mat2 J = mat2(duvdx, duvdy);
   mat2 Jinv = inverse(J);
 
@@ -717,9 +723,16 @@ trimming_loop_list_coverage(in vec2 uv,
   const float sqrt2 = sqrt(2.0);
   const float gradient_angle = gradient_pixel_coords.y > 0.0 ? gradient_pixel_coords.y : -gradient_pixel_coords.y;
   const float normalized_signed_distance = (distance_pixel_coords + sqrt2 / 2.0) / sqrt2;
-  return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
 
-  return coverage;
+  switch (coverage_estimation_type)
+  {
+  case 1: // edge estimation
+    return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+  case 2: // curve estimation -> TODO: not implemented yet
+    return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
+  case 3: // distance estimation
+    return min(1.0, distance_pixel_coords + sqrt(2.0) / 2.0);
+  };
 }
 
 
