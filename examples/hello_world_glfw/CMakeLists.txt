@@ -1,7 +1,7 @@
 ###############################################################################
 # set sources
 ###############################################################################
-include (find_glfw)
+include (findGLFW)
 
 FILE(GLOB EXAMPLE_HELLO_WORLD_GLFW_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
@@ -44,9 +44,9 @@ IF (MSVC)
 TARGET_LINK_LIBRARIES(${_EXE_NAME} 
                       gpucast_gl 
                       gpucast_core
-		                  debug ${FREEGLUT_LIBRARY_DEBUG} optimized ${FREEGLUT_LIBRARY_RELEASE} 
+		                  general ${GLUT_glut_LIBRARY}
                       debug ${GLFW_LIBRARY_DEBUG} optimized ${GLFW_LIBRARY_RELEASE}
-                      ${GLEW_LIBRARY}
+                      debug ${GLEW_LIBRARY_DEBUG} optimized ${GLEW_LIBRARY_RELEASE}
 		                  ${FREEIMAGE_LIBRARY}
 		                  ${FREEIMAGEPLUS_LIBRARY}
 )
@@ -71,8 +71,12 @@ ENDIF (MSVC)
 # copy runtime libraries as a post-build process
 ###############################################################################
 IF (MSVC)
-    ADD_CUSTOM_COMMAND ( TARGET ${_EXE_NAME} POST_BUILD 
-      COMMAND robocopy \"${LIBRARY_OUTPUT_PATH}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP 
-            & robocopy \"${GLOBAL_EXT_DIR}/lib/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP \n if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1)
-    )
+  FOREACH(_LIB ${GPUCAST_RUNTIME_LIBRARIES})
+    get_filename_component(_FILE ${_LIB} NAME)
+    get_filename_component(_PATH ${_LIB} DIRECTORY)
+    SET(COPY_DLL_COMMAND_STRING ${COPY_DLL_COMMAND_STRING} robocopy \"${_PATH}\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" ${_FILE} /R:0 /W:0 /NP &)
+  ENDFOREACH()
+
+  SET(COPY_DLL_COMMAND_STRING ${COPY_DLL_COMMAND_STRING} robocopy \"${LIBRARY_OUTPUT_PATH}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP &)
+  ADD_CUSTOM_COMMAND ( TARGET ${_EXE_NAME} POST_BUILD COMMAND ${COPY_DLL_COMMAND_STRING} \n if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1))
 ENDIF (MSVC)

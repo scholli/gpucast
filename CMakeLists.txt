@@ -34,7 +34,7 @@ ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 SET(ENABLE_GPUCAST_VOLUME_MODULE false CACHE BOOL "Build module gpucast volume")
 
 ################################################################
-# Configure and find libraries
+# Configure and find dependencies
 ################################################################
 SET(GLOBAL_EXT_DIR ${CMAKE_SOURCE_DIR}/externals)
 
@@ -43,13 +43,29 @@ if (UNIX)
 endif (UNIX)
 
 include(macros)
-include(find_compiler)
-include(find_boost)
-include(find_glew)
-include(find_freeglut)
-include(find_freeimage)
-include(find_qhull)
 
+##boost#########################################################
+set(BOOST_INCLUDEDIR ${GLOBAL_EXT_DIR}/boost/include)
+set(BOOST_LIBRARYDIR ${GLOBAL_EXT_DIR}/boost/lib)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_LIBS ON)
+find_package( Boost 1.54.0 REQUIRED thread regex system program_options timer chrono filesystem date_time)
+ADD_DEFINITIONS("-DBOOST_ALL_NO_LIB")
+
+##glew##########################################################
+include(findGLEW)
+
+##glut##########################################################
+set(GLUT_ROOT_PATH ${GLOBAL_EXT_DIR}/freeglut)
+include(findGLUT)
+
+##freeimage#####################################################
+include(findFreeImage)
+
+##qhull#########################################################
+include(findQHull)
+
+##cuda##########################################################
 IF (${ENABLE_GPUCAST_VOLUME_MODULE})
   IF (MSVC)
 	  set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5)
@@ -61,6 +77,12 @@ IF (${ENABLE_GPUCAST_VOLUME_MODULE})
 	  include(FindCUDA)
   ENDIF (MSVC)
 ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})
+
+################################################################
+# Write Configuration
+################################################################
+FILE(GLOB_RECURSE _RUNTIME_LIBRARIES ${GLOBAL_EXT_DIR} ${GLOBAL_EXT_DIR}/*.dll)
+SET(GPUCAST_RUNTIME_LIBRARIES ${_RUNTIME_LIBRARIES} CACHE INTERNAL "Runtime libraries.")
 
 ################################################################
 # Write Configuration
@@ -77,13 +99,13 @@ configure_file(
 )
 
 set(LIB_PATHS
-    ${BOOST_LIBRARY_DIRS}
+    ${BOOST_LIBRARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/lib
 )
 
 set(INCLUDE_PATHS
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${BOOST_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
 )
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -131,9 +153,3 @@ message(STATUS "" )
 message(STATUS "Summary:" )
 message(STATUS " build type: ${CMAKE_BUILD_TYPE}" )
 message(STATUS "" )
-
-print_dependency(BOOST)
-print_dependency(GLEW)
-print_dependency(QHULL)
-print_dependency(FREEIMAGE)
-print_dependency(FREEGLUT)

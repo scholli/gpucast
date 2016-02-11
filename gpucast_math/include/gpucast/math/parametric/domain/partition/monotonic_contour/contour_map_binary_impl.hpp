@@ -49,7 +49,7 @@ contour_map_binary<value_t>::~contour_map_binary ()
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-void
+bool
 contour_map_binary<value_t>::initialize ()
 {
   // make sure bi-monotonic contour segments are v-monotonic increasing
@@ -109,6 +109,7 @@ contour_map_binary<value_t>::initialize ()
     }
     _partition.push_back ( cells_in_v_interval );
   }
+  return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

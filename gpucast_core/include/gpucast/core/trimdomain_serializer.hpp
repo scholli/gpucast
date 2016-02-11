@@ -42,69 +42,33 @@ class GPUCAST_CORE trimdomain_serializer
 
   public : // c'tor/d'tor
 
-    trimdomain_serializer();
-    virtual ~trimdomain_serializer();
-
   public : // methods
 
+    
     template <typename float3_type>
     address_type    serialize ( curve_ptr const&                             input_curve, 
                                 std::unordered_map<curve_ptr, address_type>& referenced_curves,
                                 std::vector<float3_type>&                    output_container ) const;
 
+    address_type    serialize(trimdomain_ptr const& input_domain, 
+                              std::vector<unsigned char>& output_classification_field, 
+                              unsigned texture_classification_resolution) const;
+    
     float_type      unsigned_bits_as_float  ( address_type i ) const;
 
     address_type    float_bits_as_unsigned  ( float_type f ) const;
 
-    address_type uint4ToUInt ( unsigned char a, unsigned char b, unsigned char c, unsigned char d ) const
-    {
-      assert ( sizeof ( address_type ) == 4 );
-
-      address_type result = 0U;
-      result |= (d & 0x000000FF) << 24U;
-      result |= (c & 0x000000FF) << 16U;
-      result |= (b & 0x000000FF) << 8U;
-      result |= (a & 0x000000FF);
-
-      return result;
-    }
-
-    address_type uint8_24ToUInt ( unsigned char a, unsigned int b ) const
-    {
-      assert ( sizeof ( address_type ) == 4 );
-
-      address_type result = 0U;
-      result |= (b & 0x00FFFFFF) << 8U;
-      result |= (a & 0x000000FF);
-
-      return result;
-    }
-
-    void intToUint8_24 ( address_type input,
-                         unsigned char& a, 
-                         unsigned int& b ) const
-    {
-      b = (input & 0xFFFFFF00) >> 8U;
-      a = (input & 0x000000FF);
-    }
-
-    address_type float2_to_unsigned ( float a, float b ) const
-    {
-      gpucast::math::halffloat_t ah = gpucast::math::floatToHalf ( a );
-      gpucast::math::halffloat_t bh = gpucast::math::floatToHalf ( b );
-
-      address_type result = 0U;
-      result |= (bh & 0x0000FFFF) << 16U;
-      result |= (ah & 0x0000FFFF);
-
-      return result;
-    }
+    address_type    uint4ToUInt (unsigned char a, unsigned char b, unsigned char c, unsigned char d) const;
+    address_type    uint8_24ToUInt (unsigned char a, unsigned int b) const;
+    void            intToUint8_24 (address_type input, unsigned char& a, unsigned int& b) const;
+    address_type    float2_to_unsigned (float a, float b) const;
 
   private : // member
 
 
 
   };
+
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename float3_type>

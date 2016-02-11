@@ -205,9 +205,11 @@ void contour<value_t>::monotonize ()
     } else {
       // if curve has same monotony as contour -> add curve to current contour
       if (u_increasing == c_ptr->is_increasing(point_type::u) &&
-          v_increasing == c_ptr->is_increasing(point_type::v) &&
-          !c_ptr->is_constant(point_type::u) &&
-          !c_ptr->is_constant(point_type::v))
+          v_increasing == c_ptr->is_increasing(point_type::v) 
+          //&&
+          //!c_ptr->is_constant(point_type::u) &&
+          //!c_ptr->is_constant(point_type::v)
+          )
       {
         current_contour.push_back(c_ptr);
       } else { // push previous contour_segment and restart new contour_segment

@@ -38,14 +38,22 @@ class GPUCAST_CORE trimdomain
 {
   public : // enums/typedefs
 
+    enum pre_classification {
+      unknown   = 0,
+      untrimmed = 1,
+      trimmed   = 2
+    };
+
     typedef double                                     value_type;                               
-    typedef gpucast::math::point<double,2>             point_type;
+    typedef gpucast::math::point<value_type, 2>        point_type;
 
     typedef gpucast::math::domain::contour_segment<value_type> contour_segment_type;
     typedef std::shared_ptr<contour_segment_type>      contour_segment_ptr;
     typedef std::shared_ptr<trimdomain>                domain_ptr;
 
     typedef gpucast::math::beziercurve<point_type>     curve_type;
+    typedef curve_type::bbox_type                      bbox_type;
+
     typedef std::shared_ptr<curve_type>                curve_ptr;
     typedef std::vector<curve_ptr>                     curve_container;
 
@@ -57,9 +65,6 @@ class GPUCAST_CORE trimdomain
   public : // c'tor/d'tor
 
     trimdomain();
-    ~trimdomain();
-
-    void swap(trimdomain& swp);
 
   public : // methods
 
@@ -67,7 +72,7 @@ class GPUCAST_CORE trimdomain
     void                      add           ( contour_type const& loop );
 
     std::size_t               size          () const;
-
+     
     bool                      empty         () const;
 
     void                      nurbsdomain   ( bbox_type const& );
@@ -82,6 +87,9 @@ class GPUCAST_CORE trimdomain
     std::size_t               max_degree    () const;
 
     trimloop_container const& loops         () const;
+    
+    std::vector<value_type>   signed_distance_field(unsigned resolution) const;
+    value_type                signed_distance(point_type const& point) const;
 
     void                      print         ( std::ostream& os ) const;
 

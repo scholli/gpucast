@@ -206,7 +206,7 @@ glutwindow::_init( int argc, char* argv[])
   }
 
   // configure visual
-  glutInitDisplayMode     ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL );
+  glutInitDisplayMode     ( GLUT_RGBA | GLUT_ALPHA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL );
   glutInitWindowSize      ( GLint(_width), GLint(_height) );
   glutInitWindowPosition  ( GLint(_posx), GLint(_posy) );
 

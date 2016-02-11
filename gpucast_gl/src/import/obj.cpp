@@ -314,13 +314,13 @@ namespace gpucast { namespace gl {
         _stack.vertexbuffer.push_back     (_stack.vertex    [d.get<0>() - 1]);
 
         // optionally add texture coordinate
-        has_texcoord  = d.get<1>();
+        has_texcoord  = d.get<1>() != 0;
         if (has_texcoord) {
           _stack.texcoordbuffer.push_back (_stack.texcoord  [d.get<1>().get() - 1]);
         }
 
         // optionally add vertex normal
-        has_normal    = d.get<2>();
+        has_normal = d.get<2>() != 0;
         if (has_normal) {
           _stack.normalbuffer.push_back   (_stack.normal    [d.get<2>().get() - 1]);
         }

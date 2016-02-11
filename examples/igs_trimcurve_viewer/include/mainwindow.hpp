@@ -33,6 +33,7 @@
 
 #include <gpucast/core/nurbssurfaceobject.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_kd.hpp>
 
 class mainwindow : public QMainWindow
 {
@@ -53,6 +54,8 @@ public: // c'tor / d'tor
   void                    show_memusage      ( std::size_t bytes ) const;
   void                    show_domainsize    ( float umin, float vmin, float umax, float vmax) const;
 
+  gpucast::kd_split_strategy kdsplit() const;
+
 protected:
 
   /* virtual */ void      closeEvent   ( QCloseEvent* event );
@@ -60,12 +63,16 @@ protected:
 public Q_SLOTS: // slot events           
 
   void                    openfile           ();
+  void                    clear();
   void                    update_objectlist  ();
   void                    update_surfacelist ();
   void                    update_view        () const;
   void                    antialiasing       () const;
+  void                    rendermode         () const;
   void                    pixel_size_changed () const;
   void                    zoom_changed       (int);
+  void                    testrun            ();
+  void                    enable             ();
 
 private: // methods
 
@@ -76,26 +83,30 @@ private: // attributes
 
   std::map<glwidget::view, std::string> _modes;
   std::map<glwidget::aamode, std::string> _aamodes;
+  std::map<gpucast::kd_split_strategy, std::string> _kdsplit_modes;
   std::list<double>       _fps;
 
   // menubar and menubar actions
   QWidget*                _controlwidget;
   QMenu*                  _file_menu;
   QAction*                _action_loadfile;
+  QAction*                _action_clear;
   QComboBox*              _viewbox;
   QLabel*                 _label_fps;
   QLabel*                 _label_mem;
   QLabel*                 _label_size;
   QPushButton*            _recompile_button;
   QPushButton*            _resetview_button;
+  QPushButton*            _testrun_button;
 
   QCheckBox*              _show_texel_fetches;
   QCheckBox*              _linear_texture_filter;
   QCheckBox*              _optimal_distance;
   QCheckBox*              _show_gradient;
+  QCheckBox*              _tex_classification;
 
   QComboBox*              _antialiasing;
-
+  QComboBox*              _kdsplit;
 
   QComboBox*              _texture_resolution;
   QComboBox*              _pixel_size;

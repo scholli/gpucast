@@ -760,15 +760,15 @@ namespace gpucast {
         unsigned surface_data_id   = unsigned ( _surface_data.size() );
         unsigned surface_points_id = unsigned ( _surface_points.size() );
 
-        gpucast::math::beziersurface<gpucast::math::vec3d> outer_face;
+        gpucast::math::beziersurface<gpucast::math::point3d> outer_face;
         switch ( surface )
         {
-          case beziervolume::boundary_t::umin : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::x, 0); break;
-          case beziervolume::boundary_t::umax : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::x, v.degree_u() ); break;
-          case beziervolume::boundary_t::vmin : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::y, 0 ); break;
-          case beziervolume::boundary_t::vmax : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::y, v.degree_v() ); break;
-          case beziervolume::boundary_t::wmin : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::z, 0 ); break;
-          case beziervolume::boundary_t::wmax : outer_face = v.slice<gpucast::math::vec3d> (beziervolume::point_type::z, v.degree_w() ); break;
+          case beziervolume::boundary_t::umin : outer_face = v.slice<gpucast::math::point3d> (beziervolume::point_type::x, 0); break;
+          case beziervolume::boundary_t::umax : outer_face = v.slice<gpucast::math::point3d> (beziervolume::point_type::x, v.degree_u() ); break;
+          case beziervolume::boundary_t::vmin : outer_face = v.slice<gpucast::math::point3d> (beziervolume::point_type::y, 0 ); break;
+          case beziervolume::boundary_t::vmax : outer_face = v.slice<gpucast::math::point3d> (beziervolume::point_type::y, v.degree_v() ); break;
+          case beziervolume::boundary_t::wmin : outer_face = v.slice<gpucast::math::point3d> (beziervolume::point_type::z, 0 ); break;
+          case beziervolume::boundary_t::wmax : outer_face = v.slice<gpucast::math::point3d> (beziervolume::point_type::z, v.degree_w() ); break;
         }
 
         // write header of surface

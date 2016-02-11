@@ -5,6 +5,7 @@
 
 #include "resources/glsl/trimming/binary_search.glsl"
 #include "resources/glsl/trimming/bisect_curve.glsl"
+#include "resources/glsl/trimming/pre_classification.glsl"
 
 ///////////////////////////////////////////////////////////////////////////////
 bool
@@ -12,6 +13,7 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
                          in samplerBuffer cell_buffer, 
                          in samplerBuffer curvelist_buffer, 
                          in samplerBuffer curvedata_buffer, 
+                         in usamplerBuffer preclassification,
                          in vec2    uv, 
                          in int     id, 
                          in int     trim_outer, 
@@ -19,18 +21,24 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
                          in float   tolerance,
                          in int     max_iterations)
 {
-  vec4 domaininfo1 = texelFetch( partition_buffer, id );
+  vec4 baseinfo = texelFetch( partition_buffer, id );
   gpucast_count_texel_fetch();
 
+  /////////////////////////////////////////////////////////////////////////////
+  // 1. classification : no partition - not trimmed
+  /////////////////////////////////////////////////////////////////////////////
   int total_intersections  = 0;
-  int v_intervals = int ( floatBitsToUint ( domaininfo1[0] ) );
+  int v_intervals = int ( floatBitsToUint ( baseinfo[0] ) );
 
   // if there is no partition in vertical(v) direction -> return
   if ( v_intervals == 0) 
   {
-    return false;
+    return bool(trim_outer);
   } 
   
+  /////////////////////////////////////////////////////////////////////////////
+  // 2. trim against outer loop bounds
+  /////////////////////////////////////////////////////////////////////////////
   vec4 domaininfo2 = texelFetch ( partition_buffer, id+1 );
   gpucast_count_texel_fetch();
 
@@ -41,8 +49,35 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
     return bool(trim_outer);
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // 3. texture-based pre-classification 
+  /////////////////////////////////////////////////////////////////////////////
+  int classification_base_id = int(floatBitsToUint(baseinfo.y));
+
+  vec4 domainbounds = texelFetch(partition_buffer, id + 2);
+  gpucast_count_texel_fetch();
+
+  if (classification_base_id != 0)
+  {
+    int preclasstex_width  = int(floatBitsToUint(baseinfo.z));
+    int preclasstex_height = int(floatBitsToUint(baseinfo.w));    
+    int pre_class = pre_classify(preclassification,
+                                 classification_base_id,
+                                 uv,
+                                 domainbounds,
+                                 preclasstex_width, 
+                                 preclasstex_height);
+  
+    if (pre_class != 0) {
+      return mod(pre_class, 2) == 0;
+    }  
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // 4. magnification - exact classification
+  /////////////////////////////////////////////////////////////////////////////
   vec4 vinterval = vec4(0.0, 0.0, 0.0, 0.0);
-  bool vinterval_found = binary_search ( partition_buffer, uv[1], id + 2, v_intervals, vinterval );
+  bool vinterval_found = binary_search ( partition_buffer, uv[1], id + 3, v_intervals, vinterval );
 
   if ( !vinterval_found ) {
     return bool(trim_outer);
@@ -94,6 +129,7 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
                                 in samplerBuffer cell_buffer,
                                 in samplerBuffer curvelist_buffer,
                                 in samplerBuffer curvedata_buffer,
+                                in usamplerBuffer preclassification,
                                 in sampler2D prefilter,
                                 in vec2    uv,
                                 in vec2    duvdx,
@@ -105,21 +141,26 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
                                 in int     max_iterations,
                                 in int     coverage_estimation_type)
 {
-  vec4 domaininfo1 = texelFetch(partition_buffer, id);
+  vec4 baseinfo = texelFetch(partition_buffer, id);
   gpucast_count_texel_fetch();
 
   int total_intersections = 0;
-  int v_intervals = int(floatBitsToUint(domaininfo1[0]));
+  int v_intervals = int(floatBitsToUint(baseinfo[0]));
 
   vec2 closest_point_on_curve = vec2(0);
   vec2 closest_gradient_on_curve = vec2(0);
   vec4 remaining_bbox = vec4(0);
 
-  // if there is no partition in vertical(v) direction -> return
+  /////////////////////////////////////////////////////////////////////////////
+  // 1. classification : no partition - not trimmed
+  /////////////////////////////////////////////////////////////////////////////
   if (v_intervals == 0) {
     return 0.0;
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // 2. trim against outer loop bounds
+  /////////////////////////////////////////////////////////////////////////////
   vec4 domaininfo2 = texelFetch(partition_buffer, id + 1);
   gpucast_count_texel_fetch();
 
@@ -130,8 +171,34 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
     return float(!bool(trim_outer));
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // 3. texture-based pre-classification 
+  /////////////////////////////////////////////////////////////////////////////
+  int classification_base_id = int(floatBitsToUint(baseinfo.y));
+  vec4 domainbounds = texelFetch(partition_buffer, id + 2);
+  gpucast_count_texel_fetch();
+
+  if (classification_base_id != 0)
+  {
+    int preclasstex_width  = int(floatBitsToUint(baseinfo.z));
+    int preclasstex_height = int(floatBitsToUint(baseinfo.w));
+    int pre_class = pre_classify(preclassification,
+                                 classification_base_id,
+                                 uv,
+                                 domainbounds,
+                                 preclasstex_width, 
+                                 preclasstex_height);
+  
+    if (pre_class != 0) {
+      return float(mod(pre_class, 2) == 1);
+    }  
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // 4. magnification - exact classification
+  /////////////////////////////////////////////////////////////////////////////
   vec4 vinterval = vec4(0.0, 0.0, 0.0, 0.0);
-  bool vinterval_found = binary_search(partition_buffer, uv[1], id + 2, v_intervals, vinterval);
+  bool vinterval_found = binary_search(partition_buffer, uv[1], id + 3, v_intervals, vinterval);
 
   if (!vinterval_found) {
     return float(!bool(trim_outer));
@@ -186,6 +253,11 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
   // coverage estimation
   /////////////////////////////////////////////////////////////////////////////////////
   mat2 J = mat2(duvdx, duvdy);
+
+  if (determinant(J) == 0.0) {
+    return float(!is_trimmed);
+  }
+
   mat2 Jinv = inverse(J);
 
   vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient_on_curve);

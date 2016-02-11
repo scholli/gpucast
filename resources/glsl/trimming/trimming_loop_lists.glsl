@@ -5,6 +5,7 @@
 #include "resources/glsl/common/conversion.glsl"
 #include "resources/glsl/trimming/binary_search.glsl"
 #include "resources/glsl/trimming/bisect_curve.glsl"
+#include "resources/glsl/trimming/pre_classification.glsl"
 
 struct bbox_t {
   float umin;
@@ -33,6 +34,14 @@ struct loop_t {
   unsigned int child_index;
   unsigned int ncontours;
   unsigned int contour_index;
+
+  unsigned int pre_class_id;
+  unsigned int pre_class_width;
+  unsigned int pre_class_height;
+  unsigned int pad;
+
+  vec4 domainsize;
+
   bbox_t       bbox;
 };
 
@@ -60,6 +69,8 @@ layout(std430) buffer point_buffer {
   vec4 points[];
 };
 
+uniform usamplerBuffer sampler_preclass;
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 void
@@ -78,6 +89,7 @@ evaluateCurve(in unsigned int index,
   gpucast_count_texel_fetch();
 
   p *= u;
+
 
   if (order > 2) {
     for (unsigned int i = 1; i <= deg - 1; ++i) {
@@ -660,11 +672,35 @@ bool classify_loop_coverage(in vec2 uv, in int index, out vec2 closest_point, ou
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 bool
-trimming_loop_list (in vec2 uv, in int index)
+trimming_loop_list (in vec2 uv, in int index, in usamplerBuffer preclassification)
 {
-  bool is_trimmed;
+  bool is_trimmed = false;
+
+  /////////////////////////////////////////////////////////////////////////////
+  // 1. texture-based pre-classification 
+  /////////////////////////////////////////////////////////////////////////////
+  int classification_base_id = int(loops[index].pre_class_id);
+  if ( classification_base_id != 0 )
+  {
+    int preclasstex_width  = int(loops[index].pre_class_width);
+    int preclasstex_height = int(loops[index].pre_class_height);
+    int pre_class = pre_classify(preclassification,
+                                 classification_base_id,
+                                 uv,
+                                 loops[index].domainsize,
+                                 preclasstex_width, 
+                                 preclasstex_height);
+  
+    if (pre_class != 0) {
+      return mod(pre_class, 2) == 0;
+    }  
+  }
   is_trimmed = classify_loop(uv, index);
 
+  /////////////////////////////////////////////////////////////////////////////
+  // 2. magnification - exact classification
+  /////////////////////////////////////////////////////////////////////////////
+  vec4 kdnode = vec4(0.0);
   for (unsigned int i = 0; i < loops[index].nchildren; ++i) {
     //is_trimmed = is_trimmed && classify_loop(uv, int(loops[index].child_index + i));
     is_trimmed = is_trimmed == classify_loop(uv, int(loops[index].child_index + i));
@@ -678,10 +714,41 @@ float
 trimming_loop_list_coverage(in vec2 uv, 
                             in vec2 duvdx, 
                             in vec2 duvdy, 
+                            in usamplerBuffer preclassification,
                             in sampler2D prefilter,
                             in int index,
                             in int coverage_estimation_type)
 {
+  /////////////////////////////////////////////////////////////////////////////
+  // 1. texture-based pre-classification 
+  /////////////////////////////////////////////////////////////////////////////
+  int classification_base_id = int(loops[index].pre_class_id);
+  if ( classification_base_id != 0 )
+  { 
+    int preclasstex_width  = int(loops[index].pre_class_width);
+    int preclasstex_height = int(loops[index].pre_class_height);
+
+    int pre_class = pre_classify(preclassification,
+                                 classification_base_id,
+                                 uv,
+                                 loops[index].domainsize,
+                                 preclasstex_width, 
+                                 preclasstex_height);
+    return float(pre_class/3.0);
+    if (pre_class != 0) {
+      if (mod(pre_class, 2) == 1) {
+        return 0.2;
+      } else {
+        return 0.8;
+      }
+      //return float(mod(pre_class, 2) == 1);
+    } 
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // 2. magnification - exact classification
+  /////////////////////////////////////////////////////////////////////////////
   float coverage = 0.0;
   bool is_trimmed;
 

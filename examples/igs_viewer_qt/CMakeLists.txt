@@ -37,17 +37,6 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
                      ${Qt5OpenGL_INCLUDE_DIRS}
 )
 
-SET(LIBRARY_DIRS ${LIB_PATHS} 
-                 ${GLEW_LIBRARY_DIRS} 
-                 ${BOOST_LIBRARY_DIRS} 
-                 ${QT_LIBRARY_DIRS}
-                 ${QHULL_LIBRARY_DIRS} 
-                 ${FREEIMAGE_LIBRARY_DIRS}
-                 ${FREEGLUT_LIBRARY_DIRS}
-)
-
-LINK_DIRECTORIES(${LIBRARY_DIRS})
-
 ADD_EXECUTABLE( ${_EXE_NAME}
     ${EXAMPLE_IGS_VIEWER_QT_SRC}
     ${SOURCE_FILES_IGS_VIEWER_QT_GUI}
@@ -71,8 +60,8 @@ IF (MSVC)
                         ${Qt5Widgets_LIBRARIES}
                         ${Qt5Gui_LIBRARIES}
                         ${QT_QTMAIN_LIBRARY}
-                        debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY_RELEASE}
-                        debug ${FREEIMAGEPLUS_LIBRARY_DEBUG} optimized ${FREEIMAGEPLUS_LIBRARY_RELEASE}
+                        debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY}
+                        debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}
   )
 ELSEIF (UNIX)
   TARGET_LINK_LIBRARIES(${_EXE_NAME} 
@@ -85,9 +74,6 @@ ELSEIF (UNIX)
                         ${QT_QTMAIN_LIBRARY}
                         ${FREEIMAGE_LIBRARY}
                         ${FREEIMAGEPLUS_LIBRARY}
-                        boost_filesystem
-	                      boost_system
-                        boost_regex
   )
 ENDIF (MSVC)
 
@@ -95,9 +81,12 @@ ENDIF (MSVC)
 # copy runtime libraries as a post-build process
 ###############################################################################
 IF (MSVC)
-    ADD_CUSTOM_COMMAND ( TARGET ${_EXE_NAME} POST_BUILD 
-      COMMAND robocopy \"${LIBRARY_OUTPUT_PATH}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP 
-            & robocopy \"${GLOBAL_EXT_DIR}/Qt5/bin\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP 
-            & robocopy \"${GLOBAL_EXT_DIR}/lib/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP \n if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1)
-    )
+  FOREACH(_LIB ${GPUCAST_RUNTIME_LIBRARIES})
+    get_filename_component(_FILE ${_LIB} NAME)
+    get_filename_component(_PATH ${_LIB} DIRECTORY)
+    SET(COPY_DLL_COMMAND_STRING ${COPY_DLL_COMMAND_STRING} robocopy \"${_PATH}\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" ${_FILE} /R:0 /W:0 /NP &)
+  ENDFOREACH()
+
+  SET(COPY_DLL_COMMAND_STRING ${COPY_DLL_COMMAND_STRING} robocopy \"${LIBRARY_OUTPUT_PATH}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP &)
+  ADD_CUSTOM_COMMAND ( TARGET ${_EXE_NAME} POST_BUILD COMMAND ${COPY_DLL_COMMAND_STRING} \n if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1))
 ENDIF (MSVC)

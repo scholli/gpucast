@@ -56,6 +56,8 @@ ADD_DEPENDENCIES(gpucast_core gpucast_gl gpucast_math)
 IF (MSVC)
     TARGET_LINK_LIBRARIES( gpucast_core 
                            debug ${QHULL_LIBRARY_DEBUG} optimized ${QHULL_LIBRARY_RELEASE}
+                           debug ${Boost_SYSTEM_LIBRARY_DEBUG} optimized ${Boost_SYSTEM_LIBRARY_RELEASE}
+                           debug ${Boost_FILESYSTEM_LIBRARY_DEBUG} optimized ${Boost_FILESYSTEM_LIBRARY_RELEASE}
                            OpenGL32.lib )
 ELSEIF (UNIX)
     TARGET_LINK_LIBRARIES( gpucast_core 

@@ -16,6 +16,7 @@
 // header, system
 #include <iterator>
 #include <limits>
+#include <thread>
 
 // header, project
 #include <gpucast/math/parametric/point.hpp>
@@ -31,21 +32,6 @@ namespace gpucast {
       _type         ( false ),
       _nurbsdomain  ( point_type(0,0), point_type(1,1) )
   {}
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  trimdomain::~trimdomain()
-  {}
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  void
-  trimdomain::swap(trimdomain& swp)
-  {
-    std::swap(_trimloops, swp._trimloops);
-    std::swap(_type, swp._type);
-    std::swap(_nurbsdomain, swp._nurbsdomain);
-  }
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -149,6 +135,82 @@ namespace gpucast {
   trimdomain::loops () const
   {
     return _trimloops;
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  std::vector<trimdomain::value_type> trimdomain::signed_distance_field(unsigned resolution) const
+  {
+    std::size_t const worker_threads = 16;
+
+    unsigned res_u = resolution;
+    unsigned res_v = resolution;
+
+    auto offset_u = (_nurbsdomain.max[point_type::u] - _nurbsdomain.min[point_type::u]) / res_u;
+    auto offset_v = (_nurbsdomain.max[point_type::v] - _nurbsdomain.min[point_type::v]) / res_v;
+
+    auto min_u = _nurbsdomain.min[point_type::u];
+    auto min_v = _nurbsdomain.min[point_type::v];
+
+    std::vector<bbox_type> texels;
+
+    // create jobs
+    for (unsigned v = 0; v < res_v; ++v)
+    {
+      for (unsigned u = 0; u < res_u; ++u)
+      {
+        auto bbox_min = point_type(min_u + u*offset_u, min_v + v*offset_v);
+        auto bbox_max = point_type(min_u + (u + 1)*offset_u, min_v + (v + 1)*offset_v);
+
+        bbox_type texel(bbox_min, bbox_max);
+        texels.push_back(texel);
+      }
+    }
+
+    std::vector<value_type> result(texels.size());
+    std::vector<std::thread> threads(worker_threads);
+
+    auto worker = [&result, &texels, worker_threads](trimdomain const* domain, std::size_t id) {
+      while (id < result.size()) {
+        result[id] = domain->signed_distance(texels[id].center());
+        id += worker_threads;
+      }
+    };
+
+    std::size_t thread_id = 0;
+    for (auto& t : threads) {
+      t = std::thread(std::bind(worker, this, thread_id++));
+    }
+    
+    for (auto& t : threads) {
+      t.join();
+    }
+
+    return result;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  trimdomain::value_type trimdomain::signed_distance(point_type const& p) const
+  {
+    unsigned intersections = 0;
+    value_type minimal_distance = std::numeric_limits<value_type>::max();
+
+    for (auto const& loop : loops()) {
+      intersections += loop.is_inside(p);
+      for (auto const& curve : loop.curves()) {
+        if (curve->bbox_simple().distance(p) < minimal_distance)
+        {
+          minimal_distance = std::min(curve->closest_distance(p), minimal_distance);
+        }
+      }
+    }
+
+    if (intersections % 2) {
+      return minimal_distance;
+    }
+    else {
+      return -minimal_distance;
+    }
   }
 
 

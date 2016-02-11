@@ -29,7 +29,7 @@ void main(void)
     ///////////////////////////////////////////////////////////////////////////
   case 0: // no anti-aliasing
 
-    bool trimmed = trimming_loop_list(uv_coord, trim_index);
+    bool trimmed = trimming_loop_list(uv_coord, trim_index, sampler_preclass);
 
     if (trimmed) {
       outcolor = vec4(0.0);
@@ -44,7 +44,7 @@ void main(void)
     case 2: 
     case 3: 
 
-      float coverage = trimming_loop_list_coverage(uv_coord, dFdx(uv_coord), dFdy(uv_coord), prefilter_texture, trim_index, antialiasing);
+      float coverage = trimming_loop_list_coverage(uv_coord, dFdx(uv_coord), dFdy(uv_coord), sampler_preclass, prefilter_texture, trim_index, antialiasing);
 
       outcolor = debug_out * vec4(coverage);
       break;
@@ -87,7 +87,7 @@ void main(void)
     for (int c = 1; c <= sample_cols; ++c) {
       for (int r = 1; r <= sample_rows; ++r) {
 
-        sample_coverage += float(!trimming_loop_list(uv_base + r * dx + c * dy, trim_index));
+        sample_coverage += float(!trimming_loop_list(uv_base + r * dx + c * dy, trim_index, sampler_preclass));
       }
     }
     outcolor = debug_out * vec4(sample_coverage / (sample_rows*sample_cols));

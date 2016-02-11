@@ -194,7 +194,8 @@ mainwindow::_create_menus()
 
   auto widget = new QWidget{ _menu };
   _menu->setWidget(widget);
-  _menu->setFixedWidth(240);
+  _menu->setFixedWidth(600);
+  _menu->setFixedHeight(1200);
   this->addDockWidget(Qt::RightDockWidgetArea, _menu);
 
   auto layout = new QGridLayout;

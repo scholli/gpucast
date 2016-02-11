@@ -13,7 +13,7 @@
 // header i/f
 #include "gpucast/volume/isosurface/grid/grid.hpp"
 
-#include <gpucast/core/util.hpp>
+#include <gpucast/volume/util.hpp>
 
 namespace gpucast {
 

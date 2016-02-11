@@ -75,7 +75,7 @@ namespace gpucast { namespace math {
     bool          is_inside     ( point_t const& p ) const;
     bool          is_inside     ( axis_aligned_boundingbox<point_t> const& a ) const;
 
-    bool          overlap       ( axis_aligned_boundingbox<point_t> const& a ) const;
+    bool          overlap       ( axis_aligned_boundingbox<point_t> const& a, bool include_border = true) const;
     interval_type extends       ( typename point_type::coordinate_type const& dimension, 
                                   boundary_type min_bounds = excluded,
                                   boundary_type max_bounds = excluded ) const;

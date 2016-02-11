@@ -42,7 +42,7 @@ struct kdtree2d {
   /////////////////////////////////////////////////////////////////////////////
   bool initialize(kdsplit_strategy<value_t> const& split_strategy, std::set<contour_segment_ptr> const& segments) {
     if (segments.empty()) {
-      root = std::make_shared<kdnode2d<value_t>>(bbox_type(), 0, 0, 0, segments, nullptr, nullptr, nullptr);
+      root = std::make_shared<kdnode2d<value_t>>(bbox_type(), 0, 0, 0, 0, segments, nullptr, nullptr, nullptr);
       return false;
     }
     else {
@@ -52,13 +52,24 @@ struct kdtree2d {
         bbox.merge(segment->bbox());
       }
       // create root
-      root = std::make_shared<kdnode2d<value_t>>(bbox, 0, 0, 0, segments, nullptr, nullptr, nullptr);
+      root = std::make_shared<kdnode2d<value_t>>(bbox, 0, 0, 0, 0, segments, nullptr, nullptr, nullptr);
 
       bool success = split_strategy.generate(*this);
       root->determine_parity(segments);
       
       return success;
     }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  kdnode_ptr is_in_node(bbox_type const& bb) const {
+    return root->is_in_node(bb);
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  value_t traversal_costs() const {
+    value_t absolute_costs = root->traversal_costs_absolute();
+    return absolute_costs / bbox.size().abs();
   }
 
   /////////////////////////////////////////////////////////////////////////////

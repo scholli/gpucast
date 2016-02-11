@@ -241,6 +241,7 @@ void main(void)
     out_color = shade_phong_fresnel(p_world, 
                                     normalize((normalmatrix * vec4(normal, 0.0)).xyz), 
                                     vec4(1.0, 1.0, 1.0, 1.0),
+                                    //vec3(0.1), vec3(0.8, 0.5, 0.2), vec3(1.0),
                                     mat_ambient, mat_diffuse, mat_specular,
                                     shininess,
                                     opacity,

@@ -54,7 +54,7 @@ SOURCE_GROUP("Source Files\\primitives" FILES ${GPUCAST_GL_PRIM_SRC})
 SOURCE_GROUP("Source Files\\test" FILES ${GPUCAST_GL_TEST_SRC})
 SOURCE_GROUP("Source Files\\util" FILES ${GPUCAST_GL_UTIL_SRC})
 
-LINK_DIRECTORIES(${LIB_PATHS} ${GLEW_LIBRARY_DIRS} ${BOOST_LIBRARY_DIRS} ${QHULL_LIBRARY_DIRS} ${FREEIMAGE_LIBRARY_DIRS})
+LINK_DIRECTORIES(${LIB_PATHS} ${GLEW_LIBRARY_DIRS} ${QHULL_LIBRARY_DIRS} ${FREEIMAGE_LIBRARY_DIRS})
 
 ADD_LIBRARY( gpucast_gl SHARED
            ${GPUCAST_GL_INC}
@@ -106,9 +106,12 @@ ADD_DEPENDENCIES(gpucast_gl gpucast_math)
 IF (MSVC)
   TARGET_LINK_LIBRARIES( gpucast_gl
                          OpenGL32.lib 
-                         debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY_RELEASE}
-                         debug ${FREEIMAGEPLUS_LIBRARY_DEBUG} optimized ${FREEIMAGEPLUS_LIBRARY_RELEASE}
+                         debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY}
+                         debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}
                          debug ${GLEW_LIBRARY_DEBUG} optimized ${GLEW_LIBRARY_RELEASE}
+                         debug ${Boost_SYSTEM_LIBRARY_DEBUG} optimized ${Boost_SYSTEM_LIBRARY_RELEASE}
+                         debug ${Boost_FILESYSTEM_LIBRARY_DEBUG} optimized ${Boost_FILESYSTEM_LIBRARY_RELEASE}
+                         debug ${Boost_REGEX_LIBRARY_DEBUG} optimized ${Boost_REGEX_LIBRARY_RELEASE}
                        )
 
 ELSE (MSVC)

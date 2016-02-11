@@ -23,39 +23,48 @@ namespace gpucast {
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
-void
+bool
 contour_map_loop_list<value_t>::initialize()
 {
-  // extract loops
-  std::vector<contour_ptr> unclassified_loops;
-  for (auto const& segmented_loop : this->_segmented_loops) {
-    unclassified_loops.push_back(segmented_loop.first);
-  }
-
-  // 1. determine outer loop
-  auto outer_contour = _determine_outer_loop(unclassified_loops);
-  unclassified_loops.erase(std::remove(unclassified_loops.begin(), unclassified_loops.end(), outer_contour), unclassified_loops.end());
-
-  _outer_loop = trimloop{ outer_contour, {} };
-
-  // 2. determine other loos: TODO: allow trimloops of depth > 2
-  while (!unclassified_loops.empty()) {
-
-    auto const& child_contour = unclassified_loops.front();
-    if (_is_child(outer_contour, child_contour, unclassified_loops)) {
-      trimloop child { child_contour, {} };
-      _outer_loop.children.push_back(child);
+  try {
+    // extract loops
+    std::vector<contour_ptr> unclassified_loops;
+    for (auto const& segmented_loop : this->_segmented_loops) {
+      unclassified_loops.push_back(segmented_loop.first);
     }
-    else {
-      throw std::runtime_error("contour_map_loop_list<value_t>::initialize(): Nested loops with depth > 2 not considered.");
+
+    // 1. determine outer loop
+    auto outer_contour = _determine_outer_loop(unclassified_loops);
+    unclassified_loops.erase(std::remove(unclassified_loops.begin(), unclassified_loops.end(), outer_contour), unclassified_loops.end());
+
+    _outer_loop = trimloop{ outer_contour, {} };
+
+    // 2. determine other loos: TODO: allow trimloops of depth > 2
+    while (!unclassified_loops.empty()) {
+
+      auto const& child_contour = unclassified_loops.front();
+      if (_is_child(outer_contour, child_contour, unclassified_loops)) {
+        trimloop child{ child_contour, {} };
+        _outer_loop.children.push_back(child);
+      }
+      else {
+        throw std::runtime_error("contour_map_loop_list<value_t>::initialize(): Nested loops with depth > 2 not considered.");
+      }
+      unclassified_loops.erase(std::remove(unclassified_loops.begin(), unclassified_loops.end(), child_contour), unclassified_loops.end());
     }
-    unclassified_loops.erase(std::remove(unclassified_loops.begin(), unclassified_loops.end(), child_contour), unclassified_loops.end());
+
+    // determine parity and priority for contour segments
+    _determine_contour_segments_parity();
+
+    _determine_contour_segments_priority();
+
+    return true;
   }
-
-  // determine parity and priority for contour segments
-  _determine_contour_segments_parity();
-
-  _determine_contour_segments_priority();
+  catch (std::exception& e)
+  {
+    std::cout << "Warning: " << e.what() << std::endl;
+    return false;
+  }
 }
 
 

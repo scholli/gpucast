@@ -41,7 +41,9 @@ namespace gpucast { namespace math {
     typedef typename point_t::value_type                    value_type;
     typedef typename std::vector<point_t>::iterator         point_iterator;
     typedef typename std::vector<point_t>::const_iterator   const_point_iterator;
+    
     typedef beziercurve<point<value_type,2> >               beziercurve2_type;
+    typedef axis_aligned_boundingbox<point_type>            bbox_type;
 
   public : // c'tors and d'tor
 
@@ -164,11 +166,11 @@ namespace gpucast { namespace math {
     void                  translate   (point_t const& t);
 
     // bounding volume
-    void                  bbox_simple (axis_aligned_boundingbox<point_t>& bb) const;
-    void                  bbox_tight  (axis_aligned_boundingbox<point_t>& bb) const;
+    void                  bbox_simple (bbox_type& bb) const;
+    void                  bbox_tight  (bbox_type& bb) const;
 
-    axis_aligned_boundingbox<point_t> bbox_simple() const;
-    axis_aligned_boundingbox<point_t> bbox_tight() const;
+    bbox_type             bbox_simple() const;
+    bbox_type             bbox_tight() const;
 
     // iterator interface for control points
     point_iterator        begin       ();

@@ -2,14 +2,14 @@
 # search paths
 ##############################################################################
 SET(GLFW_INCLUDE_SEARCH_DIRS
-  ${GLOBAL_EXT_DIR}/include/GLFW
+  ${GLOBAL_EXT_DIR}/GLFW/include
   ${GLFW_INCLUDE_SEARCH_DIR}
   /opt/glfw3/current/include
   /usr/include
 )
 
 SET(GLFW_LIBRARY_SEARCH_DIRS
-  ${GLOBAL_EXT_DIR}/lib
+  ${GLOBAL_EXT_DIR}/GLFW/lib
   ${GLFW_LIBRARY_SEARCH_DIR}
   /opt/glfw3/current/lib
   /usr/lib

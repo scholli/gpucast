@@ -32,12 +32,15 @@ class trimdomain_serializer_double_binary : public trimdomain_serializer
 
     template <typename float4_type, typename float3_type>
     address_type     serialize  ( trimdomain_ptr const&                               input, 
-                                  std::unordered_map<trimdomain_ptr, address_type>& referenced_trimdomains,
-                                  std::unordered_map<curve_ptr, address_type>&      referenced_curves,
+                                  std::unordered_map<trimdomain_ptr, address_type>&   referenced_trimdomains,
+                                  std::unordered_map<curve_ptr, address_type>&        referenced_curves,
                                   std::vector<float4_type>&                           output_vslabs,
                                   std::vector<float4_type>&                           output_cells,
                                   std::vector<float4_type>&                           output_curvelists,
-                                  std::vector<float3_type>&                           output_curves ) const;
+                                  std::vector<float3_type>&                           output_curves,
+                                  std::vector<unsigned char>&                         output_classification_field = std::vector<unsigned char>(),
+                                  bool                                                texture_classification_enabled = false,
+                                  unsigned                                            texture_classification_resolution = 8) const;
 
     // output_vslabs
     // [ id ]       [ id + 1 ]      ...   [ id + 2 + #vintervals ]
@@ -80,12 +83,15 @@ class trimdomain_serializer_double_binary : public trimdomain_serializer
 template <typename float4_type, typename float3_type>
 trimdomain_serializer::address_type  
 trimdomain_serializer_double_binary::serialize ( trimdomain_ptr const&                               input_domain, 
-                                                 std::unordered_map<trimdomain_ptr, address_type>& referenced_trimdomains,
-                                                 std::unordered_map<curve_ptr, address_type>&      referenced_curves,
+                                                 std::unordered_map<trimdomain_ptr, address_type>&   referenced_trimdomains,
+                                                 std::unordered_map<curve_ptr, address_type>&        referenced_curves,
                                                  std::vector<float4_type>&                           output_vslabs,
                                                  std::vector<float4_type>&                           output_cells,
                                                  std::vector<float4_type>&                           output_curvelists,
-                                                 std::vector<float3_type>&                           output_curves ) const
+                                                 std::vector<float3_type>&                           output_curves,
+                                                 std::vector<unsigned char>&                         output_classification_field,
+                                                 bool                                                pre_classification_enabled,
+                                                 unsigned                                            pre_classification_resolution) const
 {
   // if already in buffer -> return index
   if ( referenced_trimdomains.count( input_domain ) ) 
@@ -112,8 +118,24 @@ trimdomain_serializer_double_binary::serialize ( trimdomain_ptr const&          
   float_type umin = explicit_type_conversion<double, float>(input_partition.get_horizontal_interval().minimum());
   float_type umax = explicit_type_conversion<double, float>(input_partition.get_horizontal_interval().maximum());
 
-  output_vslabs.push_back ( float4_type ( unsigned_bits_as_float(vintervals), 0, 0, 0 ) );
+  // generate fast pre-classification texture
+  address_type classification_id = 0;
+  if (pre_classification_enabled) {
+    classification_id = trimdomain_serializer::serialize(input_domain, output_classification_field, pre_classification_resolution);
+  }
+
+  output_vslabs.push_back(float4_type(unsigned_bits_as_float(vintervals),
+                                      unsigned_bits_as_float(classification_id),
+                                      unsigned_bits_as_float(pre_classification_resolution),
+                                      unsigned_bits_as_float(pre_classification_resolution)
+    ));
+
   output_vslabs.push_back ( float4_type ( umin, umax, vmin, vmax ) );
+
+  output_vslabs.push_back ( float4_type(input_domain->nurbsdomain().min[point_type::u],
+                                        input_domain->nurbsdomain().max[point_type::u],
+                                        input_domain->nurbsdomain().min[point_type::v],
+                                        input_domain->nurbsdomain().max[point_type::v]));
 
   for ( auto v : input_partition )
   {   

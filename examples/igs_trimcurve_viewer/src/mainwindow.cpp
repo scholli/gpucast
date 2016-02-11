@@ -23,7 +23,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
-
 ///////////////////////////////////////////////////////////////////////////////
 mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
 : _width                              ( width ), 
@@ -56,14 +55,18 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
 
   _recompile_button = new QPushButton;
   _resetview_button = new QPushButton;
+  _testrun_button = new QPushButton;
   _resetview_button->setText("Reset View");
   _recompile_button->setText("Recompile");
+  _testrun_button->setText("Run");
 
   _show_texel_fetches = new QCheckBox;
   _linear_texture_filter = new QCheckBox;
   _optimal_distance   = new QCheckBox;
   _show_gradient      = new QCheckBox;
+  _tex_classification = new QCheckBox;
   _antialiasing       = new QComboBox;
+  _kdsplit            = new QComboBox;
 
   _zoom_control = new SlidersGroup(Qt::Horizontal, tr("Zoom"), this);
   _zoom_control->setMinimum(0);
@@ -104,6 +107,12 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   layout->addWidget(new QLabel("Reset View:"), row, 0);
   layout->addWidget(_resetview_button, row++, 1);
 
+  layout->addWidget(new QLabel("Testrun:"), row, 0);
+  layout->addWidget(_testrun_button, row++, 1);
+
+  layout->addWidget(new QLabel("Enable Pre-classification:"), row, 0);
+  layout->addWidget(_tex_classification, row++, 1);
+
   layout->addWidget(new QLabel("Texture Resolution:"), row, 0);
   layout->addWidget(_texture_resolution, row++, 1);
 
@@ -123,6 +132,7 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _optimal_distance->setText("Optimal Distance Field");
 
   layout->addWidget(_antialiasing, row++, 1);
+  layout->addWidget(_kdsplit , row++, 1);
   layout->addWidget(_zoom_control, row++, 1);
   
   layout->addWidget(_label_mem, row++, 0);
@@ -135,6 +145,7 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _file_menu = menuBar()->addMenu(tr("File"));
 
   _action_loadfile = new QAction(tr("Open"), _glwindow);
+  _action_clear = new QAction(tr("Clear"), _glwindow);
   _file_menu->addAction(_action_loadfile);
 
   /////////////////////////////////////
@@ -150,6 +161,14 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _aamodes.insert(std::make_pair(glwidget::supersampling8x8, "Supersampling(8x8)"));
 
   std::for_each(_aamodes.begin(), _aamodes.end(), [&](std::map<glwidget::aamode, std::string>::value_type const& p) { _antialiasing->addItem(p.second.c_str()); });
+  
+  /////////////////////////////////////
+  // kdsplit modes
+  /////////////////////////////////////
+  _kdsplit_modes.insert(std::make_pair(gpucast::kd_split_strategy::midsplit, "Mid Split"));
+  _kdsplit_modes.insert(std::make_pair(gpucast::kd_split_strategy::maxarea, "Max. Adjacent Area"));
+  _kdsplit_modes.insert(std::make_pair(gpucast::kd_split_strategy::sah, "SAH"));
+  std::for_each(_kdsplit_modes.begin(), _kdsplit_modes.end(), [&](std::map<gpucast::kd_split_strategy, std::string>::value_type const& p) { _kdsplit->addItem(p.second.c_str()); });
 
   /////////////////////////////////////
   // view modes
@@ -165,6 +184,9 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _modes.insert(std::make_pair(glwidget::contour_map_loop_list_partition, "contour_map_loop_list_partition"));
   _modes.insert(std::make_pair(glwidget::contour_map_loop_list_classification, "contour_map_loop_list_classification"));
 
+  _modes.insert(std::make_pair(glwidget::contour_map_kd_classification, "contour_map_kd_classification"));
+  _modes.insert(std::make_pair(glwidget::contour_map_kd_partition, "contour_map_kd_partition"));
+  
   _modes.insert(std::make_pair(glwidget::minification, "sampling"));
 
   _modes.insert(std::make_pair(glwidget::binary_field, "binary_texture"));
@@ -178,17 +200,22 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   // actions
   /////////////////////////////////////
   connect(_action_loadfile, SIGNAL(triggered()), this, SLOT(openfile()));
+  connect(_action_clear, SIGNAL(triggered()), this, SLOT(clear()));
   connect(_list_object, SIGNAL(itemSelectionChanged()), this, SLOT(update_surfacelist()));
   connect(_list_surface, SIGNAL(itemSelectionChanged()), this, SLOT(update_view()));
   connect(_viewbox, SIGNAL(currentIndexChanged(int)), this, SLOT(update_view()));
   connect(_recompile_button, SIGNAL(clicked()), _glwindow, SLOT(recompile()));
   connect(_resetview_button, SIGNAL(clicked()), _glwindow, SLOT(resetview()));
+  connect(_testrun_button, SIGNAL(clicked()), this, SLOT(testrun()));
+
   connect(_show_texel_fetches, SIGNAL(stateChanged(int)), _glwindow, SLOT(show_texel_fetches(int)));
+  connect(_tex_classification, SIGNAL(stateChanged(int)), _glwindow, SLOT(tex_classification(int)));
   connect(_linear_texture_filter, SIGNAL(stateChanged(int)), _glwindow, SLOT(texture_filtering(int)));
   connect(_texture_resolution, SIGNAL(currentIndexChanged(int)), SLOT(update_view()));
   connect(_optimal_distance, SIGNAL(stateChanged(int)), _glwindow, SLOT(optimal_distance(int)));
   connect(_pixel_size, SIGNAL(currentIndexChanged(int)), this, SLOT(pixel_size_changed()));
   connect(_antialiasing, SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
+  connect(_kdsplit, SIGNAL(currentIndexChanged(int)), this, SLOT(update_view()));
   connect(_zoom_control, SIGNAL(valueChanged(int)), this, SLOT(zoom_changed(int)));
 
   _controlwidget->show();
@@ -274,7 +301,28 @@ void mainwindow::antialiasing() const
       _glwindow->antialiasing(mode.first);
     }
   }
+}
 
+///////////////////////////////////////////////////////////////////////////////
+gpucast::kd_split_strategy mainwindow::kdsplit() const
+{
+  for (auto const& mode : _kdsplit_modes) {
+    if (mode.second == _kdsplit->currentText().toStdString()) {
+      return mode.first;
+    }
+  }
+  throw std::runtime_error("No such mode");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::rendermode() const
+{
+  std::string modestr = _viewbox->currentText().toStdString();
+  for (auto const& mode : _modes) {
+    if (mode.second == modestr) {
+      _glwindow->rendermode(mode.first);
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -289,6 +337,23 @@ mainwindow::zoom_changed(int value)
 {
   auto normalized_zoom = float(value) / (float(_zoom_control->getMaximum()) - float(_zoom_control->getMinimum()));
   _glwindow->zoom(normalized_zoom);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::testrun() 
+{
+  _controlwidget->setDisabled(true);
+
+  rendermode();
+  antialiasing();
+
+  _glwindow->testrun(_filenames);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::enable()
+{
+  _controlwidget->setDisabled(false);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -332,10 +397,19 @@ mainwindow::closeEvent(QCloseEvent* /*event*/)
 
 
 ///////////////////////////////////////////////////////////////////////////////
+void
+mainwindow::clear()
+{
+  _filenames.clear();
+  update_objectlist();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void 
 mainwindow::openfile()
 {
- _filenames.clear();
+ //_filenames.clear();
  QStringList qfilelist = QFileDialog::getOpenFileNames(this, tr("Open IGS File"), ".", tr("Surface Files (*.igs)"));
 
  std::transform(qfilelist.begin(), qfilelist.end(), std::back_inserter(_filenames), []( QString const& qstr ) { return qstr.toStdString(); } );

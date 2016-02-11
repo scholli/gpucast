@@ -62,7 +62,7 @@ class contour_map_binary : public contour_map_base<value_t>
 
   public : // methods
 
-    /* virtual */ void    initialize ();
+    /* virtual */ bool    initialize();
 
     cell_partition const& partition () const;
 

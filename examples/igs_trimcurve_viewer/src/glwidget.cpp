@@ -57,9 +57,9 @@
 #include <gpucast/core/trimdomain_serializer_contour_map_kd.hpp>
 #include <gpucast/core/trimdomain_serializer_loop_contour_list.hpp>
 
-
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_binary.hpp>
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_loop_list.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_kd.hpp>
 #include <gpucast/math/parametric/domain/partition/double_binary/partition.hpp>
 
 
@@ -136,11 +136,15 @@ glwidget::clear()
 
 ///////////////////////////////////////////////////////////////////////
 void                    
-glwidget::update_view(std::string const& name, std::size_t const index, view current_view, unsigned resolution)
+glwidget::update_view(std::string const& name, 
+                      std::size_t const index, 
+                      view current_view, 
+                      unsigned resolution)
 {
-  _current_object  = name;
-  _current_surface = index;
-  _view            = current_view;
+  _current_object        = name;
+  _current_surface       = index;
+  _view                  = current_view;
+  _current_texresolution = resolution;
 
   clear();
 
@@ -163,9 +167,12 @@ glwidget::update_view(std::string const& name, std::size_t const index, view cur
       _domain_min = gpucast::math::vec2f(domain->nurbsdomain().min);
 
       mainwindow* win = dynamic_cast<mainwindow*>(parent());
-      if (win) {
-        win->show_domainsize(_domain_min[0], _domain_min[1], _domain_min[0] + _domain_size[0], _domain_min[1] + _domain_size[1]);
+      if (!win) {
+        throw std::runtime_error("No Main Window");
       }
+      win->show_domainsize(_domain_min[0], _domain_min[1], _domain_min[0] + _domain_size[0], _domain_min[1] + _domain_size[1]);
+
+      std::size_t bytes = 0;
 
       switch ( _view )
       {
@@ -176,13 +183,19 @@ glwidget::update_view(std::string const& name, std::size_t const index, view cur
           generate_double_binary_view ( domain );
           break;
         case double_binary_classification :
-          serialize_double_binary ( domain );
+          bytes = serialize_double_binary(domain);
           break;
         case contour_map_binary_partition :
           generate_bboxmap_view ( domain );
           break;
         case contour_map_binary_classification :
-          serialize_contour_binary ( domain );
+          bytes = serialize_contour_binary(domain);
+          break;
+        case contour_map_kd_classification:
+          bytes = serialize_contour_kd(domain, win->kdsplit());
+          break;
+        case contour_map_kd_partition:
+          generate_kd_view(domain, win->kdsplit());
           break;
         case minification:
           generate_minification_view(domain, resolution);
@@ -191,7 +204,7 @@ glwidget::update_view(std::string const& name, std::size_t const index, view cur
           generate_loop_list_view(domain);
           break;
         case contour_map_loop_list_classification:
-          serialize_contour_loop_list(domain);
+          bytes = serialize_contour_loop_list(domain);
           break;
         case distance_field:
           generate_distance_field(domain, resolution);
@@ -205,6 +218,12 @@ glwidget::update_view(std::string const& name, std::size_t const index, view cur
         default : 
           break;
       };
+
+      for (auto const& r : _testruns) {
+        if (r->rendermode == current_view) {
+          r->data[r->current].size_bytes = bytes;
+        }
+      }
 
       _projection = gpucast::math::ortho(float(domain->nurbsdomain().min[gpucast::trimdomain::point_type::u] ), 
                                          float(domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] ), 
@@ -323,7 +342,7 @@ glwidget::generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& 
     looplist.add(gpucast::math::domain::contour<double>(loop.begin(), loop.end()));
   }
 
-  looplist.initialize();
+  bool success = looplist.initialize();
 
   for (auto const& contour : looplist.loops()) {
     gpucast::math::vec4f loop_color(1.0f, 0.0f, 0.0f, 1.0f);
@@ -336,9 +355,82 @@ glwidget::generate_loop_list_view(gpucast::beziersurface::trimdomain_ptr const& 
       add_gl_bbox(ubox, segment_color);
     }
   }
+}
 
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::generate_kd_view(gpucast::beziersurface::trimdomain_ptr const& domain, gpucast::kd_split_strategy s)
+{
+  using namespace gpucast::math::domain;
+  generate_trim_region_vbo(domain);
 
+  contour_map_kd<double> kdmap(s);
 
+  for (auto const& loop : domain->loops()) {
+    kdmap.add(contour<double>(loop.begin(), loop.end()));
+  }
+  if (!kdmap.initialize()) {
+    std::cout << "initialization failed!\n";
+  }
+
+  std::vector<std::shared_ptr<kdnode2d<double>>> nodes;
+
+  if (!kdmap.partition().root) {
+    return;
+  }
+
+  kdmap.partition().root->serialize_bfs(nodes);
+
+  unsigned tmp_count = 0;
+
+  std::map<unsigned, gpucast::math::vec4f> cmap;
+  cmap[0] = gpucast::math::vec4f{ 1.0f, 0.0f, 0.0f, 1.0f };
+  cmap[1] = gpucast::math::vec4f{ 1.0f, 1.0f, 0.0f, 1.0f };
+  cmap[2] = gpucast::math::vec4f{ 1.0f, 1.0f, 1.0f, 1.0f };
+  cmap[3] = gpucast::math::vec4f{ 1.0f, 0.0f, 1.0f, 1.0f };
+  cmap[4] = gpucast::math::vec4f{ 0.0f, 1.0f, 1.0f, 1.0f };
+  cmap[5] = gpucast::math::vec4f{ 0.0f, 1.0f, 0.0f, 1.0f };
+  cmap[6] = gpucast::math::vec4f{ 0.0f, 0.0f, 1.0f, 1.0f };
+  cmap[7] = gpucast::math::vec4f{ 0.0f, 0.0f, 0.5f, 1.0f };
+  cmap[8] = gpucast::math::vec4f{ 0.5f, 0.0f, 0.0f, 1.0f };
+  cmap[9] = gpucast::math::vec4f{ 0.0f, 0.5f, 0.0f, 1.0f };
+  cmap[10] = gpucast::math::vec4f{ 0.5f, 0.5f, 0.0f, 1.0f };
+  cmap[11] = gpucast::math::vec4f{ 0.5f, 0.5f, 0.5f, 1.0f };
+  cmap[12] = gpucast::math::vec4f{ 0.0f, 0.5f, 0.5f, 1.0f };
+
+  for (auto const& kdnode : nodes) 
+  {
+    if (kdnode->is_leaf()) {
+      unsigned cindex = tmp_count % cmap.size();
+      auto col = cmap[cindex];
+
+      gpucast::math::bbox2d ubox = kdnode->bbox;
+      add_gl_bbox(ubox, col, true);
+      /*
+      std::cout << "leaf : " << std::endl;
+      std::cout << "   - display color : " << col << std::endl;
+      std::cout << "   - # : " << tmp_count++ << std::endl;
+      std::cout << "   - segments : " << kdnode->overlapping_segments.size() << std::endl;
+      std::cout << "   - parity : " << kdnode->parity << std::endl;
+      std::cout << "   - bbox : " << kdnode->bbox << std::endl;
+      std::cout << "   - size : " << kdnode->bbox.size() << std::endl;*/
+    }
+    if (!kdnode->is_leaf())
+    {
+      if (kdnode->split_direction == gpucast::math::point2d::u) {
+        gpucast::math::beziercurve2d bc;
+        bc.add(gpucast::math::point2d(kdnode->split_value, kdnode->bbox.min[gpucast::math::point2d::v]));
+        bc.add(gpucast::math::point2d(kdnode->split_value, kdnode->bbox.max[gpucast::math::point2d::v]));
+        add_gl_curve(bc, gpucast::math::vec4f{ 1.0f, 0.0f, 0.0f, 1.0f });
+      }
+      else {
+        gpucast::math::beziercurve2d bc;
+        bc.add(gpucast::math::point2d(kdnode->bbox.min[gpucast::math::point2d::u], kdnode->split_value));
+        bc.add(gpucast::math::point2d(kdnode->bbox.max[gpucast::math::point2d::u], kdnode->split_value));
+        add_gl_curve(bc, gpucast::math::vec4f{ 0.0f, 0.0f, 1.0f, 1.0f });
+      }
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -349,6 +441,8 @@ glwidget::generate_minification_view(gpucast::beziersurface::trimdomain_ptr cons
 
   unsigned res_u = resolution;
   unsigned res_v = resolution;
+
+  auto distance_field = domain->signed_distance_field(resolution);
 
   auto offset_u = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::u]) / res_u;
   auto offset_v = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::v]) / res_v;
@@ -365,28 +459,13 @@ glwidget::generate_minification_view(gpucast::beziersurface::trimdomain_ptr cons
       auto bbox_max = gpucast::trimdomain::point_type(min_u + (u+1)*offset_u , min_v + (v+1)*offset_v);
 
       gpucast::math::bbox2d ubox(bbox_min, bbox_max);
+      auto minimal_distance = distance_field[v*resolution + u];
 
-      unsigned intersections = 0;
-      float minimal_distance = std::numeric_limits<float>::max();
-
-      for (auto const& loop : domain->loops()) {
-        intersections += loop.is_inside(ubox.center());
-
-        for (auto const& curve : loop.curves()) {
-          if (!_optimal_distance) {
-            minimal_distance = std::min(float(curve->estimate_closest_distance(ubox.center())), minimal_distance);
-          }
-          else {
-            minimal_distance = std::min(float(curve->closest_distance(ubox.center())), minimal_distance);
-          }
-        }
-      }
-
-      float intensity = 0.1f + minimal_distance / std::max(offset_u, offset_v);
+      float intensity = std::fabs(0.1f + minimal_distance / std::max(offset_u, offset_v));
       gpucast::math::vec4f color_inside(0.0f, intensity, 0.0f, 1.0f);
       gpucast::math::vec4f color_outside(intensity, 0.0f, 0.0f, 1.0f);
 
-      if (intersections % 2) { 
+      if (minimal_distance > 0) {
         add_gl_bbox(ubox, color_inside);
       }
       else {
@@ -453,68 +532,23 @@ glwidget::generate_distance_field(gpucast::beziersurface::trimdomain_ptr const& 
   initialize_sampler();
 
   _distance_field_texture = make_unique<gpucast::gl::texture2d>();
-  std::vector<float> texture_data;
+   
+  auto distance_field = domain->signed_distance_field(resolution);
+  std::vector<float> distance_fieldf(distance_field.begin(), distance_field.end());
 
-  unsigned res_u = resolution;
-  unsigned res_v = resolution;
-
-  auto offset_u = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::u] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::u]) / res_u;
-  auto offset_v = (domain->nurbsdomain().max[gpucast::trimdomain::point_type::v] - domain->nurbsdomain().min[gpucast::trimdomain::point_type::v]) / res_v;
-
-  auto min_u = domain->nurbsdomain().min[gpucast::trimdomain::point_type::u];
-  auto min_v = domain->nurbsdomain().min[gpucast::trimdomain::point_type::v];
-
-  // draw sampled regions
-  for (unsigned v = 0; v < res_v; ++v)
-  {
-    for (unsigned u = 0; u < res_u; ++u)
-    {
-      auto bbox_min = gpucast::trimdomain::point_type(min_u + u*offset_u, min_v + v*offset_v);
-      auto bbox_max = gpucast::trimdomain::point_type(min_u + (u + 1)*offset_u, min_v + (v + 1)*offset_v);
-
-      gpucast::math::bbox2d ubox(bbox_min, bbox_max);
-
-      unsigned intersections = 0;
-      float minimal_distance = std::numeric_limits<float>::max();
-
-      for (auto const& loop : domain->loops()) {
-        // find out interections ->
-        intersections += loop.is_inside(ubox.center());
-        for (auto const& curve : loop.curves()) 
-        {
-          if (curve->bbox_simple().distance(ubox.center()) < minimal_distance) 
-          {
-            if (!_optimal_distance) {
-              minimal_distance = std::min(float(curve->estimate_closest_distance(ubox.center())), minimal_distance);
-            }
-            else {
-              minimal_distance = std::min(float(curve->closest_distance(ubox.center())), minimal_distance);
-            }
-          }
-        }
-      }
-
-      if (intersections % 2) {
-        texture_data.push_back(1.0f * minimal_distance );
-      }
-      else {
-        texture_data.push_back(-1.0f * minimal_distance );
-      }
-    }
-  }
-
-  _distance_field_texture->teximage(0, GL_R32F, res_u, res_v, 0, GL_RED, GL_FLOAT, (void*)(&texture_data[0]));
+  _distance_field_texture->teximage(0, GL_R32F, resolution, resolution, 0, GL_RED, GL_FLOAT, (void*)(&distance_fieldf[0]));
 }
 
 
 ///////////////////////////////////////////////////////////////////////
-void                    
+std::size_t                    
 glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const& domain )
 {
-  if ( !_db_trimdata )   _db_trimdata  = make_unique<gpucast::gl::texturebuffer>();
-  if ( !_db_celldata )   _db_celldata  = make_unique<gpucast::gl::texturebuffer>();
-  if ( !_db_curvelist )  _db_curvelist = make_unique<gpucast::gl::texturebuffer>();
-  if ( !_db_curvedata )  _db_curvedata = make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_trimdata )    _db_trimdata     = make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_celldata )    _db_celldata     = make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_curvelist )   _db_curvelist    = make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_curvedata )   _db_curvedata    = make_unique<gpucast::gl::texturebuffer>();
+  if ( !_db_preclassdata) _db_preclassdata = make_unique<gpucast::gl::texturebuffer>();
 
   std::unordered_map<gpucast::trimdomain::curve_ptr, gpucast::trimdomain_serializer::address_type>          referenced_curves;
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>  referenced_domains;
@@ -523,19 +557,22 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
   std::vector<gpucast::math::vec4f> celldata(1);
   std::vector<gpucast::math::vec4f> curvelists(1);
   std::vector<gpucast::math::vec3f> curvedata(1);
+  std::vector<unsigned char>        preclassdata(1);
 
   gpucast::trimdomain_serializer_double_binary serializer;
-  _trimid = serializer.serialize ( domain, referenced_domains, referenced_curves, trimdata, celldata, curvelists, curvedata ) ;
+  _trimid = serializer.serialize(domain, referenced_domains, referenced_curves, trimdata, celldata, curvelists, curvedata, preclassdata, _tex_classification_enabled, _current_texresolution);
 
   _db_trimdata->update  ( trimdata.begin(), trimdata.end() );
   _db_celldata->update  ( celldata.begin(), celldata.end() );
   _db_curvelist->update ( curvelists.begin(), curvelists.end() );
   _db_curvedata->update ( curvedata.begin(), curvedata.end() );
+  _db_preclassdata->update ( preclassdata.begin(), preclassdata.end());
                        
   _db_trimdata->format  ( GL_RGBA32F );
   _db_celldata->format  ( GL_RGBA32F );
   _db_curvelist->format ( GL_RGBA32F );
   _db_curvedata->format ( GL_RGB32F );
+  _db_preclassdata->format (GL_R8UI );
 
   // overdraw outer box
   gpucast::math::vec4f loop_color(1.0f, 1.0f, 0.0f, 1.0f);
@@ -546,25 +583,29 @@ glwidget::serialize_double_binary ( gpucast::beziersurface::trimdomain_ptr const
   std::size_t size_bytes = ((trimdata.size() - 1)   * sizeof(gpucast::math::vec4f) +
     (celldata.size() - 1)   * sizeof(gpucast::math::vec4f) +
     (curvelists.size() - 1) * sizeof(gpucast::math::vec4f) +
-    (curvedata.size() - 1)  * sizeof(gpucast::math::vec3f));
+    (curvedata.size() - 1)  * sizeof(gpucast::math::vec3f) +
+    (preclassdata.size() - 1)  * sizeof(unsigned char));
 
   mainwindow* win = dynamic_cast<mainwindow*>(parent());
   if (win) {
     win->show_memusage(size_bytes);
   }
+
+  return size_bytes;
 }
 
 ///////////////////////////////////////////////////////////////////////
-void                    
-glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr const& domain )
+std::size_t
+glwidget::serialize_contour_kd(gpucast::beziersurface::trimdomain_ptr const& domain, gpucast::kd_split_strategy split_strategy)
 {
-  if (!_cmb_partition)   _cmb_partition = make_unique<gpucast::gl::texturebuffer>();
-  if (!_cmb_contourlist) _cmb_contourlist = make_unique<gpucast::gl::texturebuffer>();
-  if (!_cmb_curvelist) _cmb_curvelist = make_unique<gpucast::gl::texturebuffer>();
-  if (!_cmb_curvedata) _cmb_curvedata = make_unique<gpucast::gl::texturebuffer>();
-  if (!_cmb_pointdata) _cmb_pointdata = make_unique<gpucast::gl::texturebuffer>();
+  if (!_kd_partition)   _kd_partition = make_unique<gpucast::gl::texturebuffer>();
+  if (!_kd_contourlist) _kd_contourlist = make_unique<gpucast::gl::texturebuffer>();
+  if (!_kd_curvelist) _kd_curvelist = make_unique<gpucast::gl::texturebuffer>();
+  if (!_kd_curvedata) _kd_curvedata = make_unique<gpucast::gl::texturebuffer>();
+  if (!_kd_pointdata) _kd_pointdata = make_unique<gpucast::gl::texturebuffer>();
+  if (!_kd_preclassdata) _kd_preclassdata = make_unique<gpucast::gl::texturebuffer>();
 
-  std::unordered_map<gpucast::trimdomain::curve_ptr,         gpucast::trimdomain_serializer::address_type>                                  referenced_curves;
+  std::unordered_map<gpucast::trimdomain::curve_ptr, gpucast::trimdomain_serializer::address_type>                                          referenced_curves;
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>                                  referenced_domains;
   std::unordered_map<gpucast::trimdomain_serializer_contour_map_binary::contour_segment_ptr, gpucast::trimdomain_serializer::address_type>  referenced_contours;
 
@@ -573,29 +614,36 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
   std::vector<gpucast::math::vec4f> curvelist(1);
   std::vector<float> curvedata(1);
   std::vector<gpucast::math::vec3f> pointdata(1);
+  std::vector<unsigned char> preclassdata(1);
 
-  gpucast::trimdomain_serializer_contour_map_binary serializer;
-  _trimid = serializer.serialize ( domain, 
-                                   referenced_domains, 
-                                   referenced_curves, 
-                                   referenced_contours, 
-                                   partition, 
-                                   contourlist,
-                                   curvelist,
-                                   curvedata,
-                                   pointdata );
+  gpucast::trimdomain_serializer_contour_map_kd serializer;
+  _trimid = serializer.serialize(domain,
+    split_strategy,
+    referenced_domains,
+    referenced_curves,
+    referenced_contours,
+    partition,
+    contourlist,
+    curvelist,
+    curvedata,
+    pointdata,
+    preclassdata, 
+    _tex_classification_enabled, 
+    _current_texresolution);
 
-  _cmb_partition->update   ( partition.begin(), partition.end());
-  _cmb_contourlist->update ( contourlist.begin(), contourlist.end());
-  _cmb_curvelist->update   ( curvelist.begin(), curvelist.end());
-  _cmb_curvedata->update   ( curvedata.begin(), curvedata.end());
-  _cmb_pointdata->update   ( pointdata.begin(), pointdata.end());
+  _kd_partition->update(partition.begin(), partition.end());
+  _kd_contourlist->update(contourlist.begin(), contourlist.end());
+  _kd_curvelist->update(curvelist.begin(), curvelist.end());
+  _kd_curvedata->update(curvedata.begin(), curvedata.end());
+  _kd_pointdata->update(pointdata.begin(), pointdata.end());
+  _kd_preclassdata->update(preclassdata.begin(), preclassdata.end());
 
-  _cmb_partition->format   ( GL_RGBA32F );
-  _cmb_contourlist->format ( GL_RGBA32F );
-  _cmb_curvelist->format   ( GL_RGBA32F );
-  _cmb_curvedata->format   ( GL_R32F );
-  _cmb_pointdata->format   ( GL_RGB32F );
+  _kd_partition->format(GL_RGBA32F);
+  _kd_contourlist->format(GL_RGBA32F);
+  _kd_curvelist->format(GL_RGBA32F);
+  _kd_curvedata->format(GL_R32F);
+  _kd_pointdata->format(GL_RGB32F);
+  _kd_preclassdata->format(GL_R8UI);
 
   // overdraw outer box
   gpucast::math::vec4f loop_color(1.0f, 1.0f, 0.0f, 1.0f);
@@ -607,36 +655,114 @@ glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr cons
     (contourlist.size() - 1) * sizeof(gpucast::math::vec2f) +
     (curvelist.size() - 1) * sizeof(gpucast::math::vec4f) +
     (curvedata.size() - 1) * sizeof(float)+
-    (pointdata.size() - 1) * sizeof(gpucast::math::vec3f));
+    (pointdata.size() - 1) * sizeof(gpucast::math::vec3f) +
+    (preclassdata.size() - 1) * sizeof(unsigned char));
 
   mainwindow* win = dynamic_cast<mainwindow*>(parent());
   if (win) {
     win->show_memusage(size_bytes);
   }
+
+  return size_bytes;
+}
+
+///////////////////////////////////////////////////////////////////////
+std::size_t
+glwidget::serialize_contour_binary ( gpucast::beziersurface::trimdomain_ptr const& domain )
+{
+  if (!_cmb_partition)   _cmb_partition = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_contourlist) _cmb_contourlist = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_curvelist) _cmb_curvelist = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_curvedata) _cmb_curvedata = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_pointdata) _cmb_pointdata = make_unique<gpucast::gl::texturebuffer>();
+  if (!_cmb_preclassdata) _cmb_preclassdata = make_unique<gpucast::gl::texturebuffer>();
+
+  std::unordered_map<gpucast::trimdomain::curve_ptr,         gpucast::trimdomain_serializer::address_type>                                  referenced_curves;
+  std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type>                                  referenced_domains;
+  std::unordered_map<gpucast::trimdomain_serializer_contour_map_binary::contour_segment_ptr, gpucast::trimdomain_serializer::address_type>  referenced_contours;
+
+  std::vector<gpucast::math::vec4f> partition(1);
+  std::vector<gpucast::math::vec4f> contourlist(1);
+  std::vector<gpucast::math::vec4f> curvelist(1);
+  std::vector<float> curvedata(1);
+  std::vector<gpucast::math::vec3f> pointdata(1);
+  std::vector<unsigned char> preclassdata(1);
+
+  gpucast::trimdomain_serializer_contour_map_binary serializer;
+  _trimid = serializer.serialize ( domain, 
+                                   referenced_domains, 
+                                   referenced_curves, 
+                                   referenced_contours, 
+                                   partition, 
+                                   contourlist,
+                                   curvelist,
+                                   curvedata,
+                                   pointdata,
+                                   preclassdata, 
+                                   _tex_classification_enabled,
+                                   _current_texresolution);
+
+  _cmb_partition->update   ( partition.begin(), partition.end());
+  _cmb_contourlist->update ( contourlist.begin(), contourlist.end());
+  _cmb_curvelist->update   ( curvelist.begin(), curvelist.end());
+  _cmb_curvedata->update   ( curvedata.begin(), curvedata.end());
+  _cmb_pointdata->update   ( pointdata.begin(), pointdata.end());
+  _cmb_preclassdata->update( preclassdata.begin(), preclassdata.end());
+
+  _cmb_partition->format   ( GL_RGBA32F );
+  _cmb_contourlist->format ( GL_RGBA32F );
+  _cmb_curvelist->format   ( GL_RGBA32F );
+  _cmb_curvedata->format   ( GL_R32F );
+  _cmb_pointdata->format   ( GL_RGB32F );
+  _cmb_preclassdata->format( GL_R8UI );
+
+  // overdraw outer box
+  gpucast::math::vec4f loop_color(1.0f, 1.0f, 0.0f, 1.0f);
+  auto box = domain->nurbsdomain();
+  add_gl_bbox(box, loop_color);
+
+  // show memory usage
+  std::size_t size_bytes = ((partition.size() - 1) * sizeof(gpucast::math::vec4f) +
+    (contourlist.size() - 1) * sizeof(gpucast::math::vec2f) +
+    (curvelist.size() - 1) * sizeof(gpucast::math::vec4f) +
+    (curvedata.size() - 1) * sizeof(float)+
+    (pointdata.size() - 1) * sizeof(gpucast::math::vec3f) +
+    (preclassdata.size() - 1) * sizeof(unsigned char));
+
+  mainwindow* win = dynamic_cast<mainwindow*>(parent());
+  if (win) {
+    win->show_memusage(size_bytes);
+  }
+
+  return size_bytes;
 }
 
 
 ///////////////////////////////////////////////////////////////////////
-void
+std::size_t
 glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr const& domain)
 {
   if (!_loop_list_loops)    _loop_list_loops = make_unique<gpucast::gl::shaderstoragebuffer>();
   if (!_loop_list_contours) _loop_list_contours = make_unique<gpucast::gl::shaderstoragebuffer>();
   if (!_loop_list_curves)   _loop_list_curves = make_unique<gpucast::gl::shaderstoragebuffer>();
   if (!_loop_list_points)   _loop_list_points = make_unique<gpucast::gl::shaderstoragebuffer>();
+  if (!_loop_list_preclassdata) _loop_list_preclassdata = make_unique<gpucast::gl::texturebuffer>();
 
   gpucast::trimdomain_serializer_loop_contour_list::serialization serialization;
   gpucast::trimdomain_serializer_loop_contour_list serializer;
 
   std::unordered_map<gpucast::beziersurface::trimdomain_ptr, gpucast::trimdomain_serializer::address_type> referenced_domains;
 
-  _trimid = serializer.serialize(domain, referenced_domains, serialization);
+  _trimid = serializer.serialize(domain, referenced_domains, serialization, _tex_classification_enabled, _current_texresolution);
 
   // write data to shader storage
   _loop_list_loops->update(serialization.loops.begin(), serialization.loops.end());
   _loop_list_contours->update(serialization.contours.begin(), serialization.contours.end());
   _loop_list_curves->update(serialization.curves.begin(), serialization.curves.end());
   _loop_list_points->update(serialization.points.begin(), serialization.points.end());
+  _loop_list_preclassdata->update(serialization.pre_classification.begin(), serialization.pre_classification.end());
+
+  _loop_list_preclassdata->format(GL_R8UI);
 
   // overdraw outer box
   gpucast::math::vec4f loop_color(1.0f, 1.0f, 0.0f, 1.0f);
@@ -647,12 +773,15 @@ glwidget::serialize_contour_loop_list(gpucast::beziersurface::trimdomain_ptr con
   std::size_t size_bytes = ((serialization.loops.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::loop_t) +
     (serialization.contours.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::contour_t) +
     (serialization.curves.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::curve_t) +
-    (serialization.points.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::point_t));
+    (serialization.points.size() - 1) * sizeof(gpucast::trimdomain_serializer_loop_contour_list::serialization::point_t) +
+    (serialization.pre_classification.size() - 1) * sizeof(unsigned char));
 
   mainwindow* win = dynamic_cast<mainwindow*>(parent());
   if (win) {
     win->show_memusage(size_bytes);
   }
+
+  return size_bytes;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -725,7 +854,7 @@ glwidget::add_gl_curve ( gpucast::beziersurface::curve_type const& curve, gpucas
 
 ///////////////////////////////////////////////////////////////////////
 void                    
-glwidget::add_gl_bbox (  gpucast::math::bbox2d const& bbox, gpucast::math::vec4f const& color )
+glwidget::add_gl_bbox(gpucast::math::bbox2d const& bbox, gpucast::math::vec4f const& color, bool diagonals)
 {
   std::vector<gpucast::math::vec4f> bbox_points;
 
@@ -740,11 +869,12 @@ glwidget::add_gl_bbox (  gpucast::math::bbox2d const& bbox, gpucast::math::vec4f
   bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f));
 
   // diagonals
-  bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f));
-  bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f));
-  bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f));
-  bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f));
-
+  if (diagonals) {
+    bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.min[1]), -2.0f, 1.0f));
+    bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.max[1]), -2.0f, 1.0f));
+    bbox_points.push_back(gpucast::math::vec4f(float(bbox.min[0]), float(bbox.max[1]), -2.0f, 1.0f));
+    bbox_points.push_back(gpucast::math::vec4f(float(bbox.max[0]), float(bbox.min[1]), -2.0f, 1.0f));
+  }
   std::vector<gpucast::math::vec4f> bbox_colors ( bbox_points.size(), color );
 
   auto gl_bbox = std::make_shared<gpucast::gl::line>(bbox_points, 0, 1, 2);
@@ -809,6 +939,17 @@ glwidget::show_texel_fetches(int enable)
 }
 
 ///////////////////////////////////////////////////////////////////////
+void                    
+glwidget::tex_classification(int enable)
+{
+  _tex_classification_enabled = enable;
+
+  if(dynamic_cast<mainwindow*>(parent())) {
+    dynamic_cast<mainwindow*>(parent())->update_view();
+  }
+}
+
+///////////////////////////////////////////////////////////////////////
 void
 glwidget::optimal_distance(int enable)
 {
@@ -824,6 +965,13 @@ void
 glwidget::antialiasing(enum aamode mode)
 {
   _aamode = mode;
+}
+
+///////////////////////////////////////////////////////////////////////
+void
+glwidget::rendermode(enum view mode)
+{
+  _view = mode;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -847,6 +995,62 @@ glwidget::resetview()
   _shift_x = 0.0f;
   _shift_y = 0.0f;
   _zoom = 1.0f;
+}
+
+///////////////////////////////////////////////////////////////////////
+void glwidget::testrun(std::list<std::string> const& objects)
+{
+  _initialize_prefilter();
+#if 0
+  testrun_t run_db = { double_binary_classification, _aamode, 0U, {}, 0.0 };
+  testrun_t run_cb = { contour_map_binary_classification, _aamode, 0U, {}, 0.0 };
+  testrun_t run_ll = { contour_map_loop_list_classification, _aamode, 0U, {}, 0.0 };
+  testrun_t run_kd = { contour_map_kd_classification, _aamode, 0U, {}, 0.0 };
+
+  _testruns.push_back(std::make_shared<testrun_t>(run_db));
+  _testruns.push_back(std::make_shared<testrun_t>(run_cb));
+  _testruns.push_back(std::make_shared<testrun_t>(run_ll));
+  _testruns.push_back(std::make_shared<testrun_t>(run_kd));
+
+  for (auto const& file : objects) {
+
+    std::size_t nsurfaces = _objects.find(file)->second->size();
+
+    for (unsigned id = 0; id != nsurfaces; ++id) {
+
+      auto surface = _objects.find(file)->second->begin();
+      std::advance(surface, id);
+
+      auto domain = (**surface).domain();
+
+      _testruns[0]->data.push_back({ file, id, domain, 0, 0.0 });
+      _testruns[1]->data.push_back({ file, id, domain, 0, 0.0 });
+      _testruns[2]->data.push_back({ file, id, domain, 0, 0.0 });
+      _testruns[3]->data.push_back({ file, id, domain, 0, 0.0 });
+    }
+  } 
+#else
+  mainwindow* win = dynamic_cast<mainwindow*>(parent());
+  if (!win) {
+    throw std::runtime_error("No Main Window");
+  }
+
+  testrun_t run = { _view, _aamode, 0U, _current_texresolution, _tex_classification_enabled, {}, 0.0 };
+  _testruns.push_back(std::make_shared<testrun_t>(run));
+
+  for (auto const& file : objects) {
+
+    std::size_t nsurfaces = _objects.find(file)->second->size();
+
+    for (unsigned id = 0; id != nsurfaces; ++id) {
+      auto surface = _objects.find(file)->second->begin();
+      std::advance(surface, id);
+
+      auto domain = (**surface).domain();
+      _testruns[0]->data.push_back({ file, id, domain, 0, 0.0 });
+    }
+  }
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -888,6 +1092,32 @@ glwidget::paintGL()
     _gputimer.reset(new gpucast::gl::timer_query);
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // test setup
+  /////////////////////////////////////////////////////////////////////////////
+  if (!_testruns.empty()) {
+    auto run = _testruns.back();
+    if (run->current == run->data.size()) {
+      run->save();
+      _testruns.pop_back();
+    }
+    else{
+      auto id = run->current;
+      std::cout << "progress : " << float(100*id) / run->data.size() << "%             \r";
+      update_view(run->data[id].filename, run->data[id].index, run->rendermode, run->antialiasing);
+    }
+  }
+  else {
+    mainwindow* win = dynamic_cast<mainwindow*>(parent());
+    if (win) {
+      win->enable();
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // test setup
+  /////////////////////////////////////////////////////////////////////////////
+
   _gputimer->begin();
 
   auto view_center = gpucast::math::vec2f(_domain_min[0] + _shift_x*_domain_size[0], _domain_min[1] + _shift_y*_domain_size[1]);
@@ -904,6 +1134,7 @@ glwidget::paintGL()
     case double_binary_partition :
     case minification:
     case contour_map_binary_partition :
+    case contour_map_kd_partition:
     case contour_map_loop_list_partition :
       { 
         _partition_program->begin();
@@ -936,6 +1167,7 @@ glwidget::paintGL()
           _db_program->set_texturebuffer ( "curvelist",        *_db_curvelist,       texunit++ );
           _db_program->set_texturebuffer ( "curvedata",        *_db_curvedata,       texunit++ );
           _db_program->set_texture1d     ( "transfertexture",  *_transfertexture,    texunit++ );
+          _db_program->set_texturebuffer ( "sampler_preclass", *_db_preclassdata,    texunit++ );
 
           _bilinear_filter->bind(texunit);
           _db_program->set_texture2d("prefilter_texture", *_prefilter_texture, texunit++);
@@ -944,6 +1176,50 @@ glwidget::paintGL()
         }
         _db_program->end();
 
+        if (!_testruns.empty()) {
+          _partition_program->begin();
+          _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+          _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
+          _partition_program->set_uniform2f("domain_min", _domain_size[0], _domain_size[1]);
+          _partition_program->set_uniform2f("view_min", view_center[0], view_center[1]);
+          _partition_program->set_uniform1f("domain_zoom", _zoom);
+          std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
+          _partition_program->end();
+        }
+        break;
+      }
+      // per-pixel classification contour search
+    case contour_map_kd_classification:
+      _kd_program->begin();
+      {
+        _kd_program->set_uniform1i("trimid", _trimid);
+        _kd_program->set_uniform1i("width", _width);
+        _kd_program->set_uniform1i("height", _height);
+        _kd_program->set_uniform1i("show_costs", int(_show_texel_fetches));
+        _kd_program->set_uniform1i("antialiasing", int(_aamode));
+        _kd_program->set_uniform2f("domain_size", view_size[0], view_size[1]);
+        _kd_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+
+        _kd_program->set_uniform1f("domain_zoom", _zoom);
+
+        unsigned texunit = 0;
+        _kd_program->set_texturebuffer("sampler_partition", *_kd_partition, texunit++);
+        _kd_program->set_texturebuffer("sampler_contourlist", *_kd_contourlist, texunit++);
+        _kd_program->set_texturebuffer("sampler_curvelist", *_kd_curvelist, texunit++);
+        _kd_program->set_texturebuffer("sampler_curvedata", *_kd_curvedata, texunit++);
+        _kd_program->set_texturebuffer("sampler_pointdata", *_kd_pointdata, texunit++);
+        _kd_program->set_texturebuffer("sampler_preclass", *_kd_preclassdata, texunit++);
+        _kd_program->set_texture1d("transfertexture", *_transfertexture, texunit++);
+
+        _bilinear_filter->bind(texunit);
+        _kd_program->set_texture2d("prefilter_texture", *_prefilter_texture, texunit++);
+
+        _quad->draw();
+
+      }
+      _kd_program->end();
+
+      if (!_testruns.empty()) {
         _partition_program->begin();
         _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
         _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
@@ -951,9 +1227,9 @@ glwidget::paintGL()
         _partition_program->set_uniform1f("domain_zoom", _zoom);
         std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
         _partition_program->end();
-        break;
       }
-      // per-pixel classification contour search
+      break;
+
     case contour_map_binary_classification :
             
         _cmb_program->begin();
@@ -975,6 +1251,7 @@ glwidget::paintGL()
           _cmb_program->set_texturebuffer ( "sampler_curvedata",   *_cmb_curvedata,   texunit++ );
           _cmb_program->set_texturebuffer ( "sampler_pointdata",   *_cmb_pointdata,   texunit++ );
           _cmb_program->set_texture1d     ( "transfertexture",     *_transfertexture, texunit++ );
+          _cmb_program->set_texturebuffer ("sampler_preclass",     *_cmb_preclassdata, texunit++);
 
           _bilinear_filter->bind(texunit);
           _cmb_program->set_texture2d("prefilter_texture", *_prefilter_texture, texunit++);
@@ -983,13 +1260,15 @@ glwidget::paintGL()
         }
         _cmb_program->end();
 
-        _partition_program->begin();
-        _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
-        _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
-        _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
-        _partition_program->set_uniform1f("domain_zoom", _zoom);
-        std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
-        _partition_program->end();
+        if (!_testruns.empty()) {
+          _partition_program->begin();
+          _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+          _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
+          _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+          _partition_program->set_uniform1f("domain_zoom", _zoom);
+          std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
+          _partition_program->end();
+        }
         break;
     case contour_map_loop_list_classification:
       _loop_list_program->begin();
@@ -1019,17 +1298,21 @@ glwidget::paintGL()
         _bilinear_filter->bind(4);
         _loop_list_program->set_texture2d("prefilter_texture", *_prefilter_texture, 4);
 
+        _loop_list_program->set_texturebuffer("sampler_preclass", *_loop_list_preclassdata, 5);
+
         _quad->draw();
       }
       _loop_list_program->end();
 
-      _partition_program->begin();
-      _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
-      _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
-      _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
-      _partition_program->set_uniform1f("domain_zoom", _zoom);
-      std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
-      _partition_program->end();
+      if (!_testruns.empty()) {
+        _partition_program->begin();
+        _partition_program->set_uniform_matrix4fv("mvp", 1, false, &_projection[0]);
+        _partition_program->set_uniform2f("domain_base", _domain_min[0], _domain_min[1]);
+        _partition_program->set_uniform2f("domain_min", view_center[0], view_center[1]);
+        _partition_program->set_uniform1f("domain_zoom", _zoom);
+        std::for_each(_curve_geometry.begin(), _curve_geometry.end(), std::bind(&gpucast::gl::line::draw, std::placeholders::_1, 1.0f));
+        _partition_program->end();
+      }
       break;
 
     case distance_field:
@@ -1107,9 +1390,18 @@ glwidget::paintGL()
 
   // try to get query result
   double time_ms = _gputimer->result_wait();
+
+  if (!_testruns.empty()) {
+    _testruns.back()->data[_testruns.back()->current].time_ms = time_ms;
+  }
+
   mainwindow* win = dynamic_cast<mainwindow*>(parent());
   if (win) {
     win->show_drawtime(time_ms);
+  }
+
+  if (!_testruns.empty()) {
+    ++_testruns.back()->current;
   }
 
   // redraw
@@ -1254,7 +1546,7 @@ glwidget::_initialize_shader()
   _db_program = program_factory.create_program("./shader/double_binary.vert", "./shader/double_binary.frag");
   _tex_program = program_factory.create_program("./shader/texture_view.vert.glsl", "./shader/texture_view.frag.glsl");
   _cmb_program = program_factory.create_program("./shader/contour_binary.vert", "./shader/contour_binary.frag");
-  _kd_program = program_factory.create_program("./shader/domain.vert.glsl", "./shader/contour.frag.glsl");
+  _kd_program = program_factory.create_program("./shader/contour_kd.vert", "./shader/contour_kd.frag");
   _loop_list_program = program_factory.create_program("./shader/contour_loop_list.vert", "./shader/contour_loop_list.frag");
   _prefilter_program = program_factory.create_program("./shader/prefilter_view.vert.glsl", "./shader/prefilter_view.frag.glsl");
 }

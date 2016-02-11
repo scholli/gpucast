@@ -19,12 +19,12 @@
 #include <mainwindow.hpp>
 #include <gpucast/gl/util/init_glew.hpp>
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
   try 
   {
     QApplication app(argc, argv);
-    mainwindow win(argc, argv, 1920, 1200);
+    mainwindow win(argc, argv, 2560, 1600);
     win.show();
     app.exec();
   } 

@@ -41,7 +41,8 @@ class trimdomain_serializer_loop_contour_list : public trimdomain_serializer
       : loops(1),
         contours(1),
         curves(1),
-        points(1)
+        points(1),
+        pre_classification(1)
       {}
 
       struct bbox_t {
@@ -62,7 +63,7 @@ class trimdomain_serializer_loop_contour_list : public trimdomain_serializer
         unsigned order;
         unsigned point_index;
         unsigned uincreasing;
-        unsigned pad;
+        unsigned pad; // 16 byte alignment
         bbox_t   bbox;
       };
 
@@ -71,6 +72,17 @@ class trimdomain_serializer_loop_contour_list : public trimdomain_serializer
         unsigned child_index;
         unsigned ncontours;
         unsigned contour_index;
+
+        unsigned pre_class_id;
+        unsigned pre_class_width;
+        unsigned pre_class_height;
+        unsigned pad0; // 16 byte alignment
+
+        float    umin;
+        float    umax;
+        float    vmin;
+        float    vmax;
+
         bbox_t   bbox;
       };
 
@@ -82,17 +94,20 @@ class trimdomain_serializer_loop_contour_list : public trimdomain_serializer
         bbox_t   bbox;
       };
 
-      std::vector<loop_t>    loops;
-      std::vector<contour_t> contours;
-      std::vector<curve_t>   curves;
-      std::vector<point_t>   points;
+      std::vector<loop_t>        loops;
+      std::vector<contour_t>     contours;
+      std::vector<curve_t>       curves;
+      std::vector<point_t>       points;
+      std::vector<unsigned char> pre_classification;
     };
 
   public : // methods
 
-    address_type     serialize  ( trimdomain_ptr const&                               input, 
-                                  std::unordered_map<trimdomain_ptr, address_type>&   referenced_trimdomains,
-                                  serialization& result) const;
+    address_type     serialize(trimdomain_ptr const&                               input,
+                               std::unordered_map<trimdomain_ptr, address_type>&   referenced_trimdomains,
+                               serialization& result,
+                               bool pre_classification_enabled,
+                               unsigned pre_classification_resolution ) const;
 
     void             serialize  ( contour_segment_ptr const& input, partition_type const& partition, serialization& result) const;
 
@@ -134,7 +149,9 @@ std::ostream& operator<<(std::ostream& os, trimdomain_serializer_loop_contour_li
 trimdomain_serializer::address_type  
 trimdomain_serializer_loop_contour_list::serialize(trimdomain_ptr const&                                    input_domain,
                                                    std::unordered_map<trimdomain_ptr, address_type>&        referenced_trimdomains,
-                                                   trimdomain_serializer_loop_contour_list::serialization&  result) const
+                                                   trimdomain_serializer_loop_contour_list::serialization&  result,
+                                                   bool pre_classification_enabled,
+                                                   unsigned pre_classification_resolution) const
 {
   // if already in buffer -> return index
   if (referenced_trimdomains.count(input_domain)) {
@@ -147,22 +164,45 @@ trimdomain_serializer_loop_contour_list::serialize(trimdomain_ptr const&        
     loop_list.add(loop);
   }
 
-  loop_list.initialize();
+  bool success = loop_list.initialize();
 
   // not trimmed 
-  if (loop_list.loops().empty())
+  if (loop_list.loops().empty() || !success)
   {
     auto loop_index = loop_list.loops().size();
 
-    serialization::loop_t no_loop{ 0, 0, 0, 0, { 0.0f, 0.0f, 0.0f, 0.0f } };
+    serialization::loop_t no_loop{ 0, 0, 0, 0,   
+                                   0, 0, 0, 0, 
+                                   0.0f, 0.0f, 0.0f, 0.0f,
+                                   { 0.0f, 0.0f, 0.0f, 0.0f } };
     result.loops.push_back(no_loop);
 
     referenced_trimdomains.insert(std::make_pair(input_domain, loop_index));
     return loop_index;
   }
   else {
-
     address_type root_index = serialize(loop_list.root(), loop_list, result, true);
+
+    if (pre_classification_enabled) {
+      address_type classification_id = trimdomain_serializer::serialize(input_domain, result.pre_classification, pre_classification_resolution);
+
+      result.loops[root_index].pre_class_id     = classification_id;
+      result.loops[root_index].pre_class_width  = pre_classification_resolution;
+      result.loops[root_index].pre_class_height = pre_classification_resolution;
+
+      std::cout << classification_id << pre_classification_resolution << std::endl;
+
+      result.loops[root_index].umin = input_domain->nurbsdomain().min[point_type::u];
+      result.loops[root_index].umax = input_domain->nurbsdomain().max[point_type::u];
+      result.loops[root_index].vmin = input_domain->nurbsdomain().min[point_type::v];
+      result.loops[root_index].vmax = input_domain->nurbsdomain().max[point_type::v];
+
+      std::cout << result.loops[root_index].umin << std::endl;
+      std::cout << result.loops[root_index].umax << std::endl;
+      std::cout << result.loops[root_index].vmin << std::endl;
+      std::cout << result.loops[root_index].vmax << std::endl;
+    }
+
     return root_index;
     /*
     serialization::loop_t parent_loop{ loop_list.loops().size() - 1,
@@ -284,6 +324,8 @@ trimdomain_serializer_loop_contour_list::serialize(partition_type::trimloop cons
                                          first_child_index,
                                          ncontours,
                                          contour_index,
+                                         0, 0, 0, 0, // filled later
+                                         0.0f, 0.0f, 0.0f, 0.0f, // filled later
                                           { loop_bbox.min[point_type::u], 
                                             loop_bbox.max[point_type::u], 
                                             loop_bbox.min[point_type::v], 

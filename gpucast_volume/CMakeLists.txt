@@ -50,7 +50,8 @@ CUDA_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include
                          ${CMAKE_SOURCE_DIR}/gpucast_gl/include
                          ${CMAKE_SOURCE_DIR}/gpucast_math/include
                          ${CMAKE_SOURCE_DIR}/gpucast_core/include
-                         ${CMAKE_SOURCE_DIR}/externals/include/glew)
+                         ${CMAKE_SOURCE_DIR}/externals/include/glew
+                         ${GLEW_INCLUDE_DIR})
 
 SET(GPUCAST_VOLUME_PASSTHROUGH_SRC kernel/external_passthrough.cu)
 SET(CUDA_VERBOSE_BUILD ON)

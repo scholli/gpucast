@@ -35,20 +35,23 @@ class trimdomain_serializer_contour_map_binary : public trimdomain_serializer
   public : // methods
 
     template <typename float4_type, typename float3_type>
-    address_type     serialize  ( trimdomain_ptr const&                                     input_domain, 
-                                  std::unordered_map<trimdomain_ptr, address_type>&       referenced_trimdomains,
-                                  std::unordered_map<curve_ptr, address_type>&            referenced_curves,
-                                  std::unordered_map<contour_segment_ptr, address_type>&  referenced_contour_segments,
-                                  std::vector<float4_type>&                                 output_partition,
-                                  std::vector<float4_type>&                                 output_contourlist,
-                                  std::vector<float4_type>&                                 output_curvelist,
-                                  std::vector<float>&                                       output_curvedata,
-                                  std::vector<float3_type>&                                 output_pointdata ) const;
+    address_type     serialize  ( trimdomain_ptr const&                                  input_domain, 
+                                  std::unordered_map<trimdomain_ptr, address_type>&      referenced_trimdomains,
+                                  std::unordered_map<curve_ptr, address_type>&           referenced_curves,
+                                  std::unordered_map<contour_segment_ptr, address_type>& referenced_contour_segments,
+                                  std::vector<float4_type>&                              output_partition,
+                                  std::vector<float4_type>&                              output_contourlist,
+                                  std::vector<float4_type>&                              output_curvelist,
+                                  std::vector<float>&                                    output_curvedata,
+                                  std::vector<float3_type>&                              output_pointdata,
+                                  std::vector<unsigned char>&                            output_classification_field = std::vector<unsigned char>(),
+                                  bool                                                   pre_classification_enabled = false,
+                                  unsigned                                               pre_classification_resolution = 8) const;
 
     template <typename float4_type, typename float3_type>
     address_type     serialize_contour_segment  ( contour_segment_ptr const&                                contour_segment,
-                                                  std::unordered_map<contour_segment_ptr, address_type>&  referenced_contour_segments,
-                                                  std::unordered_map<curve_ptr, address_type>&            referenced_curves,
+                                                  std::unordered_map<contour_segment_ptr, address_type>&    referenced_contour_segments,
+                                                  std::unordered_map<curve_ptr, address_type>&              referenced_curves,
                                                   std::vector<float4_type>&                                 output_curvelist,
                                                   std::vector<float>&                                       output_curvedata,
                                                   std::vector<float3_type>&                                 output_pointdata ) const;
@@ -67,7 +70,10 @@ trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&     
                                                       std::vector<float4_type>&                               output_contourlist,
                                                       std::vector<float4_type>&                               output_curvelist,
                                                       std::vector<float>&                                     output_curvedata,
-                                                      std::vector<float3_type>&                               output_pointdata ) const
+                                                      std::vector<float3_type>&                               output_pointdata,
+                                                      std::vector<unsigned char>&                             output_classification_field,
+                                                      bool                                                    pre_classification_enabled,
+                                                      unsigned                                                pre_classification_resolution) const
 {
   typedef gpucast::math::domain::contour_map_binary<beziersurface::curve_point_type::value_type> contour_map_type;
   assert ( output_partition.size() < std::numeric_limits<address_type>::max() );
@@ -90,13 +96,28 @@ trimdomain_serializer_contour_map_binary::serialize ( trimdomain_ptr const&     
   float_type vmin = explicit_type_conversion<double, float>(map.bounds().min[point_type::v]);
   float_type vmax = explicit_type_conversion<double, float>(map.bounds().max[point_type::v]);
 
+  // generate fast pre-classification texture
+  address_type classification_id = 0;
+  if (pre_classification_enabled) {
+    classification_id = trimdomain_serializer::serialize(input_domain, output_classification_field, pre_classification_resolution);
+  }
+
   assert ( map.partition().size() < std::numeric_limits<address_type>::max() ); 
   address_type vintervals = explicit_type_conversion<std::size_t, address_type>(map.partition().size());
 
-  output_partition.resize ( partition_index + 2 + map.partition().size() ); 
-  output_partition[partition_index]   = float4_type ( unsigned_bits_as_float(vintervals), 0, 0, 0 );
-  output_partition[partition_index+1] = float4_type ( umin, umax, vmin, vmax );
-  std::size_t vindex = partition_index + 2;
+  const std::size_t header_size = 3;
+  output_partition.resize(partition_index + header_size + map.partition().size());
+  output_partition[partition_index] = float4_type(unsigned_bits_as_float(vintervals), 
+                                                  unsigned_bits_as_float(classification_id), 
+                                                  unsigned_bits_as_float(pre_classification_resolution),
+                                                  unsigned_bits_as_float(pre_classification_resolution));
+
+  output_partition[partition_index + 1] = float4_type ( umin, umax, vmin, vmax );
+  output_partition[partition_index + 2] = float4_type(input_domain->nurbsdomain().min[point_type::u],
+                                                      input_domain->nurbsdomain().max[point_type::u],
+                                                      input_domain->nurbsdomain().min[point_type::v],
+                                                      input_domain->nurbsdomain().max[point_type::v]);
+  std::size_t vindex = partition_index + header_size;
   
   for ( auto const& vinterval : map.partition() )
   {

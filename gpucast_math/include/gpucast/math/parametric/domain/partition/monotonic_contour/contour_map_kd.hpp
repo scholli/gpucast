@@ -16,8 +16,19 @@
 
 // includes, project
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_base.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/kdtree2d.hpp>
+#include <gpucast/math/parametric/domain/partition/classification_field.hpp>
 
 namespace gpucast {
+
+  enum kd_split_strategy {
+    midsplit,
+    greedy,
+    maxarea,
+    sah,
+    minsplits
+  };
+
   namespace math {
     namespace domain {
 
@@ -35,21 +46,35 @@ class contour_map_kd : public contour_map_base<value_t>
     using typename contour_map_base<value_t>::contour_segment_ptr;
     using typename contour_map_base<value_t>::contour_type;
     using typename contour_map_base<value_t>::contour_segment_type;
+    typedef kdtree2d<value_t> kdtree_type;
+    typedef kdnode2d<value_t> kdnode_type;
+    typedef typename kdnode_type::kdnode_ptr kdnode_ptr;
+
+  public : // helper types
 
   public : // c'tor / d'tor
 
+    contour_map_kd(kd_split_strategy s, bool usebitfield = false, unsigned bitfield_resolution = 8);
+
   public : // methods
 
-    /*virtual*/ void initialize() override;
+    /*virtual*/ bool initialize() override;
+
+    kdtree2d<value_t> const& partition() const;
+
+    classification_field<unsigned char> const& pre_classification() const;
 
     /*virtual*/ void print(std::ostream& os) const;
 
   protected : // methods
 
-  private : // internal/auxilliary methods
+  private : // attributes
 
-  protected : // attributes
+    kdtree2d<value_t>                   _kdtree;
+    kd_split_strategy                   _split_strategy;
 
+    bool                                _enable_bitfield;
+    classification_field<unsigned char> _classification_texture;
 };
 
 template <typename value_t>

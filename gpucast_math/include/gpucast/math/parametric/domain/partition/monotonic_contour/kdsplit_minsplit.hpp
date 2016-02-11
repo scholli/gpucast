@@ -4,13 +4,13 @@
 *
 *********************************************************************************
 *
-*  module     : kdsplit_maxarea.hpp
+*  module     : kdsplit_minsplit.hpp
 *
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_KDSPLIT_MAXAREA_HPP
-#define GPUCAST_KDSPLIT_MAXAREA_HPP
+#ifndef GPUCAST_KDSPLIT_MINSPLIT_HPP
+#define GPUCAST_KDSPLIT_MINSPLIT_HPP
 
 // includes, system
 
@@ -22,7 +22,7 @@ namespace gpucast {
     namespace domain {
 
 template <typename value_t>
-struct kdsplit_maxarea : public kdsplit_strategy<value_t> {
+struct kdsplit_minsplit : public kdsplit_strategy<value_t> {
 
   /////////////////////////////////////////////////////////////////////////////
   // typedefs
@@ -36,7 +36,7 @@ struct kdsplit_maxarea : public kdsplit_strategy<value_t> {
   struct split_candidate {
     coordinate_type direction;
     value_t         split_value;
-    value_t         adjacent_area;
+    value_t         costs;
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -87,19 +87,13 @@ struct kdsplit_maxarea : public kdsplit_strategy<value_t> {
       
       // find and accumulate areas of adjacent bboxes
       for (auto& candidate : candidates) {
-        value_t adjacent_area = 0;
-        for (auto const& segment : node->overlapping_segments) {
-          if (segment->bbox().min[candidate.direction] ||
-            segment->bbox().max[candidate.direction]) {
-            candidate.adjacent_area = std::max(candidate.adjacent_area, segment->bbox().size().abs());
-            //candidate.adjacent_area += segment->bbox().size().abs());
-          }
-        }
+        // todo compute costs
+        throw std::runtime_error("not implemented");
       }
        
       std::sort(candidates.begin(), candidates.end(), []
         (split_candidate const& lhs, split_candidate const& rhs) { 
-        return lhs.adjacent_area > rhs.adjacent_area; 
+        return lhs.costs < rhs.costs;
       });
 
       if (!candidates.empty()) {
@@ -118,4 +112,4 @@ struct kdsplit_maxarea : public kdsplit_strategy<value_t> {
   } // namespace math
 } // namespace gpucast 
 
-#endif // GPUCAST_KDSPLIT_MAXAREA_HPP
+#endif // GPUCAST_KDSPLIT_MINSPLIT_HPP

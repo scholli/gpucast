@@ -38,8 +38,18 @@ public :
 };
 
 
+
+struct P
+{
+  bool operator()(const int &n) const
+  {
+    return n % 3 == 0;
+  }
+};
+
 int main(int argc, char **argv)
 {
+
   try 
   {
     volume_viewer app(argc, argv);
@@ -48,7 +58,7 @@ int main(int argc, char **argv)
       mainwindow win(argc, argv, std::atoi(argv[1]), std::atoi(argv[2]));
       app.exec();
     } else {
-      mainwindow win(argc, argv, 1600, 1200);
+      mainwindow win(argc, argv, 3840, 2160);
       app.exec();
     }
   } 

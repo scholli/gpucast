@@ -35,15 +35,19 @@ class trimdomain_serializer_contour_map_kd : public trimdomain_serializer
   public : // methods
 
     template <typename float4_type, typename float3_type, typename float2_type>
-    address_type     serialize  ( trimdomain_ptr const&                                     input_domain, 
-                                  std::unordered_map<trimdomain_ptr, address_type>&       referenced_trimdomains,
-                                  std::unordered_map<curve_ptr, address_type>&            referenced_curves,
-                                  std::unordered_map<contour_segment_ptr, address_type>&  referenced_contour_segments,
-                                  std::vector<float4_type>&                                 output_partition,
-                                  std::vector<float2_type>&                                 output_contourlist,
-                                  std::vector<float4_type>&                                 output_curvelist,
-                                  std::vector<float>&                                       output_curvedata,
-                                  std::vector<float3_type>&                                 output_pointdata ) const;
+    address_type     serialize(trimdomain_ptr const&                                     input_domain,
+      kd_split_strategy                                         kdtree_generation,
+      std::unordered_map<trimdomain_ptr, address_type>&         referenced_trimdomains,
+      std::unordered_map<curve_ptr, address_type>&              referenced_curves,
+      std::unordered_map<contour_segment_ptr, address_type>&    referenced_contour_segments,
+      std::vector<float4_type>&                                 output_partition,
+      std::vector<float2_type>&                                 output_contourlist,
+      std::vector<float4_type>&                                 output_curvelist,
+      std::vector<float>&                                       output_curvedata,
+      std::vector<float3_type>&                                 output_pointdata,
+      std::vector<unsigned char>&                               output_classification_field,
+      bool texture_classification_enabled,
+      unsigned texture_classification_resolution) const;
 
     template <typename float4_type, typename float3_type>
     address_type     serialize_contour_segment  ( contour_segment_ptr const&                                contour_segment,
@@ -58,95 +62,130 @@ class trimdomain_serializer_contour_map_kd : public trimdomain_serializer
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename float4_type, typename float3_type, typename float2_type>
-trimdomain_serializer::address_type  
-trimdomain_serializer_contour_map_kd::serialize ( trimdomain_ptr const&                                     input_domain, 
-                                                  std::unordered_map<trimdomain_ptr, address_type>&       referenced_trimdomains,
-                                                  std::unordered_map<curve_ptr, address_type>&            referenced_curves,
-                                                  std::unordered_map<contour_segment_ptr, address_type>&  referenced_contour_segments,
-                                                  std::vector<float4_type>&                                 output_partition,
-                                                  std::vector<float2_type>&                                 output_contourlist,
-                                                  std::vector<float4_type>&                                 output_curvelist,
-                                                  std::vector<float>&                                       output_curvedata,
-                                                  std::vector<float3_type>&                                 output_pointdata ) const
+trimdomain_serializer::address_type
+trimdomain_serializer_contour_map_kd::serialize(trimdomain_ptr const&                                     input_domain,
+                                                kd_split_strategy                                         kdtree_generation,
+                                                std::unordered_map<trimdomain_ptr, address_type>&         referenced_trimdomains,
+                                                std::unordered_map<curve_ptr, address_type>&              referenced_curves,
+                                                std::unordered_map<contour_segment_ptr, address_type>&    referenced_contour_segments,
+                                                std::vector<float4_type>&                                 output_partition,
+                                                std::vector<float2_type>&                                 output_contourlist,
+                                                std::vector<float4_type>&                                 output_curvelist,
+                                                std::vector<float>&                                       output_curvedata,
+                                                std::vector<float3_type>&                                 output_pointdata,
+                                                std::vector<unsigned char>&                               output_classification_field,
+                                                bool                                                      texture_classification_enabled,
+                                                unsigned                                                  texture_classification_resolution) const
 {
-  typedef gpucast::math::domain::contour_map_kd<beziersurface::curve_point_type::value_type> contour_map_type;
-  assert ( output_partition.size() < std::numeric_limits<address_type>::max() );
+  typedef gpucast::math::domain::contour_map_kd<typename beziersurface::curve_point_type::value_type> contour_map_type;
+  typedef typename contour_map_type::kdtree_type::kdnode_ptr kdnode_ptr;
+  assert(output_partition.size() < std::numeric_limits<address_type>::max());
 
   // if already in buffer -> return index
-  if ( referenced_trimdomains.count( input_domain ) ) 
-  {
-    return referenced_trimdomains.find ( input_domain )->second;
+  if (referenced_trimdomains.count(input_domain)) {
+    return referenced_trimdomains.find(input_domain)->second;
   }
 
-  address_type partition_index = output_partition.size();
-  contour_map_type map;
+  address_type partition_base_index = output_partition.size();
+  contour_map_type kdtree(kdtree_generation, texture_classification_enabled, texture_classification_resolution);
 
   // fill loops into contour map
-  std::for_each ( input_domain->loops().begin(), input_domain->loops().end(), std::bind ( &contour_map_type::add, &map, std::placeholders::_1 ) );
-  map.initialize();
+  std::for_each(input_domain->loops().begin(), input_domain->loops().end(), std::bind(&contour_map_type::add, &kdtree, std::placeholders::_1));
+  kdtree.initialize();
 
-  /*
-  float_type umin = map.bounds().min[point_type::u];
-  float_type umax = map.bounds().max[point_type::u];
-  float_type vmin = map.bounds().min[point_type::v];
-  float_type vmax = map.bounds().max[point_type::v];
+  // generate fast pre-classification texture
+  address_type classification_id = 0;
+  if (texture_classification_enabled) {
+    classification_id = trimdomain_serializer::serialize(input_domain, output_classification_field, texture_classification_resolution);
+  }
 
-  assert ( map.partition().size() < std::numeric_limits<address_type>::max() ); 
-  address_type vintervals = map.partition().size();
+  float_type umin = kdtree.bounds().min[point_type::u];
+  float_type umax = kdtree.bounds().max[point_type::u];
+  float_type vmin = kdtree.bounds().min[point_type::v];
+  float_type vmax = kdtree.bounds().max[point_type::v];
 
-  output_partition.resize ( partition_index + 2 + map.partition().size() ); 
-  output_partition[partition_index]   = float4_type ( unsigned_bits_as_float(vintervals), 0, 0, 0 );
-  output_partition[partition_index+1] = float4_type ( umin, umax, vmin, vmax );
-  std::size_t vindex = partition_index + 2;
-  
-  BOOST_FOREACH ( auto const& vinterval, map.partition() )
+  // serialize tree
+  std::vector<kdnode_ptr> nodes;
+  kdtree.partition().root->serialize_dfs(nodes);
+
+  // retrieve indices to pointer mapping
+  std::unordered_map<kdnode_ptr, unsigned> node_offset_map;
+  unsigned offset = 0;
+  for (kdnode_ptr const& node : nodes) {
+    node_offset_map.insert(std::make_pair(node, offset++));
+  }
+
+  // reserve enough memory
+  const std::size_t header_size = 3;
+  output_partition.resize(partition_base_index + header_size);
+  output_partition[partition_base_index] = float4_type(unsigned_bits_as_float(nodes.size() != 0), 
+                                                       unsigned_bits_as_float(classification_id),
+                                                       unsigned_bits_as_float(kdtree.pre_classification().width()),
+                                                       unsigned_bits_as_float(kdtree.pre_classification().height())); // base entry
+  // second entry is size of partition
+  output_partition[partition_base_index + 1] = float4_type(umin, umax, vmin, vmax); 
+
+  // third entry is size of domain
+  output_partition[partition_base_index + 2] = float4_type(input_domain->nurbsdomain().min[point_type::u], 
+    input_domain->nurbsdomain().max[point_type::u],
+    input_domain->nurbsdomain().min[point_type::v],
+    input_domain->nurbsdomain().max[point_type::v]); 
+
+  assert(nodes.size() < std::numeric_limits<address_type>::max());
+  for (kdnode_ptr const& node : nodes) 
   {
-    assert ( vinterval.cells.size() < std::numeric_limits<address_type>::max() );
+    assert(node->overlapping_segments.size() < std::numeric_limits<char>::max());
+    assert(node->is_leaf() < std::numeric_limits<char>::max());
+    assert(node->split_direction < std::numeric_limits<char>::max());
 
-    address_type uid    = output_partition.size();
-    address_type ucells = vinterval.cells.size();
+    address_type node_base_info = uint4ToUInt(unsigned(node->is_leaf()), 
+                                              node->parity, 
+                                              unsigned(node->split_direction), 
+                                              unsigned(node->overlapping_segments.size()));
+    if (node->is_leaf()) {
+      address_type contourlist_base_index = output_contourlist.size();
+      output_partition.push_back(float4_type(unsigned_bits_as_float(node_base_info),
+                                             unsigned_bits_as_float(contourlist_base_index),
+                                             0,  // spare
+                                             0   // spare
+                                             ));
 
-    output_partition[vindex++] = float4_type ( vinterval.interval_v.minimum(), 
-                                               vinterval.interval_v.maximum(), 
-                                               unsigned_bits_as_float(uid), 
-                                               unsigned_bits_as_float(ucells) );
-    output_partition.push_back ( float4_type ( vinterval.interval_u.minimum(), 
-                                               vinterval.interval_u.maximum(), 
-                                               0, 
-                                               0 ) );
+      // serialize segments in leaf
+      for (auto const& contour_segment : node->overlapping_segments)
+      {
+        address_type ncurves_uincreasing = uint2x16ToUInt(explicit_type_conversion<size_t, address_type>(contour_segment->size()),
+          contour_segment->is_increasing(point_type::u));
 
-    BOOST_FOREACH ( auto const& cell, vinterval.cells )
-    {
-      address_type contourlist_id = output_contourlist.size();
-      address_type type_and_contours = uint4ToUInt ( 0, cell.inside, cell.overlapping_segments.size(), 0 );
+        address_type curvelist_id = serialize_contour_segment(contour_segment, referenced_contour_segments, referenced_curves, output_curvelist, output_curvedata, output_pointdata);
 
-      output_partition.push_back ( float4_type ( cell.interval_u.minimum(), 
-                                                 cell.interval_u.maximum(), 
-                                                 unsigned_bits_as_float(type_and_contours), 
-                                                 unsigned_bits_as_float(contourlist_id) ) );
-
-      BOOST_FOREACH ( auto const& contour_segment, cell.overlapping_segments )
-      { 
-        address_type ncurves_uincreasing = uint4ToUInt ( contour_segment->size(), contour_segment->increasing(point_type::u), 0, 0 );
-        
-        address_type curvelist_id = serialize_contour_segment ( contour_segment, referenced_contour_segments, referenced_curves, output_curvelist, output_curvedata, output_pointdata );
-
-        output_contourlist.push_back ( float2_type ( unsigned_bits_as_float ( ncurves_uincreasing ), 
-                                                     unsigned_bits_as_float ( curvelist_id ) ) );
+        output_contourlist.push_back(float4_type(unsigned_bits_as_float(ncurves_uincreasing),
+                                                 unsigned_bits_as_float(curvelist_id),
+                                                 unsigned_bits_as_float(float2_to_unsigned(contour_segment->bbox().min[point_type::u], contour_segment->bbox().min[point_type::v])),
+                                                 unsigned_bits_as_float(float2_to_unsigned(contour_segment->bbox().max[point_type::u], contour_segment->bbox().max[point_type::v]))));
       }
+
+    }
+    else { // node is no leaf -> just add split value and children
+      address_type less_id = partition_base_index + header_size + node_offset_map[node->child_less];
+      address_type greater_id = partition_base_index + header_size + node_offset_map[node->child_greater];
+
+      output_partition.push_back(float4_type(unsigned_bits_as_float(node_base_info),
+                                             explicit_type_conversion<double, float>(node->split_value),
+                                             unsigned_bits_as_float(less_id),
+                                             unsigned_bits_as_float(greater_id)));
     }
   }
 
   // store domain_ptr to index mapping for later reference
-  referenced_trimdomains.insert( std::make_pair (input_domain, partition_index));
+  referenced_trimdomains.insert(std::make_pair(input_domain, partition_base_index));
 
   // make sure buffers are still in range of address_type
   if ( output_partition.size() >= std::numeric_limits<address_type>::max() ) 
   {
     throw std::runtime_error("Address exceeds maximum of addressable memory");
   }
-  */
-  return partition_index;
+
+  return partition_base_index;
 }
 
 /////////////////////////////////////////////////////////////////////////////

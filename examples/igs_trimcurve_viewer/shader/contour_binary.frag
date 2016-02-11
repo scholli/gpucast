@@ -19,6 +19,7 @@ uniform samplerBuffer sampler_contourlist;
 uniform samplerBuffer sampler_curvelist;
 uniform samplerBuffer sampler_curvedata;
 uniform samplerBuffer sampler_pointdata;
+uniform usamplerBuffer sampler_preclass;
 
 uniform sampler2D     prefilter_texture;
 
@@ -48,19 +49,14 @@ void main(void)
                                                     sampler_curvelist,
                                                     sampler_curvedata,
                                                     sampler_pointdata,
+                                                    sampler_preclass,
                                                     uv_coord,
                                                     trimid,
                                                     trim_outer,
                                                     iterations,
                                                     epsilon,
                                                     max_iterations);
-
-      if (trimmed) {
-        outcolor = vec4(0.0);
-      }
-      else {
-        outcolor = debug_out * vec4(1.0);
-      }
+      outcolor = debug_out * vec4(float(!trimmed));
       break;
 
       ///////////////////////////////////////////////////////////////////////////
@@ -72,10 +68,11 @@ void main(void)
                                                                  sampler_curvelist,
                                                                  sampler_curvedata,
                                                                  sampler_pointdata,
+                                                                 sampler_preclass,
                                                                  prefilter_texture,
                                                                  uv_coord,
-                                                                 dFdx(uv_coord), //dFdx(uv_normalized)*domain_size*domain_zoom,
-                                                                 dFdy(uv_coord), //dFdy(uv_normalized)*domain_size*domain_zoom,
+                                                                 dFdx(uv_coord),
+                                                                 dFdy(uv_coord),
                                                                  trimid,
                                                                  trim_outer,
                                                                  iterations,
@@ -122,7 +119,7 @@ void main(void)
       for (int r = 1; r <= sample_rows; ++r) {
         
         sample_coverage += float(!trimming_contour_double_binary(sampler_partition,
-          sampler_contourlist, sampler_curvelist, sampler_curvedata, sampler_pointdata,
+          sampler_contourlist, sampler_curvelist, sampler_curvedata, sampler_pointdata, sampler_preclass,
           uv_base + r * dx + c * dy,
           trimid, trim_outer, iterations, epsilon, max_iterations));
       }

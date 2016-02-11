@@ -20,7 +20,7 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
                      ../gpucast_math/include
                      ../gpucast_core/include
                      ../gpucast_gl/include
-                     ${FREEGLUT_INCLUDE_DIR}
+                     ${GLUT_INCLUDE_DIR}
                     )
 
 ###############################################################################
@@ -42,7 +42,7 @@ ADD_DEPENDENCIES(gpucast_glut gpucast_math gpucast_gl)
 IF (MSVC)
   TARGET_LINK_LIBRARIES( gpucast_glut
                          OpenGL32.lib 
-                         debug ${FREEGLUT_LIBRARY_DEBUG} optimized ${FREEGLUT_LIBRARY_RELEASE}
+                         general ${GLUT_glut_LIBRARY}
                          debug ${GLEW_LIBRARY_DEBUG} optimized ${GLEW_LIBRARY_RELEASE}
                        )
 

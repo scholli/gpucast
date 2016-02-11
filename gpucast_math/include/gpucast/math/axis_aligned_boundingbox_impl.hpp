@@ -280,15 +280,22 @@ namespace gpucast { namespace math {
   //////////////////////////////////////////////////////////////////////////////
   template<typename point_t>
   bool
-  axis_aligned_boundingbox<point_t>::overlap ( axis_aligned_boundingbox<point_t> const& a ) const
+    axis_aligned_boundingbox<point_t>::overlap(axis_aligned_boundingbox<point_t> const& a, bool include_border) const
   {
     bool overlap = true;
 
     for (std::size_t i = 0; i != point_t::coordinates; ++i)
     {
-       gpucast::math::interval<typename point_t::value_type> range       (   min[i],   max[i],  gpucast::math::included,  gpucast::math::included);
-       gpucast::math::interval<typename point_t::value_type> range_other ( a.min[i], a.max[i],  gpucast::math::included,  gpucast::math::included);
-      overlap &= range.overlap(range_other);
+      if (include_border) {
+        gpucast::math::interval<typename point_t::value_type> range(min[i], max[i], gpucast::math::included, gpucast::math::included);
+        gpucast::math::interval<typename point_t::value_type> range_other(a.min[i], a.max[i], gpucast::math::included, gpucast::math::included);
+        overlap &= range.overlap(range_other);
+      }
+      else {
+        gpucast::math::interval<typename point_t::value_type> range(min[i], max[i], gpucast::math::excluded, gpucast::math::excluded);
+        gpucast::math::interval<typename point_t::value_type> range_other(a.min[i], a.max[i], gpucast::math::excluded, gpucast::math::excluded);
+        overlap &= range.overlap(range_other);
+      }
 
       // early abort
       if (!overlap) {

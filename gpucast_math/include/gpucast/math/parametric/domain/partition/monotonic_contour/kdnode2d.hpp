@@ -41,6 +41,7 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
            value_type v, 
            coordinate_type c, 
            unsigned par,
+           unsigned d,
            std::set<contour_segment_ptr> const& s, 
            kdnode_ptr const& p, 
            kdnode_ptr const& cl,
@@ -49,6 +50,7 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
     split_value(v),
     split_direction(c),
     parity(par),
+    depth(d),
     overlapping_segments(s),
     parent(p),
     child_less(cl),
@@ -58,7 +60,7 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
   /////////////////////////////////////////////////////////////////////////////
   // methods
   /////////////////////////////////////////////////////////////////////////////
-  bool is_leaf() { 
+  bool is_leaf() const { 
     return child_less == nullptr && 
            child_greater == nullptr; 
   }
@@ -81,11 +83,9 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
     if (!is_leaf()) {
       nodes.push_back(child_less);
       nodes.push_back(child_greater);
-
       child_less->serialize_bfs(nodes);
       child_greater->serialize_bfs(nodes);
-    }
-    
+    } 
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -119,10 +119,8 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
       }
     }
     
-    child_less = std::make_shared<kdnode2d>(bbox_less, 0, 0, 0, less_segments, shared_from_this(), nullptr, nullptr);
-    child_greater = std::make_shared<kdnode2d>(bbox_greater, 0, 0, 0, greater_segments, shared_from_this(), nullptr, nullptr);
-
-    overlapping_segments.clear();
+    child_less = std::make_shared<kdnode2d>(bbox_less, 0, 0, 0, depth+1, less_segments, shared_from_this(), nullptr, nullptr);
+    child_greater = std::make_shared<kdnode2d>(bbox_greater, 0, 0, 0, depth+1, greater_segments, shared_from_this(), nullptr, nullptr);
 
     return true;
   }
@@ -166,6 +164,51 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
   }
   
   /////////////////////////////////////////////////////////////////////////////
+  kdnode_ptr is_in_node(bbox_type const& texel) {
+    if (bbox.is_inside(texel)) {
+      if (is_leaf()) {
+        return shared_from_this();
+      }
+      else {
+        // examine less node
+        if (child_less->bbox.is_inside(texel)) {
+          return child_less->is_in_node(texel);
+        }
+        // examine greater node
+        if (child_greater->bbox.is_inside(texel)) {
+          return child_greater->is_in_node(texel);
+        }
+
+        // bbox is in neither -> unclassified
+        return nullptr;
+      }
+    }
+    else {
+      // no or partial overlap => classification not possible
+      return nullptr;
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  value_t empty_space() const {
+    value_t approx_empty_space = bbox.size().abs();
+    for (auto const& s : overlapping_segments) {
+      approx_empty_space -= s->bbox().size().abs();
+    }
+    return std::max(0, approx_empty_space);
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  value_t traversal_costs_absolute() const {
+    if (is_leaf()) {
+      return depth * bbox.size().abs();
+    }
+    else {
+      return child_less->traversal_costs_absolute() + child_greater->traversal_costs_absolute();
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // member
   /////////////////////////////////////////////////////////////////////////////
   bbox_type                        bbox;
@@ -173,6 +216,7 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
   value_t                          split_value = 0;
   coordinate_type                  split_direction = 0;
   unsigned                         parity = 0;
+  unsigned                         depth = 0;
 
   std::set<contour_segment_ptr>    overlapping_segments;
 

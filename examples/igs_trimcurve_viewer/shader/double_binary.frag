@@ -12,6 +12,7 @@ uniform samplerBuffer trimdata;
 uniform samplerBuffer celldata;
 uniform samplerBuffer curvelist;
 uniform samplerBuffer curvedata;
+uniform usamplerBuffer sampler_preclass;
 
 uniform sampler1D     transfertexture;
 uniform sampler2D     prefilter_texture;
@@ -37,21 +38,15 @@ void main(void)
 
     ///////////////////////////////////////////////////////////////////////////
   case 0: // no anti-aliasing
-    bool trimmed = trimming_double_binary(trimdata, celldata, curvelist, curvedata, uv_coord, trimid, trim_outer, iterations, epsilon, max_iterations);
-
-    if (trimmed) {
-      outcolor = vec4(0.0);
-    }
-    else {
-      outcolor = debug_out * vec4(1.0);
-    }
+    bool trimmed = trimming_double_binary(trimdata, celldata, curvelist, curvedata, sampler_preclass, uv_coord, trimid, trim_outer, iterations, epsilon, max_iterations);
+    outcolor = debug_out * vec4(float(!trimmed));
     break;
 
     ///////////////////////////////////////////////////////////////////////////
   case 1: // coverage estimate
   case 2:
   case 3:
-    float coverage = trimming_double_binary_coverage(trimdata, celldata, curvelist, curvedata,
+    float coverage = trimming_double_binary_coverage(trimdata, celldata, curvelist, curvedata, sampler_preclass,
       prefilter_texture,
       uv_coord,
       dFdx(uv_coord),
@@ -100,7 +95,7 @@ void main(void)
 
     for (int c = 1; c <= sample_cols; ++c) {
       for (int r = 1; r <= sample_rows; ++r) {
-        sample_coverage += float(!trimming_double_binary(trimdata, celldata, curvelist, curvedata, uv_base + r * dx + c * dy, trimid, trim_outer, iterations, epsilon, max_iterations));
+        sample_coverage += float(!trimming_double_binary(trimdata, celldata, curvelist, curvedata, sampler_preclass, uv_base + r * dx + c * dy, trimid, trim_outer, iterations, epsilon, max_iterations));
       }
     }
     outcolor = debug_out * vec4(sample_coverage / (sample_rows*sample_cols));

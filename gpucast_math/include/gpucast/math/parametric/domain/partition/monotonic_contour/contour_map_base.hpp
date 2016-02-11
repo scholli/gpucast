@@ -68,7 +68,7 @@ class contour_map_base
     virtual void                      print                         ( std::ostream& os ) const;
 
     // initial partitioning scheme according to given monotonic curves
-    virtual void                      initialize                    () = 0;
+    virtual bool                      initialize() = 0;
 
   protected : // methods
 

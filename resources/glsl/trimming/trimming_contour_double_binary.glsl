@@ -13,6 +13,7 @@
 #include "resources/glsl/trimming/bisect_curve.glsl"
 #include "resources/glsl/trimming/bisect_contour.glsl"
 #include "resources/glsl/trimming/linear_search_contour.glsl"
+#include "resources/glsl/trimming/pre_classification.glsl"
 
 ////////////////////////////////////////////////////////////////////////////////
 // returns classfication using pixel center
@@ -23,6 +24,7 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
                                  in samplerBuffer curvelist,
                                  in samplerBuffer curvedata,
                                  in samplerBuffer pointdata,
+                                 in usamplerBuffer preclassification,
                                  in vec2          uv, 
                                  in int           id, 
                                  in int           trim_outer, 
@@ -31,26 +33,59 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
                                  in int           max_iterations )
 {
   int total_intersections  = 0;
-  int v_intervals = int(floatBitsToUint(texelFetch(domainpartition, id).x));
+  vec4 baseinfo = texelFetch(domainpartition, id);
   gpucast_count_texel_fetch();
 
-  // if there is no partition in vertical(v) direction -> return
-  if ( v_intervals == 0) 
-  {
-    return false;
+  /////////////////////////////////////////////////////////////////////////////
+  // 1. classification : no partition - not trimmed
+  /////////////////////////////////////////////////////////////////////////////
+  int v_intervals = int(floatBitsToUint(baseinfo.x));
+  if (v_intervals == 0) {
+    return bool(trim_outer);
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // 2. trim against outer loop bounds
+  /////////////////////////////////////////////////////////////////////////////
   vec4 domaininfo2 = texelFetch(domainpartition, id + 1);
   gpucast_count_texel_fetch();
 
   // classify against whole domain
-  if ( uv[0] > domaininfo2[1] || uv[0] < domaininfo2[0] ||
-       uv[1] > domaininfo2[3] || uv[1] < domaininfo2[2] ) 
+  if (uv[0] > domaininfo2[1] || uv[0] < domaininfo2[0] ||
+      uv[1] > domaininfo2[3] || uv[1] < domaininfo2[2])
   {
     return bool(trim_outer);
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // 3. texture-based pre-classification 
+  /////////////////////////////////////////////////////////////////////////////
+  int classification_base_id = int(floatBitsToUint(baseinfo.y));
+
+  vec4 domainbounds = texelFetch(domainpartition, id + 2);
+  gpucast_count_texel_fetch();
+
+  if (classification_base_id != 0)
+  {
+    int preclasstex_width  = int(floatBitsToUint(baseinfo.z));
+    int preclasstex_height = int(floatBitsToUint(baseinfo.w));    
+    int pre_class = pre_classify(preclassification,
+                                 classification_base_id,
+                                 uv,
+                                 domainbounds,
+                                 preclasstex_width, 
+                                 preclasstex_height);
+  
+    if (pre_class != 0) {
+      return mod(pre_class, 2) == 0;
+    }  
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // 4. exact classification
+  /////////////////////////////////////////////////////////////////////////////
   vec4 vinterval = vec4(0.0);
-  bool vinterval_found = binary_search(domainpartition, uv[1], id + 2, v_intervals, vinterval);
+  bool vinterval_found = binary_search(domainpartition, uv[1], id + 3, v_intervals, vinterval);
 
   int celllist_id = int(floatBitsToUint(vinterval[2]));
   int ncells      = int(floatBitsToUint(vinterval[3]));
@@ -115,6 +150,9 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
   return ((mod(total_intersections, 2) == 1) != bool(trim_outer));
 }
 
+float length_squared(vec2 a) {
+  return a.x*a.x + a.y*a.y;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // returns coverage of pixel
@@ -125,6 +163,7 @@ trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
                                         in samplerBuffer curvelist,
                                         in samplerBuffer curvedata,
                                         in samplerBuffer pointdata,
+                                        in usamplerBuffer preclassification,
                                         in sampler2D     prefilter,
                                         in vec2          uv,
                                         in vec2          duvdx,
@@ -137,26 +176,59 @@ trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
                                         in int           coverage_estimation_type)
 {
   int total_intersections = 0;
-  int v_intervals = int(floatBitsToUint(texelFetch(domainpartition, id).x));
+  vec4 baseinfo = texelFetch(domainpartition, id);
   gpucast_count_texel_fetch();
 
-  // if there is no partition in vertical(v) direction -> return
-  if (v_intervals == 0)
-  {
+  /////////////////////////////////////////////////////////////////////////////
+  // 1. classification : no partition - not trimmed
+  /////////////////////////////////////////////////////////////////////////////
+  int v_intervals = int(floatBitsToUint(baseinfo.x));
+  if (v_intervals == 0) {
     return 1.0;
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // 2. trim against outer loop bounds
+  /////////////////////////////////////////////////////////////////////////////
   vec4 domaininfo2 = texelFetch(domainpartition, id + 1);
   gpucast_count_texel_fetch();
 
   // classify against whole domain
   if (uv[0] > domaininfo2[1] || uv[0] < domaininfo2[0] ||
-    uv[1] > domaininfo2[3] || uv[1] < domaininfo2[2])
+      uv[1] > domaininfo2[3] || uv[1] < domaininfo2[2])
   {
     return float(!bool(trim_outer));
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // 3. texture-based pre-classification 
+  /////////////////////////////////////////////////////////////////////////////
+  int classification_base_id = int(floatBitsToUint(baseinfo.y));
+
+  vec4 domainbounds = texelFetch(domainpartition, id + 2);
+  gpucast_count_texel_fetch();
+
+  if (classification_base_id != 0)
+  {
+    int preclasstex_width  = int(floatBitsToUint(baseinfo.z));
+    int preclasstex_height = int(floatBitsToUint(baseinfo.w));    
+    int pre_class = pre_classify(preclassification,
+                                 classification_base_id,
+                                 uv,
+                                 domainbounds,
+                                 preclasstex_width, 
+                                 preclasstex_height);
+  
+    if (pre_class != 0) {
+      return float(mod(pre_class, 2) == 1);
+    }  
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // 4. exact classification
+  /////////////////////////////////////////////////////////////////////////////
   vec4 vinterval = vec4(0.0);
-  bool vinterval_found = binary_search(domainpartition, uv[1], id + 2, v_intervals, vinterval);
+  bool vinterval_found = binary_search(domainpartition, uv[1], id + 3, v_intervals, vinterval);
 
   int celllist_id = int(floatBitsToUint(vinterval[2]));
   int ncells = int(floatBitsToUint(vinterval[3]));
@@ -216,7 +288,7 @@ trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
       intToUint8_24(floatBitsToUint(curveinfo), curveorder, pointid);
       bisect_curve_coverage(pointdata, uv, int(pointid), int(curveorder), contour_uincreasing, 0.0f, 1.0f, total_intersections, iterations, point_on_curve, gradient, tolerance, max_iterations, remaining_bbox);
 
-      float distance = length(point_on_curve - uv);
+      float distance = length_squared(point_on_curve.xy - uv.xy);
       if (distance < closest_distance) 
       {
         closest_distance = distance;
@@ -233,6 +305,32 @@ trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
   bool covered = bool((mod(total_intersections, 2) == 1) == bool(trim_outer));
 
   mat2 J = mat2(duvdx, duvdy);
+
+  /////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////
+  // workaround for nasty partial derivative constraints close to preclassified fragments
+  /////////////////////////////////////////////////////////////////////////////////////
+  if (determinant(J) == 0.0 && classification_base_id != 0)
+  {
+    int preclasstex_width  = int(floatBitsToUint(baseinfo.z));
+    int preclasstex_height = int(floatBitsToUint(baseinfo.w));    
+    int pre_class = pre_classify(preclassification,
+                                 classification_base_id,
+                                 uv,
+                                 domainbounds,
+                                 preclasstex_width, 
+                                 preclasstex_height);
+    
+    if (pre_class != 0) {
+      return float(mod(pre_class, 2) != 0);
+    } 
+  }
+  /////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////
+
+
   mat2 Jinv = inverse(J);
 
   vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient);
