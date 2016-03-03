@@ -20,48 +20,58 @@ struct hull_vertex_entry {
 };
 
 layout(std430) buffer hullvertexmap {
-  hull_vertex_entry data[];
+  hull_vertex_entry hvm[];
 };
 
-#if 0
-
-float calculate_obb_area(vec3           eye,
-                         mat4           mvp,
+float calculate_obb_area(mat4           modelview_projection,
+                         mat4           modelview_inverse,
+                         vec4           obb_center,
+                         mat4           obb_orientation,
+                         mat4           obb_orientation_inverse,
                          samplerBuffer  obb_vertices,
                          int            obb_base_index )
 {
-  vec3 bbox[8];
-  for(int i = 0; i != 8; ++i)
+  // transform eye to obb space
+  vec4 eye_object_space = modelview_inverse * vec4(0.0, 0.0, 0.0, 1.0);
+  vec4 eye_obb_space = obb_orientation_inverse * vec4(eye_object_space.xyz - obb_center.xyz, 1.0);
 
-  Vector2D dst[8]; 
-  float sum = 0.0; 
-  int pos;
-  
-  
-  vec3 bbox_min = texelFetch(obb_vertices, obb_base_index).xyz;
-  vec3 bbox_max = texelFetch(obb_vertices, obb_base_index + 7).xyz;
+  // copy obb vertices to local array
+  vec4 bbox[8];
+  for(int i = 0; i != 8; ++i) {
+    bbox[i] = texelFetch(obb_vertices, obb_base_index + i);
+  }
 
-  int pos = ((eye.x < bbox_min.x)     )   //  1 = left   |  compute 6-bit
-          + ((eye.x > bbox_max.x) << 1)   //  2 = right  |        code to
-          + ((eye.y < bbox_min.y) << 2)   //  4 = bottom |   classify eye
-          + ((eye.y > bbox_max.y) << 3)   //  8 = top    |with respect to
-          + ((eye.z < bbox_min.z) << 4)   // 16 = front  | the 6 defining
-          + ((eye.z > bbox_max.z) << 5);  // 32 = back   |         planes
+  // identify in which quadrant the eye is located
+  float sum = 0.0;
 
-  int num = texelFetch()
+  int pos = (int(eye_obb_space.x < bbox[0].x))        //  1 = left   |  compute 6-bit
+          + (int(eye_obb_space.x > bbox[7].x) << 1)   //  2 = right  |        code to
+          + (int(eye_obb_space.y < bbox[0].y) << 2)   //  4 = bottom |   classify eye
+          + (int(eye_obb_space.y > bbox[7].y) << 3)   //  8 = top    |with respect to
+          + (int(eye_obb_space.z < bbox[0].z) << 4)   // 16 = front  | the 6 defining
+          + (int(eye_obb_space.z > bbox[7].z) << 5);  // 32 = back   |         planes
 
-  if (!num = hullvertex[pos][6]) 
-    return 0.0;  //look up number of vertices
+  // look up according number of visible vertices
+  int n_visible_vertices = int(hvm[pos].num_visible_vertices);
+  if (n_visible_vertices == 0) {
+    return 0.0;
+  }
 
-  for(int i=0; i<num; i++) 
-    dst[i] := projectToScreen(bbox[hullvertex[pos][i]]);
+  // project all obb vertices to screen coordinates
+  vec2 dst[6];
+  for (int i = 0; i != n_visible_vertices; ++i) {
+    vec4 corner_screenspace = modelview_projection * (obb_orientation * bbox[i] + vec4(obb_center.xyz, 0.0));
+    corner_screenspace /= corner_screenspace.w;
+    dst[i] = clamp(corner_screenspace.xy, vec2(-1.0), vec2(1.0));
+  }
 
-  for(int i=0; i<num; i++) 
-    sum += (dst[ i ].x - dst[ (i+1) % num ].x) * (dst[ i ].y + dst[ (i+1) % num ].y);
+  // accumulate area of visible vertices' polygon
+  for (int i = 0; i < n_visible_vertices; i++) {
+    sum += (dst[i].x - dst[(i + 1) % n_visible_vertices].x) * (dst[i].y + dst[(i + 1) % n_visible_vertices].y);
+  }
 
-  return sum * 0.5;                               //return corrected value
+  // return area
+  return abs(sum); 
 }
-
-#endif
 
 #endif

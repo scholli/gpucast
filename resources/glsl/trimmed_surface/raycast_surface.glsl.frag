@@ -287,6 +287,7 @@ void main(void)
                                     spheremap,
                                     bool(diffusemapping),
                                     diffusemap);
+
 #else 
 
     float width = 1800.0;

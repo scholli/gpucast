@@ -113,6 +113,11 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
     _add(surface, fast_trim_texture_resolution);
   }
 
+  unsigned k = 0;
+  for (auto i : _obbs) {
+    std::cout << "[" << k++ << "] : " << i << std::endl;
+  }
+
   _is_initialized = true;
 }
 
@@ -390,29 +395,34 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   auto orientation = surface->obb().orientation();
   auto inv_orientation = compute_inverse(orientation);
 
+  orientation.transpose();
+  inv_orientation.transpose();
+
   _obbs.push_back(math::vec4f(orientation[0][0], orientation[0][1], orientation[0][2], 0.0));
   _obbs.push_back(math::vec4f(orientation[1][0], orientation[1][1], orientation[1][2], 0.0));
   _obbs.push_back(math::vec4f(orientation[2][0], orientation[2][1], orientation[2][2], 0.0));
-  _obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 0.0f));
+  _obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
   _obbs.push_back(math::vec4f(inv_orientation[0][0], inv_orientation[0][1], inv_orientation[0][2], 0.0));
   _obbs.push_back(math::vec4f(inv_orientation[1][0], inv_orientation[1][1], inv_orientation[1][2], 0.0));
   _obbs.push_back(math::vec4f(inv_orientation[2][0], inv_orientation[2][1], inv_orientation[2][2], 0.0));
-  _obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 0.0f));
+  _obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
-  auto lbf = orientation * math::point3d(plow[0], plow[1], plow[2]) + obb.center();  // left, bottom, front
-  auto rbf = orientation * math::point3d(phigh[0], plow[1], plow[2]) + obb.center();  // right, bottom, front
-  auto rtf = orientation * math::point3d(phigh[0], phigh[1], plow[2]) + obb.center();  // right, top, front
-  auto ltf = orientation * math::point3d(plow[0], plow[1], plow[2]) + obb.center();  // left, top, front
-  auto lbb = orientation * math::point3d(plow[0], plow[1], phigh[2]) + obb.center(); // left, bottom, back  
-  auto rbb = orientation * math::point3d(phigh[0], plow[1], phigh[2]) + obb.center(); // right, bottom, back  
-  auto rtb = orientation * math::point3d(phigh[0], phigh[1], phigh[2]) + obb.center(); // right, top, back  
-  auto ltb = orientation * math::point3d(plow[0], phigh[1], phigh[2]) + obb.center(); // left, top, back  
+  auto lbf = /* orientation * */ math::point3d(plow[0], plow[1], plow[2]);  // left, bottom, front
+  auto rbf = /* orientation * */ math::point3d(phigh[0], plow[1], plow[2]);  // right, bottom, front
+  auto rtf = /* orientation * */ math::point3d(phigh[0], phigh[1], plow[2]);  // right, top, front
+  auto ltf = /* orientation * */ math::point3d(plow[0], plow[1], plow[2]);  // left, top, front
+
+  auto lbb = /* orientation * */ math::point3d(plow[0], plow[1], phigh[2]); // left, bottom, back  
+  auto rbb = /* orientation * */ math::point3d(phigh[0], plow[1], phigh[2]); // right, bottom, back  
+  auto rtb = /* orientation * */ math::point3d(phigh[0], phigh[1], phigh[2]); // right, top, back  
+  auto ltb = /* orientation * */ math::point3d(plow[0], phigh[1], phigh[2]); // left, top, back  
 
   lbf.weight(1.0);
   rbf.weight(1.0);
   rtf.weight(1.0);
   ltf.weight(1.0);
+
   lbb.weight(1.0);
   rbb.weight(1.0);
   rtb.weight(1.0);
@@ -422,6 +432,7 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   _obbs.push_back(rbf);
   _obbs.push_back(rtf);
   _obbs.push_back(ltf);
+
   _obbs.push_back(lbb);
   _obbs.push_back(rbb);
   _obbs.push_back(rtb);

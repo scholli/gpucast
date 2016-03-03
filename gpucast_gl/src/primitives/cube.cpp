@@ -179,6 +179,23 @@ cube::_init ( GLint vertexattrib_index,
 
 ///////////////////////////////////////////////////////////////////////////////
 void
+cube::set_colors(gpucast::math::vec4f const& lbf,
+                 gpucast::math::vec4f const& rbf,
+                 gpucast::math::vec4f const& ltf,
+                 gpucast::math::vec4f const& rtf,
+                 gpucast::math::vec4f const& lbr,
+                 gpucast::math::vec4f const& rbr,
+                 gpucast::math::vec4f const& ltr,
+                 gpucast::math::vec4f const& rtr)
+
+{
+  std::vector<gpucast::math::vec4f> colors = create_triangle_mesh(lbf, rbf, ltf, rtf, lbr, rbr, ltr, rtr);
+  _colors.buffersubdata(0, unsigned(colors.size() * sizeof(gpucast::math::vec4f)), &colors.front());
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void
 cube::set_texcoords (gpucast::math::vec4f const& lbf,
                      gpucast::math::vec4f const& rbf,
                      gpucast::math::vec4f const& ltf,

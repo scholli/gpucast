@@ -333,6 +333,7 @@ namespace gpucast {
       _pathlist.insert("");
 
       _init_program();
+      _init_hullvertexmap();
       _init_prefilter();
     }
 

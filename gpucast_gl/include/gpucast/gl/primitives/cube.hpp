@@ -51,6 +51,15 @@ public : // methods
                          gpucast::math::vec4f const& ltr = gpucast::math::vec4f(-1.0f,  1.0f,  1.0f, 1.0f),
                          gpucast::math::vec4f const& rtr = gpucast::math::vec4f( 1.0f,  1.0f,  1.0f, 1.0f) ); // left/right(l/r) - bottom/top(b/t) - front/rear(f/r)
 
+  void set_colors      ( gpucast::math::vec4f const& lbf = gpucast::math::vec4f(0.0f, 0.0f, 0.0f, 1.0f),
+                         gpucast::math::vec4f const& rbf = gpucast::math::vec4f(1.0f, 0.0f, 0.0f, 1.0f),
+                         gpucast::math::vec4f const& ltf = gpucast::math::vec4f(0.0f, 1.0f, 0.0f, 1.0f),
+                         gpucast::math::vec4f const& rtf = gpucast::math::vec4f(1.0f, 1.0f, 0.0f, 1.0f),
+                         gpucast::math::vec4f const& lbr = gpucast::math::vec4f(0.0f, 0.0f, 1.0f, 1.0f),
+                         gpucast::math::vec4f const& rbr = gpucast::math::vec4f(1.0f, 0.0f, 1.0f, 1.0f),
+                         gpucast::math::vec4f const& ltr = gpucast::math::vec4f(0.0f, 1.0f, 1.0f, 1.0f),
+                         gpucast::math::vec4f const& rtr = gpucast::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f)); // left/right(l/r) - bottom/top(b/t) - front/rear(f/r)
+
   void set_texcoords   ( gpucast::math::vec4f const& lbf = gpucast::math::vec4f( 0.0f,  0.0f,  0.0f, 1.0f),
                          gpucast::math::vec4f const& rbf = gpucast::math::vec4f( 1.0f,  0.0f,  0.0f, 1.0f),
                          gpucast::math::vec4f const& ltf = gpucast::math::vec4f( 0.0f,  1.0f,  0.0f, 1.0f),

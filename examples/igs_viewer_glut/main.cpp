@@ -134,7 +134,8 @@ public:
           auto lbf = orientation * gpucast::math::point3d(plow[0], plow[1], plow[2])    + obb.center();  // left, bottom, front
           auto rbf = orientation * gpucast::math::point3d(phigh[0], plow[1], plow[2])   + obb.center();  // right, bottom, front
           auto rtf = orientation * gpucast::math::point3d(phigh[0], phigh[1], plow[2])  + obb.center();  // right, top, front
-          auto ltf = orientation * gpucast::math::point3d(plow[0], plow[1], plow[2])    + obb.center();  // left, top, front
+          auto ltf = orientation * gpucast::math::point3d(plow[0], phigh [1], plow[2])  + obb.center();  // left, top, front
+
           auto lbb = orientation * gpucast::math::point3d(plow[0], plow[1], phigh[2])   + obb.center(); // left, bottom, back  
           auto rbb = orientation * gpucast::math::point3d(phigh[0], plow[1], phigh[2])  + obb.center(); // right, bottom, back  
           auto rtb = orientation * gpucast::math::point3d(phigh[0], phigh[1], phigh[2]) + obb.center(); // right, top, back  
@@ -150,6 +151,14 @@ public:
           ltb.weight(1.0);
 
           obb_gl->set_vertices(lbf, rbf,ltf, rtf, lbb, rbb, ltb, rtb);
+          obb_gl->set_colors(gpucast::math::vec4f{ 0.0f, 0.0f, 0.0f, 1.0 }, 
+                             gpucast::math::vec4f{ 1.0f, 0.0f, 0.0f, 1.0 }, 
+                             gpucast::math::vec4f{ 0.0f, 1.0f, 0.0f, 1.0 }, 
+                             gpucast::math::vec4f{ 1.0f, 1.0f, 0.0f, 1.0 }, 
+                             gpucast::math::vec4f{ 0.0f, 0.0f, 1.0f, 1.0 }, 
+                             gpucast::math::vec4f{ 1.0f, 0.0f, 1.0f, 1.0 }, 
+                             gpucast::math::vec4f{ 0.0f, 1.0f, 1.0f, 1.0 }, 
+                             gpucast::math::vec4f{ 1.0f, 1.0f, 1.0f, 1.0 });
         }
 
         gpucast::gl::material mat;
@@ -175,11 +184,15 @@ public:
       #extension GL_NV_gpu_shader5 : enable
 
       layout (location = 0) in vec4 in_position;
+      layout (location = 1) in vec4 in_color;
 
       uniform mat4 mvp;
 
+      out vec4 color;
+
       void main() {
         gl_Position = mvp * in_position;
+        color = in_color;
       }    
     )";
 
@@ -187,10 +200,12 @@ public:
       #version 440 core
       #extension GL_NV_gpu_shader5 : enable
 
+      in vec4 color;
+
       layout(location = 0) out vec3 out_color;
 
       void main() {
-        out_color = vec3(1);
+        out_color = color.xyz;
       }    
     )";
 
@@ -289,6 +304,10 @@ public:
     {
       switch (key)
       {
+      case 'w':
+        renderer.recompile();
+        std::cout << "Recompiling shaders..." << std::endl;
+        break;
       case 'b':
         o->culling(!o->culling());
         std::cout << "Backface culling set to " << o->culling() << std::endl;
