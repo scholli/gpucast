@@ -65,6 +65,8 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   _optimal_distance   = new QCheckBox;
   _show_gradient      = new QCheckBox;
   _tex_classification = new QCheckBox;
+  _tex_classification->setCheckState(Qt::CheckState::Checked);
+
   _antialiasing       = new QComboBox;
   _kdsplit            = new QComboBox;
 
@@ -144,9 +146,11 @@ mainwindow::mainwindow( int argc, char** argv, unsigned width, unsigned height )
   /////////////////////////////////////
   _file_menu = menuBar()->addMenu(tr("File"));
 
-  _action_loadfile = new QAction(tr("Open"), _glwindow);
-  _action_clear = new QAction(tr("Clear"), _glwindow);
+  _action_loadfile = new QAction(tr("Open"), _file_menu);
+  _action_clear = new QAction(tr("Clear"), _file_menu);
+
   _file_menu->addAction(_action_loadfile);
+  _file_menu->addAction(_action_clear);
 
   /////////////////////////////////////
   // anti-aliasing modes

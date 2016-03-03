@@ -7,6 +7,9 @@ in vec2     uv_coord;
 uniform int trimid;
 uniform int antialiasing;
 uniform int show_costs;
+uniform int pixelsize;
+
+uniform vec2 domain_size;
 
 uniform samplerBuffer trimdata;
 uniform samplerBuffer celldata;
@@ -25,6 +28,16 @@ layout (location = 0) out vec4 outcolor;
 
 void main(void) 
 { 
+  vec2 uv;
+  if ( pixelsize != 1 ) {
+    uv = mod(pixelsize*uv_coord, domain_size);
+  } else {
+    uv = uv_coord;
+  }
+
+  vec2 duvdx = dFdx(uv);
+  vec2 duvdy = dFdy(uv);
+
   const float epsilon = 0.00001;
   const int max_iterations = 16;
   const int trim_outer = 1;
@@ -38,7 +51,7 @@ void main(void)
 
     ///////////////////////////////////////////////////////////////////////////
   case 0: // no anti-aliasing
-    bool trimmed = trimming_double_binary(trimdata, celldata, curvelist, curvedata, sampler_preclass, uv_coord, trimid, trim_outer, iterations, epsilon, max_iterations);
+    bool trimmed = trimming_double_binary(trimdata, celldata, curvelist, curvedata, sampler_preclass, uv, trimid, trim_outer, iterations, epsilon, max_iterations);
     outcolor = debug_out * vec4(float(!trimmed));
     break;
 
@@ -48,9 +61,9 @@ void main(void)
   case 3:
     float coverage = trimming_double_binary_coverage(trimdata, celldata, curvelist, curvedata, sampler_preclass,
       prefilter_texture,
-      uv_coord,
-      dFdx(uv_coord),
-      dFdy(uv_coord),
+      uv,
+      duvdx,
+      duvdy,
       trimid,
       trim_outer,
       iterations,
@@ -89,9 +102,9 @@ void main(void)
   if (sample_rows != 0) {
 
     float sample_coverage = 0.0;
-    vec2 dx = dFdx(uv_coord) / (sample_rows + 1);
-    vec2 dy = dFdy(uv_coord) / (sample_cols + 1);
-    vec2 uv_base = uv_coord - dFdx(uv_coord) / 2.0 - dFdy(uv_coord) / 2.0;
+    vec2 dx = duvdx / (sample_rows + 1);
+    vec2 dy = duvdy / (sample_cols + 1);
+    vec2 uv_base = uv - duvdx / 2.0 -duvdy / 2.0;
 
     for (int c = 1; c <= sample_cols; ++c) {
       for (int r = 1; r <= sample_rows; ++r) {

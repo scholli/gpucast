@@ -44,11 +44,9 @@ class GPUCAST_CORE trimdomain_serializer
 
   public : // methods
 
-    
-    template <typename float3_type>
     address_type    serialize ( curve_ptr const&                             input_curve, 
                                 std::unordered_map<curve_ptr, address_type>& referenced_curves,
-                                std::vector<float3_type>&                    output_container ) const;
+                                std::vector<math::vec3f>&                    output_container ) const;
 
     address_type    serialize(trimdomain_ptr const& input_domain, 
                               std::vector<unsigned char>& output_classification_field, 
@@ -68,45 +66,6 @@ class GPUCAST_CORE trimdomain_serializer
 
 
   };
-
-
-/////////////////////////////////////////////////////////////////////////////
-template <typename float3_type>
-trimdomain_serializer::address_type
-trimdomain_serializer::serialize ( curve_ptr const&                               input_curve, 
-                                   std::unordered_map<curve_ptr, address_type>& referenced_curves,
-                                   std::vector<float3_type>&                      output_container ) const
-{
-  // find curve index, if already referenced
-  std::unordered_map<curve_ptr, address_type>::const_iterator curve_index = referenced_curves.find(input_curve);
-
-  if (curve_index != referenced_curves.end())
-  {
-    return curve_index->second;
-  }
-  else
-  {
-    // save current index
-    address_type index = address_type ( output_container.size() );
-
-    // copy curve data into buffer
-    std::transform ( input_curve->begin(), 
-                     input_curve->end(), 
-                     std::back_inserter(output_container), 
-                     hyperspace_adapter_2D_to_3D<gpucast::math::point2d, float3_type>() );
-
-    // insert curve pointer and according index into map
-    referenced_curves.insert ( std::make_pair ( input_curve, index ));
-
-    if ( output_container.size() >= std::numeric_limits<address_type>::max() )
-    {
-      throw std::runtime_error ("Address exceeds maximum of addressable memory");
-    }
-
-    // return index the curve was written to
-    return index;
-  }
-}
 
 } // namespace gpucast
 

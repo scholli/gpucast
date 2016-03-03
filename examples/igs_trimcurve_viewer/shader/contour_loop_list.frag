@@ -13,6 +13,9 @@ in vec2     uv_coord;
 uniform int trim_index;
 uniform int antialiasing;
 uniform int show_costs;
+uniform int pixelsize;
+
+uniform vec2 domain_size;
 
 uniform sampler2D prefilter_texture;
 
@@ -20,6 +23,16 @@ layout (location = 0) out vec4 outcolor;
 
 void main(void) 
 { 
+  vec2 uv;
+  if ( pixelsize != 1 ) {
+    uv = mod(pixelsize*uv_coord, domain_size);
+  } else {
+    uv = uv_coord;
+  }
+
+  vec2 duvdx = dFdx(uv);
+  vec2 duvdy = dFdy(uv);
+
   int iterations = 0;
   int sample_rows = 0;
   int sample_cols = 0;
@@ -29,7 +42,7 @@ void main(void)
     ///////////////////////////////////////////////////////////////////////////
   case 0: // no anti-aliasing
 
-    bool trimmed = trimming_loop_list(uv_coord, trim_index, sampler_preclass);
+    bool trimmed = trimming_loop_list(uv, trim_index, sampler_preclass);
 
     if (trimmed) {
       outcolor = vec4(0.0);
@@ -44,7 +57,7 @@ void main(void)
     case 2: 
     case 3: 
 
-      float coverage = trimming_loop_list_coverage(uv_coord, dFdx(uv_coord), dFdy(uv_coord), sampler_preclass, prefilter_texture, trim_index, antialiasing);
+      float coverage = trimming_loop_list_coverage(uv, duvdx, duvdy, sampler_preclass, prefilter_texture, trim_index, antialiasing);
 
       outcolor = debug_out * vec4(coverage);
       break;
@@ -80,9 +93,9 @@ void main(void)
   if (sample_rows != 0) {
 
     float sample_coverage = 0.0;
-    vec2 dx = dFdx(uv_coord) / (sample_rows + 1);
-    vec2 dy = dFdy(uv_coord) / (sample_cols + 1);
-    vec2 uv_base = uv_coord - dFdx(uv_coord) / 2.0 - dFdy(uv_coord) / 2.0;
+    vec2 dx = duvdx / (sample_rows + 1);
+    vec2 dy = duvdy / (sample_cols + 1);
+    vec2 uv_base = uv - duvdx / 2.0 -duvdy / 2.0;
 
     for (int c = 1; c <= sample_cols; ++c) {
       for (int r = 1; r <= sample_rows; ++r) {

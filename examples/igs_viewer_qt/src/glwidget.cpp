@@ -167,6 +167,8 @@ glwidget::resizeGL(int width, int height)
 }
 
 
+
+
 ///////////////////////////////////////////////////////////////////////
 void 
 glwidget::paintGL()
@@ -377,17 +379,28 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
     switch (key)
     {
       case 'q':
-        if (gpucast::beziersurfaceobject::double_binary == o->trimming()) {
-          o->trimming(gpucast::beziersurfaceobject::contours_binary);
-          std::cout << "Switching trim approach to: contours_binary" << std::endl;
-        }
-        else {
-          if (gpucast::beziersurfaceobject::contours_binary == o->trimming()) {
-            o->trimming(gpucast::beziersurfaceobject::double_binary);
-            std::cout << "Switching trim approach to: double_binary" << std::endl;
-          }
-        }
-        
+        switch (o->trimming()) {
+        case gpucast::beziersurfaceobject::no_trimming:
+          o->trimming(gpucast::beziersurfaceobject::curve_binary_partition);
+          std::cout << "Switching trim approach to: curve_binary_partition" << std::endl;
+          break;
+        case gpucast::beziersurfaceobject::curve_binary_partition :
+          o->trimming(gpucast::beziersurfaceobject::contour_binary_partition);
+          std::cout << "Switching trim approach to: contour_binary_partition" << std::endl;
+          break;
+        case gpucast::beziersurfaceobject::contour_binary_partition:
+          o->trimming(gpucast::beziersurfaceobject::contour_kd_partition);
+          std::cout << "Switching trim approach to: contour_kd_partition" << std::endl;
+          break;
+        case gpucast::beziersurfaceobject::contour_kd_partition:
+          o->trimming(gpucast::beziersurfaceobject::contour_list);
+          std::cout << "Switching trim approach to: contour_list" << std::endl;
+          break;
+        case gpucast::beziersurfaceobject::contour_list:
+          o->trimming(gpucast::beziersurfaceobject::no_trimming);
+          std::cout << "Switching trim approach to: no_trimming" << std::endl;
+          break;
+        };
         break;
       case 'I':
         o->max_newton_iterations(o->max_newton_iterations() + 1);
@@ -451,7 +464,6 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   }
 
 
-
   ///////////////////////////////////////////////////////////////////////
   void                      
   glwidget::ambient_occlusion             ( int i )
@@ -459,7 +471,24 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
     _ambient_occlusion = i;
   }
 
+  ///////////////////////////////////////////////////////////////////////
+  void
+  glwidget::antialiasing(antialiasing_mode i)
+  {
+    //for (auto o : _objects) {
+    //  o->
+    //}
+  }
 
+
+  ///////////////////////////////////////////////////////////////////////
+  void
+    glwidget::trimming(gpucast::beziersurfaceobject::trim_approach_t t)
+  {
+    for (auto o : _objects) {
+      o->trimming(t);
+    }
+  }
 
 
 ///////////////////////////////////////////////////////////////////////

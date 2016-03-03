@@ -7,6 +7,7 @@
 
 #include "resources/glsl/math/horner_curve.glsl"
 #include "resources/glsl/math/adjoint.glsl.frag"
+#include "resources/glsl/math/length_squared.glsl"
 #include "resources/glsl/math/transfer_function.glsl"
 
 #include "resources/glsl/trimming/binary_search.glsl"
@@ -148,10 +149,6 @@ trimming_contour_double_binary ( in samplerBuffer domainpartition,
   }
   
   return ((mod(total_intersections, 2) == 1) != bool(trim_outer));
-}
-
-float length_squared(vec2 a) {
-  return a.x*a.x + a.y*a.y;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

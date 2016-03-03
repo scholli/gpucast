@@ -52,6 +52,9 @@ private slots: // slot events
   void openfile                       ();
   void addfile                        ();
 
+  void trimming();
+  void antialiasing();
+
 private: // methods
 
   void _create_actions      ();
@@ -64,7 +67,7 @@ private: // attributes
   unsigned              _width;
   unsigned              _height;
 
-  std::map<glwidget::trimming_mode, std::string> _trimming_modes;
+  std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string> _trimming_modes;
   std::map<glwidget::antialiasing_mode, std::string> _antialiasing_modes;
 
   // menubar and menubar actions

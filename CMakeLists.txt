@@ -57,7 +57,7 @@ include(findGLEW)
 
 ##glut##########################################################
 set(GLUT_ROOT_PATH ${GLOBAL_EXT_DIR}/freeglut)
-include(findGLUT)
+find_package(GLUT REQUIRED)
 
 ##freeimage#####################################################
 include(findFreeImage)

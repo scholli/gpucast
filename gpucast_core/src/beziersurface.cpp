@@ -15,18 +15,22 @@
 
 // header, project
 #include <gpucast/core/uvgenerator.hpp>
+#include <gpucast/core/conversion.hpp>
+
 #include <gpucast/math/vec3.hpp>
+#include <gpucast/math/oriented_boundingbox_partial_derivative_policy.hpp>
 
 using namespace gpucast::math;
 
 namespace gpucast {
 
   //////////////////////////////////////////////////////////////////////////////
-  beziersurface::beziersurface ( )
-    : beziersurface3d ( ),
-      _chull          ( ),
-      _trimdomain     ( ),
-      _bezierdomain   ( curve_point_type (0, 0), curve_point_type (1, 1) )
+  beziersurface::beziersurface()
+    : beziersurface3d(),
+    _chull(),
+    _trimdomain(),
+    _bezierdomain(curve_point_type(0, 0), curve_point_type(1, 1)),
+    _obb()
   {}
 
 
@@ -35,52 +39,11 @@ namespace gpucast {
     : beziersurface3d ( untrimmed_surface ),
       _chull          ( ),
       _trimdomain     ( ),
-      _bezierdomain   ( curve_point_type (0, 0), curve_point_type (1, 1) )
-  {}
-
-
-  //////////////////////////////////////////////////////////////////////////////
-  beziersurface::beziersurface ( beziersurface const& bs )
-    : beziersurface3d           ( bs ),
-      _chull                    ( bs._chull ),
-      _trimdomain               ( bs._trimdomain ),
-      _bezierdomain             ( bs._bezierdomain )
-  {}
-
-
-  //////////////////////////////////////////////////////////////////////////////
-  beziersurface::~beziersurface()
-  {}
-
-
-  //////////////////////////////////////////////////////////////////////////////
-  void
-  beziersurface::swap(beziersurface& other)
+      _bezierdomain   ( curve_point_type (0, 0), curve_point_type (1, 1) ),
+      _obb            ()
   {
-    beziersurface3d::swap(other);
-
-    std::swap(_chull,         other._chull);
-    std::swap(_trimdomain,    other._trimdomain);
-    std::swap(_bezierdomain,  other._bezierdomain);
+    _obb = obbox3d(_points, partial_derivative_policy<point3d>());
   }
-
-
-  //////////////////////////////////////////////////////////////////////////////
-  beziersurface&
-  beziersurface::operator=(beziersurface const& cpy)
-  {
-    beziersurface tmp(cpy);
-    swap(tmp);
-    return *this;
-  }
-
-
-  //////////////////////////////////////////////////////////////////////////////
-  /*void
-  beziersurface::add (curve_type const& trim)
-  {
-    _trimdomain.add(trim);
-  }*/
 
 
   //////////////////////////////////////////////////////////////////////////////
@@ -232,8 +195,8 @@ namespace gpucast {
                                                                    float(1), 
                                                                    float(0), 
                                                                    float(1), 
-                                                                   float(order_u()), 
-                                                                   float(order_v())));
+                                                                   bit_cast<unsigned, float>(unsigned(order_u())),
+                                                                   bit_cast<unsigned, float>(unsigned(order_v()))));
 
     std::vector<gpucast::math::vec4f> attrib(uv.size());
 
@@ -279,6 +242,13 @@ namespace gpucast {
   beziersurface::trimcurves() const
   {
     return _trimdomain->size();
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////
+  math::obbox3d const& beziersurface::obb() const
+  {
+    return _obb;
   }
 
 

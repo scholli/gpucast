@@ -18,6 +18,7 @@
 // header, external
 #include <gpucast/math/parametric/beziersurface.hpp>
 #include <gpucast/math/parametric/point.hpp>
+#include <gpucast/math/oriented_boundingbox.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
@@ -35,15 +36,15 @@ class GPUCAST_CORE beziersurface : public gpucast::math::beziersurface3d
 {
 public : // enums, typedefs
 
-  typedef gpucast::math::beziersurface3d                                    base_type;
-  typedef gpucast::math::pointmesh2d<point_type>                            mesh_type;
+  typedef gpucast::math::beziersurface3d         base_type;
+  typedef gpucast::math::pointmesh2d<point_type> mesh_type;
 
-  typedef trimdomain::point_type                                  curve_point_type;
-  typedef trimdomain::curve_type                                  curve_type;
-  typedef std::vector<trimdomain::curve_type>                     curve_container;
+  typedef trimdomain::point_type                 curve_point_type;
+  typedef trimdomain::curve_type                 curve_type;
+  typedef std::vector<trimdomain::curve_type>    curve_container;
   
-  typedef std::shared_ptr<beziersurfaceobject>                  host_ptr;
-  typedef std::shared_ptr<trimdomain>                           trimdomain_ptr;
+  typedef std::shared_ptr<beziersurfaceobject>   host_ptr;
+  typedef std::shared_ptr<trimdomain>            trimdomain_ptr;
 
 public : // c'tors and d'tor
 
@@ -51,12 +52,6 @@ public : // c'tors and d'tor
 
   beziersurface     ( gpucast::math::beziersurface3d const& untrimmed_surface );
 
-  beziersurface     ( beziersurface const& bs );
-
-  ~beziersurface    ( );
-
-  void                          swap           ( beziersurface& swp );
-  beziersurface&                operator=      ( beziersurface const& cpy );
   void                          print          ( std::ostream& os ) const;
 
 public : // methods
@@ -91,6 +86,8 @@ public : // methods
   bool                          trimtype       ( ) const;
   std::size_t                   trimcurves     ( ) const;
 
+  math::obbox3d const&          obb            ( ) const;
+
   trimdomain_ptr const&         domain         ( ) const;
   void                          domain         ( trimdomain_ptr const& domain );
 
@@ -102,6 +99,7 @@ private : // attributes
   convex_hull             _chull;
   trimdomain_ptr          _trimdomain;
   trimdomain::bbox_type   _bezierdomain; // umin, umax, vmin, vmax
+  math::obbox3d           _obb;
 };
 
 } // namespace gpucast

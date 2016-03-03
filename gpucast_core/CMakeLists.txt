@@ -29,6 +29,8 @@ ADD_LIBRARY( gpucast_core SHARED
            ${GPUCAST_CORE_IMPORT_SRC}
 )
 
+set_target_properties(gpucast_core PROPERTIES DEBUG_POSTFIX "d")
+
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${CMAKE_CURRENT_SOURCE_DIR}/include 
                      ${QHULL_INCLUDE_DIR} 
@@ -51,7 +53,7 @@ SET_TARGET_PROPERTIES( gpucast_core PROPERTIES COMPILE_FLAGS ${GPUCAST_CORE_BUIL
 # dependencies
 ###############################################################################
 
-ADD_DEPENDENCIES(gpucast_core gpucast_gl gpucast_math)
+ADD_DEPENDENCIES(gpucast_core gpucast_math)
 
 IF (MSVC)
     TARGET_LINK_LIBRARIES( gpucast_core 

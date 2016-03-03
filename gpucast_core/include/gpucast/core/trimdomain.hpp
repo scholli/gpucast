@@ -101,6 +101,8 @@ class GPUCAST_CORE trimdomain
     bbox_type            _nurbsdomain;  // [umin, umax, vmin, vmax]
   };
 
+typedef std::shared_ptr<trimdomain> trimdomain_ptr;
+
 GPUCAST_CORE std::ostream&
 operator<<(std::ostream& os, trimdomain const& t);
 

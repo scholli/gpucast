@@ -62,19 +62,28 @@ contour_segment<value_t>::is_monotonic(typename point_type::coordinate_type cons
     return true;
   }
 
-  bool monotony = _curves.front()->is_monotonic(c);
-  bool increase = _curves.front()->is_increasing(c);
+  // find monotony
+  bool found_increasing = false;
+  bool found_decreasing = false;
 
   for (auto const& curve : _curves)
   {
-    if (monotony != curve->is_monotonic(c) ||
-        increase != curve->is_increasing(c)) {
+    if (!curve->is_monotonic(c)) {
+      return false;
+    }
+
+    if (!curve->is_constant(c)) {
+      found_increasing |= curve->is_increasing(c);
+      found_decreasing |= !curve->is_increasing(c);
+    }
+
+    if (found_increasing && found_decreasing) {
       return false;
     }
   }
 
   // no change in monotony or direction
-  return true;
+  return true ;
 }
 
 /////////////////////////////////////////////////////////////////////////////

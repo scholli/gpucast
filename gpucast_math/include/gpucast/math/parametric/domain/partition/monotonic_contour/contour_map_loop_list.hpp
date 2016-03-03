@@ -13,6 +13,7 @@
 #define GPUCAST_MATH_CONTOUR_MAP_LOOP_LIST_HPP
 
 // includes, system
+#include <unordered_map>
 
 // includes, project
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_base.hpp>

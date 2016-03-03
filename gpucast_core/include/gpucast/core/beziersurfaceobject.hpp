@@ -9,8 +9,8 @@
 *  description:
 *
 ********************************************************************************/
-#ifndef GPUCAST_CORE_BEZIEROBJECT_HPP
-#define GPUCAST_CORE_BEZIEROBJECT_HPP
+#ifndef GPUCAST_CORE_BEZIERSURFACEOBJECT_HPP
+#define GPUCAST_CORE_BEZIERSURFACEOBJECT_HPP
 
 // header, system
 
@@ -26,6 +26,10 @@
 
 namespace gpucast {
 
+struct trim_double_binary_serialization;
+struct trim_contour_binary_serialization;
+struct trim_kd_serialization;
+struct trim_loop_list_serialization;
 class surface_renderer;
 
 class GPUCAST_CORE beziersurfaceobject
@@ -37,12 +41,12 @@ public : // friends
 public : // enums, typedefs
 
   enum trim_approach_t {
-    no_trimming     = 0,
-    double_binary   = 1,
-    contours_binary = 2,
-    contours_kd     = 3,
-    loop_list       = 4,
-    count           = 5
+    no_trimming              = 0,
+    curve_binary_partition   = 1,
+    contour_binary_partition = 2,
+    contour_kd_partition     = 3,
+    contour_list             = 4,
+    count                    = 5
   };
 
   typedef beziersurface::value_type         value_type;
@@ -64,7 +68,8 @@ public : // methods
   void                    add             ( surface_ptr const& surface );
   void                    remove          ( surface_ptr const& surface );
 
-  void                    udpate          ();
+  trim_approach_t         trim_approach   () const;
+  void                    trim_approach   (trim_approach_t);
 
   std::size_t             surfaces        () const;
   std::size_t             trimcurves      () const;
@@ -83,33 +88,45 @@ public : // methods
 
   void                    print           ( std::ostream& os ) const;
 
-  void                    init            ( std::size_t subdivision_level_u = 0,
-                                            std::size_t subdivision_level_v = 0 );
+  void                    init            ( unsigned subdivision_level_u = 0,
+                                            unsigned subdivision_level_v = 0,
+                                            unsigned fast_trim_texture_resolution = 0 );
 
   bool                    initialized     () const;
 
+public : // getter for serialized data
+
+  std::shared_ptr<trim_double_binary_serialization>  serialized_trimdata_as_double_binary() const;
+  std::shared_ptr<trim_contour_binary_serialization> serialized_trimdata_as_contour_binary() const;
+  std::shared_ptr<trim_kd_serialization>             serialized_trimdata_as_contour_kd() const;
+  std::shared_ptr<trim_loop_list_serialization>      serialized_trimdata_as_contour_loop_list() const;
+
+  std::vector<gpucast::math::vec3f> const& serialized_raycasting_data_attrib0() const;
+  std::vector<gpucast::math::vec4f> const& serialized_raycasting_data_attrib1() const;
+  std::vector<gpucast::math::vec4f> const& serialized_raycasting_data_attrib2() const;
+  std::vector<gpucast::math::vec4f> const& serialized_raycasting_data_attrib3() const;
+  std::vector<gpucast::math::vec4f> const& serialized_raycasting_data_controlpoints() const;
+  std::vector<gpucast::math::vec4f> const& serialized_raycasting_data_obbs() const;
+  std::vector<unsigned> const& serialized_raycasting_data_indices() const;
+  
 private : // auxilliary methods
 
-  void                    _clearbuffer     ();
+  void                    _clearbuffer    ();
 
-  std::size_t             _add            ( surface_ptr const&                                                                          surface,
-                                            std::unordered_map<trimdomain_ptr, trimdomain_serializer::address_type>&                  db_domains,
-                                            std::unordered_map<curve_ptr, trimdomain_serializer::address_type>&                       db_curves,
-                                            std::unordered_map<trimdomain_ptr, trimdomain_serializer::address_type>&                  cmb_domains,
-                                            std::unordered_map<trimdomain::contour_segment_ptr, trimdomain_serializer::address_type>& cmb_segments, 
-                                            std::unordered_map<curve_ptr, trimdomain_serializer::address_type>&                       cmb_curves);
+  std::size_t             _add            ( surface_ptr surface, unsigned fast_trim_texture_resolution );
 
   std::size_t             _add            ( gpucast::math::pointmesh2d<gpucast::math::point3d> const& points );
 
   std::size_t             _add            ( convex_hull const& chull );
 
-public : // data members
+private : // data members
 
   /////////////////////////////////////////////////////////////////////////////
   // attributes
   /////////////////////////////////////////////////////////////////////////////
   surface_container                  _surfaces;
   bool                               _is_initialized = false;
+  trim_approach_t                    _trim_approach = contour_kd_partition;
                                      
   std::size_t                        _subdivision_u;
   std::size_t                        _subdivision_v;
@@ -125,25 +142,40 @@ public : // data members
   std::vector<gpucast::math::vec4f>    _attrib3; // [umin, umax, vmin, vmax] bezierpatch-domain in nurbs-domainspace
 
   // data for element array buffer
-  std::vector<unsigned>                     _indices; // indices of convex hulls
+  std::vector<unsigned>                _indices; // indices of convex hulls
 
   // data for texturebuffer
   std::vector<gpucast::math::vec4f>    _controlpoints; // "vertexdata" -> control point data for texturebuffer
+  std::vector<gpucast::math::vec4f>    _obbs;          // "obbdata" -> object-oriented bbox [ center, low, high, 
+                                                       //                                     mat0, mat1, mat2, mat3, 
+                                                       //                                     invmat0, invmat1, invmat2, invmat3, 
+                                                       //                                     LBF, RBF, RTF, LTF, 
+                                                       //                                     LBB, RBB, RTB, LTB ]
 
-  // trim approach 1 : contour based trimming
-  std::vector<gpucast::math::vec4f>    _cmb_partition;    
-  std::vector<gpucast::math::vec4f>    _cmb_contourlist;     
-  std::vector<gpucast::math::vec4f>    _cmb_curvelist;    
-  std::vector<float>                   _cmb_curvedata;    
-  std::vector<gpucast::math::vec3f>    _cmb_pointdata;    
+  // data for trimming
+  std::shared_ptr<trim_double_binary_serialization>  _trimdata_double_binary_serialization;
+  std::shared_ptr<trim_contour_binary_serialization> _trimdata_contour_binary_serialization;
+  std::shared_ptr<trim_kd_serialization>             _trimdata_kd_serialization;
+  std::shared_ptr<trim_loop_list_serialization>      _trimdata_loop_list_serialization;
 
-  // trim approach 2 : double binary search map
-  std::vector<gpucast::math::vec4f>    _db_partition;   // "trimdata"    
-  std::vector<gpucast::math::vec4f>    _db_celldata;    // "urangeslist" 
-  std::vector<gpucast::math::vec4f>    _db_curvelist;   // "curvelist"   
-  std::vector<gpucast::math::vec3f>    _db_curvedata;   // "curvedata"   
+  // data to change trimming method
+  struct multi_trim_index {
+    std::size_t double_binary_index;
+    std::size_t contour_binary_index;
+    std::size_t contour_kd_index;
+    std::size_t loop_list_index;
+  };
+
+  struct multi_trim_attrib_desc {
+    std::size_t base_index;
+    std::size_t count;
+    unsigned trim_type;
+  };
+
+  std::map<trimdomain_ptr, multi_trim_index>       _domain_index_map;
+  std::map<surface_ptr, multi_trim_attrib_desc>    _surface_index_map;
 };
 
 } // namespace gpucast
 
-#endif // GPUCAST_CORE_BEZIEROBJECT_HPP
+#endif // GPUCAST_CORE_BEZIERSURFACEOBJECT_HPP

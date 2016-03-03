@@ -24,23 +24,45 @@
 
 namespace gpucast {
 
-class trimdomain_serializer_double_binary : public trimdomain_serializer
+///////////////////////////////////////////////////////////////////////////////
+struct GPUCAST_CORE trim_double_binary_serialization {
+
+  trim_double_binary_serialization() :
+    partition(1),
+    celldata(1),
+    curvelist(1),
+    curvedata(1),
+    preclassification(1)
+  {}
+
+  std::size_t size_in_bytes() const {
+    return partition.size() * sizeof(math::vec4f) +
+      celldata.size() * sizeof(math::vec4f) +
+      curvelist.size() * sizeof(math::vec4f) +
+      curvedata.size() * sizeof(math::vec3f) +
+      preclassification.size() * sizeof(unsigned char);
+  }
+
+  std::vector<gpucast::math::vec4f> partition;         // "trimdata"    
+  std::vector<gpucast::math::vec4f> celldata;          // "urangeslist" 
+  std::vector<gpucast::math::vec4f> curvelist;         // "curvelist"   
+  std::vector<gpucast::math::vec3f> curvedata;         // "curvedata"   
+  std::vector<unsigned char>        preclassification; // "preclassification"
+
+  std::unordered_map<trimdomain_ptr, trimdomain_serializer::address_type>         domain_index_map;
+  std::unordered_map<trimdomain::curve_ptr, trimdomain_serializer::address_type>  curve_index_map;
+};
+
+class GPUCAST_CORE trimdomain_serializer_double_binary : public trimdomain_serializer
 {
   public : // enums/typedefs
 
   public : // methods
 
-    template <typename float4_type, typename float3_type>
-    address_type     serialize  ( trimdomain_ptr const&                               input, 
-                                  std::unordered_map<trimdomain_ptr, address_type>&   referenced_trimdomains,
-                                  std::unordered_map<curve_ptr, address_type>&        referenced_curves,
-                                  std::vector<float4_type>&                           output_vslabs,
-                                  std::vector<float4_type>&                           output_cells,
-                                  std::vector<float4_type>&                           output_curvelists,
-                                  std::vector<float3_type>&                           output_curves,
-                                  std::vector<unsigned char>&                         output_classification_field = std::vector<unsigned char>(),
-                                  bool                                                texture_classification_enabled = false,
-                                  unsigned                                            texture_classification_resolution = 8) const;
+    address_type     serialize  ( trimdomain_ptr const&              input, 
+                                  trim_double_binary_serialization&  serialization,
+                                  bool                               texture_classification_enabled = false,
+                                  unsigned                           texture_classification_resolution = 8) const;
 
     // output_vslabs
     // [ id ]       [ id + 1 ]      ...   [ id + 2 + #vintervals ]
@@ -79,120 +101,6 @@ class trimdomain_serializer_double_binary : public trimdomain_serializer
 
 };
 
-/////////////////////////////////////////////////////////////////////////////
-template <typename float4_type, typename float3_type>
-trimdomain_serializer::address_type  
-trimdomain_serializer_double_binary::serialize ( trimdomain_ptr const&                               input_domain, 
-                                                 std::unordered_map<trimdomain_ptr, address_type>&   referenced_trimdomains,
-                                                 std::unordered_map<curve_ptr, address_type>&        referenced_curves,
-                                                 std::vector<float4_type>&                           output_vslabs,
-                                                 std::vector<float4_type>&                           output_cells,
-                                                 std::vector<float4_type>&                           output_curvelists,
-                                                 std::vector<float3_type>&                           output_curves,
-                                                 std::vector<unsigned char>&                         output_classification_field,
-                                                 bool                                                pre_classification_enabled,
-                                                 unsigned                                            pre_classification_resolution) const
-{
-  // if already in buffer -> return index
-  if ( referenced_trimdomains.count( input_domain ) ) 
-  {
-    return referenced_trimdomains.find ( input_domain )->second;
-  }
-
-  // copy curves to double binary partition
-  trimdomain::curve_container curves = input_domain->curves();
-  gpucast::math::domain::partition<trimdomain_serializer::point_type>  input_partition ( curves.begin(), curves.end() );
-
-  // initialize partition
-  input_partition.initialize();
-
-  // entry point in texture
-  assert (output_vslabs.size() < std::numeric_limits<address_type>::max() );
-  assert (input_partition.size() < std::numeric_limits<address_type>::max() );
-
-  address_type partition_index = explicit_type_conversion<std::size_t, unsigned>(output_vslabs.size());
-  address_type vintervals = explicit_type_conversion<std::size_t, unsigned>(input_partition.size());
- 
-  float_type vmin = explicit_type_conversion<double, float>(input_partition.get_vertical_interval().minimum());
-  float_type vmax = explicit_type_conversion<double, float>(input_partition.get_vertical_interval().maximum());
-  float_type umin = explicit_type_conversion<double, float>(input_partition.get_horizontal_interval().minimum());
-  float_type umax = explicit_type_conversion<double, float>(input_partition.get_horizontal_interval().maximum());
-
-  // generate fast pre-classification texture
-  address_type classification_id = 0;
-  if (pre_classification_enabled) {
-    classification_id = trimdomain_serializer::serialize(input_domain, output_classification_field, pre_classification_resolution);
-  }
-
-  output_vslabs.push_back(float4_type(unsigned_bits_as_float(vintervals),
-                                      unsigned_bits_as_float(classification_id),
-                                      unsigned_bits_as_float(pre_classification_resolution),
-                                      unsigned_bits_as_float(pre_classification_resolution)
-    ));
-
-  output_vslabs.push_back ( float4_type ( umin, umax, vmin, vmax ) );
-
-  output_vslabs.push_back ( float4_type(input_domain->nurbsdomain().min[point_type::u],
-                                        input_domain->nurbsdomain().max[point_type::u],
-                                        input_domain->nurbsdomain().min[point_type::v],
-                                        input_domain->nurbsdomain().max[point_type::v]));
-
-  for ( auto v : input_partition )
-  {   
-    assert ( output_cells.size() < std::numeric_limits<address_type>::max() );
-    assert ( v->size() < std::numeric_limits<address_type>::max() );
-
-    output_vslabs.push_back(float4_type(explicit_type_conversion<double, float>(v->get_vertical_interval().minimum()),
-                                        explicit_type_conversion<double, float>(v->get_vertical_interval().maximum()),
-                                        unsigned_bits_as_float ( address_type (output_cells.size())), 
-                                        unsigned_bits_as_float ( address_type (v->size()))));
-
-    output_cells.push_back(float4_type(explicit_type_conversion<double, float>(v->get_horizontal_interval().minimum()),
-                                       explicit_type_conversion<double, float>(v->get_horizontal_interval().maximum()),
-                                       unsigned_bits_as_float ( address_type (v->size()) ),
-                                       0 ) );
-
-    for ( gpucast::math::domain::partition<gpucast::math::point2d>::cell_ptr_type const& c : *v )
-    {
-      assert ( c->intersections() < std::numeric_limits<address_type>::max());
-      assert ( output_curvelists.size() < std::numeric_limits<address_type>::max());
-      assert ( c->size() < std::numeric_limits<address_type>::max());
-      
-      output_cells.push_back(float4_type(explicit_type_conversion<double, float>(c->get_horizontal_interval().minimum()),
-                                         explicit_type_conversion<double, float>(c->get_horizontal_interval().maximum()),
-                                         unsigned_bits_as_float ( address_type (c->intersections()) ),
-                                         unsigned_bits_as_float ( address_type (output_curvelists.size() ) ) ) );
-
-      output_curvelists.push_back ( float4_type ( unsigned_bits_as_float ( address_type (c->size() ) ), 0, 0, 0) );
-
-      for ( gpucast::math::domain::partition<gpucast::math::point2d>::curve_segment_ptr const& cv : *c)
-      {
-        address_type curve_index = trimdomain_serializer::serialize (cv->curve(), referenced_curves, output_curves );
-        //address_type order_and_u_increase = cv->curve()->is_increasing(point_type::u) ? explicit_type_conversion<size_t, int>(cv->curve()->order()) : -explicit_type_conversion<size_t, int>(cv->curve()->order());
-        int order_and_u_increase = cv->curve()->is_increasing(point_type::u) ? int(cv->curve()->order()) : -1 * int(cv->curve()->order());
-
-        output_curvelists.push_back ( float4_type( unsigned_bits_as_float ( curve_index ),
-                                                   unsigned_bits_as_float ( order_and_u_increase ),
-                                                   explicit_type_conversion<double, float>(cv->tmin()),
-                                                   explicit_type_conversion<double, float>(cv->tmax())));
-      }
-    }
-  }
-
-  referenced_trimdomains.insert( std::make_pair (input_domain, partition_index));
-
-  // make sure buffers are still in range of address_type
-  if ( output_vslabs.size()     >= std::numeric_limits<address_type>::max() ||
-       output_cells.size()      >= std::numeric_limits<address_type>::max() ||
-       output_curvelists.size() >= std::numeric_limits<address_type>::max() ||
-       output_curves.size()     >= std::numeric_limits<address_type>::max() ||
-       input_partition.size()   >= std::numeric_limits<address_type>::max() ) 
-  {
-    throw std::runtime_error("Address exceeds maximum of addressable memory");
-  }
-
-  return partition_index;
-}
 
 
 } // namespace gpucast

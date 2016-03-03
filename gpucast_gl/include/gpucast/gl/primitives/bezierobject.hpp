@@ -15,6 +15,7 @@
 #include <gpucast/core/beziersurfaceobject.hpp>
 
 #include <gpucast/gl/util/material.hpp>
+#include <gpucast/gl/util/hullvertexmap.hpp>
 
 #include <gpucast/gl/glpp.hpp>
 #include <gpucast/gl/program.hpp>
@@ -23,6 +24,7 @@
 #include <gpucast/gl/texturebuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>
+
 
 
 namespace gpucast { namespace gl {
@@ -47,7 +49,7 @@ public :
   bezierobject(bezierobject const&) = delete;
   bezierobject& operator=(gpucast::beziersurfaceobject const&) = delete;
 
-  ~bezierobject();
+  gpucast::beziersurfaceobject const& object() const;
 
   // draw methods
   void                draw();
@@ -78,7 +80,7 @@ private :
 
   void _apply_uniforms(program const& p);
 
-  void _upload(gpucast::beziersurfaceobject const& b);
+  void _upload();
 
   // render parameters
   unsigned                              _iterations    = 6;
@@ -86,8 +88,10 @@ private :
   bool                                  _culling       = true;
   bool                                  _raycasting    = true;
   anti_aliasing_mode                    _antialiasing  = no_anti_aliasing;
-  beziersurfaceobject::trim_approach_t  _trimming      = beziersurfaceobject::double_binary;
-  
+  beziersurfaceobject::trim_approach_t  _trimming      = beziersurfaceobject::contour_kd_partition;
+    
+  beziersurfaceobject                   _object;
+
   // object properties
   material                              _material;
 
@@ -102,22 +106,33 @@ private :
   gpucast::gl::elementarraybuffer       _indexarray;
 
   gpucast::gl::texturebuffer            _controlpoints;
+  gpucast::gl::texturebuffer            _obbs;
                                         
   gpucast::gl::texturebuffer            _cmb_partition;
   gpucast::gl::texturebuffer            _cmb_contourlist;
   gpucast::gl::texturebuffer            _cmb_curvelist;
   gpucast::gl::texturebuffer            _cmb_curvedata;
   gpucast::gl::texturebuffer            _cmb_pointdata;
+  gpucast::gl::texturebuffer            _cmb_preclassification;
 
   gpucast::gl::texturebuffer            _db_partition;
   gpucast::gl::texturebuffer            _db_celldata;
   gpucast::gl::texturebuffer            _db_curvelist;
   gpucast::gl::texturebuffer            _db_curvedata;
+  gpucast::gl::texturebuffer            _db_preclassification;
+
+  gpucast::gl::texturebuffer            _kd_partition;
+  gpucast::gl::texturebuffer            _kd_contourlist;
+  gpucast::gl::texturebuffer            _kd_curvelist;
+  gpucast::gl::texturebuffer            _kd_curvedata;
+  gpucast::gl::texturebuffer            _kd_pointdata;
+  gpucast::gl::texturebuffer            _kd_preclassification;
 
   gpucast::gl::shaderstoragebuffer      _loop_list_loops;
   gpucast::gl::shaderstoragebuffer      _loop_list_contours;
   gpucast::gl::shaderstoragebuffer      _loop_list_curves;
   gpucast::gl::shaderstoragebuffer      _loop_list_points;
+  gpucast::gl::texturebuffer            _loop_list_preclassification;
 
   gpucast::gl::vertexarrayobject        _vao;
 };
@@ -171,6 +186,7 @@ public: // methods
 private : // methods
 
   void _init_program();
+  void _init_hullvertexmap();
   void _init_prefilter(unsigned prefilter_resolution = 128);
 
 private: // attributes
@@ -185,6 +201,7 @@ private: // attributes
   gpucast::math::matrix4f       _modelviewprojectionmatrix;
   gpucast::math::matrix4f       _modelviewprojectionmatrixinverse;
                               
+  std::shared_ptr<shaderstoragebuffer> _hullvertexmap;
   std::set<std::string>         _pathlist;
   gpucast::math::vec3f          _background;
 

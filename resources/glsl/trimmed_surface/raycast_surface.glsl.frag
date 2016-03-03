@@ -10,6 +10,7 @@
 *
 ********************************************************************************/
 #extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_shader_storage_buffer_object : enable
 #extension GL_ARB_separate_shader_objects : enable 
 
 /****************************************************
@@ -31,6 +32,9 @@ precision highp float;
  ******************************************************************************/
 
 uniform samplerBuffer vertexdata;
+uniform samplerBuffer obbdata;
+
+uniform usamplerBuffer preclassification;
 
 uniform samplerBuffer cmb_partition;
 uniform samplerBuffer cmb_contourlist;
@@ -87,14 +91,17 @@ uniform sampler2D   diffusemap;
 in vec4 v_modelcoord;
 in vec4 frag_texcoord;
 
-flat in int trim_index_db;
-flat in int trim_index_cmb;
+flat in int trim_index;
+flat in int trim_approach;
+flat in int trim_type;
+
+flat in int obb_index;
 flat in int data_index;
 flat in int order_u;
 flat in int order_v;
 
 flat in vec4 uvrange;
-flat in int  trimtype;
+
 
 /*******************************************************************************
  * UNIFORMS :
@@ -105,7 +112,6 @@ uniform int   iterations;
 uniform float epsilon_object_space;
 uniform float nearplane;
 uniform float farplane;
-uniform int   trimapproach;
 
 uniform int   spheremapping;
 uniform int   diffusemapping;
@@ -113,7 +119,6 @@ uniform int   diffusemapping;
 /* trimming */
 uniform sampler2D prefilter_texture;
 uniform int   antialiasing;
-uniform int   trimming;
 
 uniform int   raycasting_enabled;
 
@@ -140,6 +145,7 @@ layout (depth_any)    out float gl_FragDepth;
 /*******************************************************************************
  * include functions
  ******************************************************************************/
+#include "./resources/glsl/common/obb_area.glsl"
 #include "./resources/glsl/base/compute_depth.frag"
 #include "./resources/glsl/math/adjoint.glsl.frag"
 #include "./resources/glsl/math/euclidian_space.glsl.frag"
@@ -149,7 +155,10 @@ layout (depth_any)    out float gl_FragDepth;
 #include "./resources/glsl/math/raygeneration.glsl.frag" 
 #include "./resources/glsl/trimming/trimming_contour_double_binary.glsl"
 #include "./resources/glsl/trimming/trimming_double_binary.glsl"
+#include "./resources/glsl/trimming/trimming_contour_kd.glsl"
+#include "./resources/glsl/trimming/trimming_loop_lists.glsl"
 #include "./resources/glsl/trimmed_surface/shade_phong_fresnel.glsl.frag"
+
 
 /*******************************************************************************
  * raycast shader for trimmed rational bezier surfaces
@@ -195,32 +204,61 @@ void main(void)
 
   bool is_trimmed = false;
 
-#if 1
-  is_trimmed = trimming_double_binary ( bp_trimdata, 
-                                        bp_celldata, 
-                                        bp_curvelist, 
-                                        bp_curvedata, 
-                                        uv, 
-                                        trim_index_db, 
-                                        trimtype, 
-                                        iters, 
-                                        0.00001, 
-                                        16 );
-#else
-  is_trimmed= trimming_contour_double_binary ( cmb_partition, 
-                                               cmb_contourlist,
-                                               cmb_curvelist,
-                                               cmb_curvedata,
-                                               cmb_pointdata,
-                                               uv, 
-                                               trim_index_cmb,
-                                               trimtype, 
-                                               iters, 
-                                               0.00001, 
-                                               16 );
-#endif
+  if (trim_approach == 0)
+  {
+    is_trimmed = false;
+  }
 
-  if ( trimming != 0 && is_trimmed )
+  if (trim_approach == 1)
+  {
+    is_trimmed = trimming_double_binary ( bp_trimdata, 
+                                          bp_celldata, 
+                                          bp_curvelist, 
+                                          bp_curvedata, 
+                                          preclassification,
+                                          uv, 
+                                          trim_index, 
+                                          trim_type, 
+                                          iters, 
+                                          0.00001, 
+                                          16 );
+  }
+  
+  if (trim_approach == 2) {
+    is_trimmed= trimming_contour_double_binary ( cmb_partition, 
+                                                 cmb_contourlist,
+                                                 cmb_curvelist,
+                                                 cmb_curvedata,
+                                                 cmb_pointdata,
+                                                 preclassification,
+                                                 uv, 
+                                                 trim_index,
+                                                 trim_type, 
+                                                 iters, 
+                                                 0.00001, 
+                                                 16 );
+  }
+
+  if (trim_approach == 3) {
+    is_trimmed = trimming_contour_kd(cmb_partition,
+                                     cmb_contourlist,
+                                     cmb_curvelist,
+                                     cmb_curvedata,
+                                     cmb_pointdata,
+                                     preclassification,
+                                     uv,
+                                     trim_index,
+                                     trim_type,
+                                     iters,
+                                     0.00001,
+                                     16);
+  }
+
+  if (trim_approach == 4) {
+    is_trimmed = trimming_loop_list(uv, trim_index, preclassification);
+  }
+
+  if ( is_trimmed )
   {
     discard;
   }

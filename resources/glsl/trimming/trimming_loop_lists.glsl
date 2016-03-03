@@ -734,14 +734,8 @@ trimming_loop_list_coverage(in vec2 uv,
                                  loops[index].domainsize,
                                  preclasstex_width, 
                                  preclasstex_height);
-    return float(pre_class/3.0);
     if (pre_class != 0) {
-      if (mod(pre_class, 2) == 1) {
-        return 0.2;
-      } else {
-        return 0.8;
-      }
-      //return float(mod(pre_class, 2) == 1);
+      return float(mod(pre_class, 2) == 1);
     } 
   }
 
@@ -775,6 +769,11 @@ trimming_loop_list_coverage(in vec2 uv,
   /////////////////////////////////////////////////////////////////////////////
 
   mat2 J = mat2(duvdx, duvdy);
+
+  if (determinant(J) == 0.0) {
+    return float(!is_trimmed);
+  }
+
   mat2 Jinv = inverse(J);
 
   vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient_on_curve);

@@ -29,9 +29,10 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
 SET (GPUCAST_GLUT_BUILD_FLAGS ${BUILD_FLAGS})
 
 IF (MSVC)
-  SET(GPUCAST_GLUT_BUILD_FLAGS "${GPUCAST_GLUT_BUILD_FLAGS} -D GPUCAST_GLUT_EXPORT")
+  SET(GPUCAST_GLUT_BUILD_FLAGS "${GPUCAST_GLUT_BUILD_FLAGS} -D GPUCAST_GLUT_EXPORT -D FREEGLUT_LIB_PRAGMAS=0")
 ENDIF (MSVC)
 
+SET_TARGET_PROPERTIES( gpucast_glut PROPERTIES DEBUG_POSTFIX "d")
 SET_TARGET_PROPERTIES( gpucast_glut PROPERTIES COMPILE_FLAGS ${GPUCAST_GLUT_BUILD_FLAGS})
 
 ###############################################################################
@@ -42,7 +43,7 @@ ADD_DEPENDENCIES(gpucast_glut gpucast_math gpucast_gl)
 IF (MSVC)
   TARGET_LINK_LIBRARIES( gpucast_glut
                          OpenGL32.lib 
-                         general ${GLUT_glut_LIBRARY}
+                         optimized ${GLUT_glut_LIBRARY} debug ${GLUT_glut_LIBRARY}
                          debug ${GLEW_LIBRARY_DEBUG} optimized ${GLEW_LIBRARY_RELEASE}
                        )
 

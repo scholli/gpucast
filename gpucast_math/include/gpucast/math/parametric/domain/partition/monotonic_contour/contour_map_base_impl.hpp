@@ -49,8 +49,12 @@ contour_map_base<value_t>::add ( contour_type const& loop )
     if (!segment->is_increasing(point_type::v)) {
       segment->invert();
     }
-    if (!segment->is_monotonic(point_type::u) && !segment->is_monotonic(point_type::v)) {
+    if (!segment->is_monotonic(point_type::u) || !segment->is_monotonic(point_type::v)) {
       std::cout << "Caution: non-bi-monotonic segment!" << std::endl;
+
+      for (auto c = segment->begin(); c != segment->end(); ++c) {
+        std::cout << **c << std::endl;
+      }
     }
   }
 

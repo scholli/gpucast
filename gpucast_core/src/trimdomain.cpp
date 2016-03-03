@@ -83,7 +83,12 @@ namespace gpucast {
   bool
   trimdomain::type() const
   {
-    return _type;
+    if (_trimloops.empty()) {
+      return false;
+    }
+    else {
+      return _type;
+    }
   }
 
 

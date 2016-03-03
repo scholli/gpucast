@@ -46,10 +46,11 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   /////////////////////////////////////
   // trimming modes
   /////////////////////////////////////
-  _trimming_modes.insert(std::make_pair(glwidget::untrimmed, "No Trimming"));
-  _trimming_modes.insert(std::make_pair(glwidget::double_binary, "Double Binary"));
-  _trimming_modes.insert(std::make_pair(glwidget::contour, "Contour"));
-  _trimming_modes.insert(std::make_pair(glwidget::loop_list, "Loop Lists"));
+  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::no_trimming, "No Trimming"));
+  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::curve_binary_partition, "Classic double binary partition"));
+  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_binary_partition, "Contour binary-partition"));
+  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_kd_partition, "Contour kd-partition"));
+  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_list, "Contour loop-list"));
 
   /////////////////////////////////////
   // create GUI
@@ -89,6 +90,9 @@ mainwindow::close_window()
 void 
 mainwindow::update_interface ( )
 {
+  trimming();
+  antialiasing();
+
   // update window
   QMainWindow::update();
 }
@@ -134,6 +138,36 @@ mainwindow::addfile()
 
 
 ///////////////////////////////////////////////////////////////////////////////
+void mainwindow::trimming()
+{
+  std::string str = _combobox_trimming->currentText().toStdString();
+  gpucast::beziersurfaceobject::trim_approach_t trimapproach = gpucast::beziersurfaceobject::no_trimming;
+
+  for (auto mode : _trimming_modes)
+  {
+    if (mode.second == str) 
+      trimapproach = mode.first;
+  }
+
+  _glwindow->trimming(trimapproach);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::antialiasing()
+{
+  std::string str = _combobox_trimming->currentText().toStdString();
+  glwidget::antialiasing_mode aa_mode = glwidget::disabled;
+
+  for (auto mode : _antialiasing_modes)
+  {
+    if (mode.second == str)
+      aa_mode = mode.first;
+  }
+
+  _glwindow->antialiasing(aa_mode);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 /* private */ void 
 mainwindow::_create_actions()
 {
@@ -155,6 +189,9 @@ mainwindow::_create_actions()
   connect(_checkbox_fxaa,                   SIGNAL( stateChanged(int) ), _glwindow,    SLOT( fxaa(int) ));
   connect(_checkbox_vsync,                  SIGNAL( stateChanged(int) ), _glwindow,    SLOT( vsync(int) ));
   connect(_checkbox_sao,                    SIGNAL( stateChanged(int) ), _glwindow,    SLOT( ambient_occlusion(int) ));
+
+  connect(_combobox_antialiasing, SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
+  connect(_combobox_trimming, SIGNAL(currentIndexChanged(int)), this, SLOT(trimming()));
 
   _file_menu->addSeparator();
   _file_menu->addAction   (_action_loadfile);
@@ -215,7 +252,7 @@ mainwindow::_create_menus()
   _combobox_trimming     = new QComboBox;
 
   std::for_each(_antialiasing_modes.begin(), _antialiasing_modes.end(), [&](std::map<glwidget::antialiasing_mode, std::string>::value_type const& p) { _combobox_antialiasing->addItem(p.second.c_str()); });
-  std::for_each(_trimming_modes.begin(), _trimming_modes.end(), [&](std::map<glwidget::trimming_mode, std::string>::value_type const& p) { _combobox_trimming->addItem(p.second.c_str()); });
+  std::for_each(_trimming_modes.begin(), _trimming_modes.end(), [&](std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string>::value_type const& p) { _combobox_trimming->addItem(p.second.c_str()); });
 
   // apply widget into layout
   unsigned row = 0;
@@ -227,6 +264,9 @@ mainwindow::_create_menus()
   layout->addWidget(new QLabel("=======Anti-Aliasing======="), row++, 0);
   layout->addWidget(_checkbox_fxaa, row++, 0);
   layout->addWidget(_combobox_antialiasing, row++, 0);
+
+  layout->addWidget(new QLabel("=======Trimming======="), row++, 0);
+  layout->addWidget(_combobox_trimming, row++, 0);
 
   layout->addWidget(new QLabel("=========Rendering========="), row++, 0);
 

@@ -4,7 +4,7 @@
 bool
 newton(inout vec2       uv,
        in float         epsilon,
-       in int           steps,
+       in int           max_steps,
        in samplerBuffer data,
        in int           index,
        in int           orderu,
@@ -23,7 +23,7 @@ newton(inout vec2       uv,
 
   vec2 Fuv = vec2(0.0);
 
-  for (int i = 0; i < steps; ++i) 
+  for (int i = 0; i < max_steps; ++i) 
   {
     evaluateSurface(data, index, orderu, orderv, uv, p, du, dv);
 
@@ -33,20 +33,22 @@ newton(inout vec2       uv,
     vec2 Fv   = vec2(dot(n1, dv.xyz), dot(n2, dv.xyz));  
 
     mat2 J    = mat2(Fu, Fv); 
-    mat2 Jinv = adjoint(J) / determinant(J);
+
+    float det = determinant(J);
+    mat2 Jinv = adjoint(J) / det;
 
     uv = uv - Jinv * Fuv; 
 
     if (length(Fuv) < epsilon) {
       break;
     }
+
   } 
 
+  bool uv_distance_too_large = length(Fuv) > epsilon;
+  bool uv_out_of_domain = uv[0] < 0.0 || uv[0] > 1.0 || uv[1] < 0.0 || uv[1] > 1.0;
+
   // return if convergence was reached
-  return !(length(Fuv) > epsilon) || 
-         uv[0] < 0.0 || 
-         uv[0] > 1.0 || 
-         uv[1] < 0.0 || 
-         uv[1] > 1.0;
+  return !uv_distance_too_large && !uv_out_of_domain;
 }
 

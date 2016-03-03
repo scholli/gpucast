@@ -35,6 +35,8 @@ ADD_LIBRARY( gpucast_math SHARED
            ${GPUCAST_MATH_MATH_PARAMETRIC_IMPLEMENTATION_INC}
            ${GPUCAST_MATH_MATH_UTIL_INC}
 )
+
+SET_TARGET_PROPERTIES(gpucast_math PROPERTIES DEBUG_POSTFIX "d")
 SET_TARGET_PROPERTIES(gpucast_math PROPERTIES LINKER_LANGUAGE CXX)
 
 ###############################################################################

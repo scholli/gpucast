@@ -62,13 +62,6 @@ public :
     supersampling8x8 = 5
   };
 
-  enum trimming_mode {
-    untrimmed = 0,
-    double_binary = 1,
-    contour = 2,
-    loop_list = 3
-  };
-
   glwidget                                              ( int argc, char** argv, QGLFormat const& format, QWidget *parent = 0 );
   ~glwidget                                             ();
 
@@ -85,6 +78,9 @@ public Q_SLOTS :
   void                    fxaa                          ( int ); 
   void                    vsync                         ( int );
   void                    ambient_occlusion             ( int );
+
+  void                    antialiasing                  (antialiasing_mode);
+  void                    trimming(gpucast::beziersurfaceobject::trim_approach_t);
 
 protected:
 

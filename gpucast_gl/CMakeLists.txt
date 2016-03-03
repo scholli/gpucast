@@ -80,6 +80,8 @@ ADD_LIBRARY( gpucast_gl SHARED
            ${GPUCAST_GL_GLSL_COMMON}
 )
 
+set_target_properties(gpucast_gl PROPERTIES DEBUG_POSTFIX "d")
+
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
                      ${GLEW_INCLUDE_DIR}
                      ../gpucast_core/include
@@ -105,6 +107,7 @@ ADD_DEPENDENCIES(gpucast_gl gpucast_math)
 
 IF (MSVC)
   TARGET_LINK_LIBRARIES( gpucast_gl
+                         gpucast_core
                          OpenGL32.lib 
                          debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY}
                          debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}

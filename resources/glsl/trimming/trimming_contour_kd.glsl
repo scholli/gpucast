@@ -1,10 +1,11 @@
-#ifndef GPUCAST_TRIMMING_CONTOUR_DOUBLE_BINARY
-#define GPUCAST_TRIMMING_CONTOUR_DOUBLE_BINARY
+#ifndef GPUCAST_TRIMMING_CONTOUR_KD
+#define GPUCAST_TRIMMING_CONTOUR_KD
 
 #include "resources/glsl/common/config.glsl"
 #include "resources/glsl/common/conversion.glsl"
 #include "resources/glsl/common/constants.glsl"
 
+#include "resources/glsl/math/length_squared.glsl"
 #include "resources/glsl/math/horner_curve.glsl"
 #include "resources/glsl/math/adjoint.glsl.frag"
 #include "resources/glsl/math/transfer_function.glsl"
@@ -224,10 +225,6 @@ trimming_contour_kd ( in samplerBuffer  domainpartition,
   return ((mod(total_intersections, 2) == 1) != bool(trim_outer));
 }
 
-float length_squared(vec2 a) {
-  return a.x*a.x + a.y*a.y;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // returns coverage of pixel
 ////////////////////////////////////////////////////////////////////////////////
@@ -365,29 +362,9 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
   bool covered = bool((mod(total_intersections, 2) == 1) == bool(trim_outer));
   mat2 J = mat2(duvdx, duvdy);
 
-  /////////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////////////
-  // workaround for nasty partial derivative constraints close to preclassified fragments
-  /////////////////////////////////////////////////////////////////////////////////////
-  if (determinant(J) == 0.0 && classification_base_id != 0)
-  {
-    int preclasstex_width  = int(floatBitsToUint(baseinfo.z));
-    int preclasstex_height = int(floatBitsToUint(baseinfo.w));    
-    int pre_class = pre_classify(preclassification,
-                                 classification_base_id,
-                                 uv,
-                                 domainbounds,
-                                 preclasstex_width, 
-                                 preclasstex_height);
-    
-    if (pre_class != 0) {
-      return float(mod(pre_class, 2) != 0);
-    } 
+  if (determinant(J) == 0.0) {
+    return float(!covered);
   }
-  /////////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////////////
 
   mat2 Jinv = inverse(J);
 
