@@ -78,8 +78,8 @@ public:
       }
     }
     else {
-      //filenames.push_back("data/deckel_vorn.igs");
-      filenames.push_back("I:/repositories/gpucast-github/data/vw/scheiben/heckscheibe.igs");
+      filenames.push_back("data/part.igs");
+      //filenames.push_back("I:/repositories/gpucast-github/data/vw/scheiben/heckscheibe.igs");
     
     }
     

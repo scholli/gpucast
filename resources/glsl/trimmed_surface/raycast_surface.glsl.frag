@@ -1,14 +1,4 @@
-/********************************************************************************
-*
-* Copyright (C) 2007-2010 Bauhaus-Universitaet Weimar
-*
-*********************************************************************************
-*
-*  module     : raycast_surface.glsl.frag
-*  project    : gpucast
-*  description:
-*
-********************************************************************************/
+#extension GL_EXT_gpu_shader4 : enable
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_ARB_shader_storage_buffer_object : enable
 #extension GL_ARB_separate_shader_objects : enable 
@@ -30,7 +20,6 @@ precision highp float;
  *   uvrange    : parameter range of surface [umin, umax, vmin, vmax]
  *   trimtype   : 0 = inner is trimmed, 1 outer is trimmed
  ******************************************************************************/
-
 uniform samplerBuffer vertexdata;
 uniform samplerBuffer obbdata;
 
@@ -46,6 +35,8 @@ uniform samplerBuffer bp_trimdata;
 uniform samplerBuffer bp_celldata;
 uniform samplerBuffer bp_curvelist;
 uniform samplerBuffer bp_curvedata;
+
+#define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 0
 
 /*******************************************************************************
  *  Trimming for parameter pair [u,v] : DATA STRUCTURE :
@@ -101,7 +92,6 @@ flat in int order_u;
 flat in int order_v;
 
 flat in vec4 uvrange;
-
 
 /*******************************************************************************
  * UNIFORMS :
@@ -269,7 +259,7 @@ void main(void)
   vec4 p_world = modelviewmatrix * vec4(p.xyz, 1.0);
   float corrected_depth = compute_depth ( p_world, nearplane, farplane );
   gl_FragDepth = corrected_depth;
-
+  
   /*********************************************************************
    * Shading process
    ********************************************************************/
@@ -287,6 +277,9 @@ void main(void)
                                     spheremap,
                                     bool(diffusemapping),
                                     diffusemap);
+
+    //float area = calculate_obb_area(modelviewprojectionmatrix, modelviewmatrixinverse, obbdata, obb_index);
+    //out_color = vec4(area, area, area, 1.0);
 
 #else 
 
@@ -314,6 +307,7 @@ void main(void)
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }
 }
+
 
 
 

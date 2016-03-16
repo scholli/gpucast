@@ -14,6 +14,7 @@
 #include <fstream>
 #include <regex>
 
+#include <gpucast/gl/error.hpp>
 #include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/util/resource_factory.hpp>
@@ -52,19 +53,24 @@ namespace gpucast {
     {
       auto& renderer = bezierobject_renderer::instance();
 
-      renderer.bind();
-
-      renderer.apply_uniforms();
-      _apply_uniforms(renderer.get_program());
-
       // draw proxy geometry
       _vao.bind();
       _indexarray.bind();
-      glDrawElements(GL_TRIANGLES, GLsizei(_size), GL_UNSIGNED_INT, 0);
-      _indexarray.unbind();
-      _vao.unbind();
+
+      renderer.bind();
+
+      // apply renderer-dependent uniforms 
+      renderer.apply_uniforms();
+
+      _apply_uniforms(renderer.get_program());
+
+      glDrawElementsBaseVertex(GL_TRIANGLES, GLsizei(_size), GL_UNSIGNED_INT, 0, 0);
 
       renderer.unbind();
+
+      // unbind buffer
+      _indexarray.unbind();
+      _vao.unbind();
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -205,17 +211,17 @@ namespace gpucast {
         p.set_texturebuffer("preclassification", _kd_preclassification, renderer.next_texunit());
         break;
       case beziersurfaceobject::contour_list:
-        _loop_list_loops.bind_buffer_base(0);
-        p.set_shaderstoragebuffer("loop_buffer", _loop_list_loops, 0);
+        _loop_list_loops.bind_buffer_base(1);
+        p.set_shaderstoragebuffer("loop_buffer", _loop_list_loops, 1);
 
-        _loop_list_contours.bind_buffer_base(1);
-        p.set_shaderstoragebuffer("contour_buffer", _loop_list_contours, 1);
+        _loop_list_contours.bind_buffer_base(2);
+        p.set_shaderstoragebuffer("contour_buffer", _loop_list_contours, 2);
 
-        _loop_list_curves.bind_buffer_base(2);
-        p.set_shaderstoragebuffer("curve_buffer", _loop_list_curves, 2);
+        _loop_list_curves.bind_buffer_base(3);
+        p.set_shaderstoragebuffer("curve_buffer", _loop_list_curves, 3);
 
-        _loop_list_points.bind_buffer_base(3);
-        p.set_shaderstoragebuffer("point_buffer", _loop_list_points, 3);
+        _loop_list_points.bind_buffer_base(4);
+        p.set_shaderstoragebuffer("point_buffer", _loop_list_points, 4);
 
         p.set_texturebuffer("preclassification", _loop_list_preclassification, renderer.next_texunit());
         break;
@@ -469,7 +475,6 @@ namespace gpucast {
         _hullvertexmap->bind_buffer_base(0);
         _program->set_shaderstoragebuffer("hullvertexmap", *_hullvertexmap, 0);
       }
-
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -519,3 +524,4 @@ namespace gpucast {
 
   } // namespace gl
 } // namespace gpucast 
+

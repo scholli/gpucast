@@ -15,9 +15,11 @@
 
 // local includes
 #include <gpucast/gl/util/trackball.hpp>
+#include <gpucast/gl/util/contextinfo.hpp>
 #include <gpucast/gl/util/material.hpp>
 #include <gpucast/gl/util/init_glew.hpp>
 
+#include <gpucast/gl/atomicbuffer.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/timer_query.hpp>
 #include <gpucast/gl/program.hpp>
@@ -72,6 +74,7 @@ public:
   void initialize()
   {
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     gpucast::igs_loader loader;
     gpucast::surface_converter converter;
@@ -118,6 +121,7 @@ public:
         }
 
         bezier_object->init();
+        std::cout << "Bbox : " << bezier_object->bbox().min << " - " << bezier_object->bbox().max << std::endl;
         
         for (auto i = bezier_object->begin(); i != bezier_object->end(); ++i) {
           auto obb_gl = std::make_shared<gpucast::gl::cube>();
@@ -265,7 +269,7 @@ public:
     _query.end();
 
     std::cout << "fps: " << double(1000) / _query.result_wait() << "\r";
-
+#if 1
     if (_show_obbs) {
 
       _program->begin();
@@ -277,6 +281,7 @@ public:
       }
       _program->end();
     }
+#endif
   }
 
   void resize(int w, int h)
@@ -326,6 +331,7 @@ public:
         break;
       case 'o':
         _show_obbs = !_show_obbs;
+        std::cout << "Rendering bbox set to " << _show_obbs << std::endl;
         break;
       }
     }
@@ -334,11 +340,12 @@ public:
 
 int main(int argc, char** argv)
 {
-  gpucast::gl::glutwindow::init(argc, argv, resolution_x, resolution_y, 100, 100, 4, 3, true);
+  gpucast::gl::glutwindow::init(argc, argv, resolution_x, resolution_y, 100, 100, 4, 2, true);
   auto& win = gpucast::gl::glutwindow::instance();
 
-  glewExperimental = true;
   gpucast::gl::init_glew(std::cout);
+
+  gpucast::gl::print_contextinfo(std::cout);
 
   auto the_app = std::make_shared<application>(argc, argv);
 

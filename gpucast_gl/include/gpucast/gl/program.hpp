@@ -102,6 +102,8 @@ public : // methods
   GLint       get_uniform_location       ( char const* varname ) const;
   GLint       get_uniform_blockindex     ( char const* varname ) const;
   GLint       get_uniform_blocksize      ( char const* varname ) const;
+  GLint       get_active_atomic_counters () const;
+  GLint       get_parameter(GLenum parameter_name) const;
 
   void        set_uniform_blockbinding   ( GLuint blockindex, GLuint blockbinding ) const;
 

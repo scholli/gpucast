@@ -1,15 +1,4 @@
- /********************************************************************************
-* 
-* Copyright (C) 2007-2010 Bauhaus-Universitaet Weimar                                               
-*
-*********************************************************************************
-*
-*  module     : raycast_surface.glsl.vert                             
-*  project    : gpucast 
-*  description: 
-*
-********************************************************************************/
-#extension GL_NV_gpu_shader5 : enable
+#extension GL_EXT_gpu_shader4 : enable
 
 #include "./resources/glsl/common/conversion.glsl"
 
@@ -34,13 +23,11 @@ flat out int order_v;
 
 flat out vec4 uvrange;
 
-
 // uniforms
 uniform mat4 modelviewmatrix;
 uniform mat4 modelviewprojectionmatrix;
 uniform mat4 normalmatrix;
 uniform mat4 modelviewmatrixinverse;
-
 
 void main(void)
 {

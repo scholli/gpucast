@@ -18,9 +18,11 @@
 #include <gpucast/gl/util/hullvertexmap.hpp>
 
 #include <gpucast/gl/glpp.hpp>
-#include <gpucast/gl/program.hpp>
+\
 #include <gpucast/gl/arraybuffer.hpp>
+#include <gpucast/gl/atomicbuffer.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
+#include <gpucast/gl/program.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>

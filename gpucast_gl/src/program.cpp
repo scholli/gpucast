@@ -13,6 +13,7 @@
 // header i/f
 #include "gpucast/gl/program.hpp"
 
+#include <gpucast/gl/atomicbuffer.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>
 #include <gpucast/gl/texture1d.hpp>
@@ -674,6 +675,20 @@ program::get_uniform_blocksize(char const* varname) const
   GLint blocksize;
   glGetActiveUniformBlockiv(id_, glGetUniformBlockIndex(id_, varname), GL_UNIFORM_BLOCK_DATA_SIZE, &blocksize);
   return blocksize;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+GLint program::get_active_atomic_counters() const
+{
+  return get_parameter(GL_ACTIVE_ATOMIC_COUNTER_BUFFERS);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+GLint program::get_parameter(GLenum parameter_name) const
+{
+  GLint param;
+  glGetProgramiv(id_, parameter_name, &param);
+  return param;
 }
 
 

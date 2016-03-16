@@ -96,6 +96,10 @@ public : // methods
 
 public : // getter for serialized data
 
+  std::unordered_map<surface_ptr, unsigned> const&   serialized_vertex_base_indices() const;
+  std::unordered_map<surface_ptr, unsigned> const&   serialized_obb_base_indices() const;
+  std::unordered_map<surface_ptr, unsigned> const&   serialized_trim_base_indices() const;
+
   std::shared_ptr<trim_double_binary_serialization>  serialized_trimdata_as_double_binary() const;
   std::shared_ptr<trim_contour_binary_serialization> serialized_trimdata_as_contour_binary() const;
   std::shared_ptr<trim_kd_serialization>             serialized_trimdata_as_contour_kd() const;
@@ -134,6 +138,9 @@ private : // data members
   /////////////////////////////////////////////////////////////////////////////
   // client side render information
   /////////////////////////////////////////////////////////////////////////////
+  std::unordered_map<surface_ptr, unsigned> _surface_vertex_base_ids;
+  std::unordered_map<surface_ptr, unsigned> _surface_obb_base_ids; 
+  std::unordered_map<surface_ptr, unsigned> _surface_trim_ids;
 
   // data for arraybuffer
   std::vector<gpucast::math::vec3f>    _attrib0; // vertices of convex hulls

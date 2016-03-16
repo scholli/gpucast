@@ -37,6 +37,10 @@ void
 beziersurfaceobject::remove ( surface_ptr const& surface ) 
 {
   _surfaces.erase(surface);
+
+  _surface_vertex_base_ids.erase(surface);
+  _surface_obb_base_ids.erase(surface);
+  _surface_trim_ids.erase(surface);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +88,7 @@ void beziersurfaceobject::trim_approach(beziersurfaceobject::trim_approach_t app
                                 _attrib2[i][3]);
     }
 
+    _surface_trim_ids[surface.first] = trim_index;
   }
 }
 
@@ -113,11 +118,6 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
     _add(surface, fast_trim_texture_resolution);
   }
 
-  unsigned k = 0;
-  for (auto i : _obbs) {
-    std::cout << "[" << k++ << "] : " << i << std::endl;
-  }
-
   _is_initialized = true;
 }
 
@@ -128,6 +128,25 @@ beziersurfaceobject::initialized () const
 {
   return _is_initialized;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_vertex_base_indices() const
+{
+  return _surface_vertex_base_ids;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_obb_base_indices() const
+{
+  return _surface_obb_base_ids;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_trim_base_indices() const
+{
+  return _surface_trim_ids;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 std::shared_ptr<trim_double_binary_serialization> beziersurfaceobject::serialized_trimdata_as_double_binary() const
@@ -233,6 +252,10 @@ beziersurfaceobject::_clearbuffer()
   // clear index buffer
   _indices.clear();
 
+  _surface_vertex_base_ids.clear();
+  _surface_obb_base_ids.clear();
+  _surface_trim_ids.clear();
+
   // texture buffer need to be at least one element!
   _controlpoints.resize(1);
   _obbs.resize(1);
@@ -245,6 +268,7 @@ beziersurfaceobject::_clearbuffer()
 
   // clear mappings
   _surface_index_map.clear();
+  _domain_index_map.clear();
 }
 
 
@@ -342,6 +366,7 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
 
   // add control point data into buffer
   std::size_t controlpointdata_index  = _add (surface->points());
+  _surface_vertex_base_ids.insert({ surface, controlpointdata_index });
 
   // add trimming information
   trimdomain_serializer_contour_map_binary cmb_serializer;
@@ -381,6 +406,7 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
 
   // serialize obb
   std::size_t obb_index = _obbs.size();
+  _surface_obb_base_ids.insert({ surface, obb_index });
 
   auto const& obb = surface->obb();
 
@@ -395,28 +421,25 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   auto orientation = surface->obb().orientation();
   auto inv_orientation = compute_inverse(orientation);
 
-  orientation.transpose();
-  inv_orientation.transpose();
-
-  _obbs.push_back(math::vec4f(orientation[0][0], orientation[0][1], orientation[0][2], 0.0));
-  _obbs.push_back(math::vec4f(orientation[1][0], orientation[1][1], orientation[1][2], 0.0));
-  _obbs.push_back(math::vec4f(orientation[2][0], orientation[2][1], orientation[2][2], 0.0));
+  _obbs.push_back(math::vec4f(orientation[0][0], orientation[1][0], orientation[2][0], 0.0));
+  _obbs.push_back(math::vec4f(orientation[0][1], orientation[1][1], orientation[2][1], 0.0));
+  _obbs.push_back(math::vec4f(orientation[0][2], orientation[1][2], orientation[2][2], 0.0));
   _obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
-  _obbs.push_back(math::vec4f(inv_orientation[0][0], inv_orientation[0][1], inv_orientation[0][2], 0.0));
-  _obbs.push_back(math::vec4f(inv_orientation[1][0], inv_orientation[1][1], inv_orientation[1][2], 0.0));
-  _obbs.push_back(math::vec4f(inv_orientation[2][0], inv_orientation[2][1], inv_orientation[2][2], 0.0));
+  _obbs.push_back(math::vec4f(inv_orientation[0][0], inv_orientation[1][0], inv_orientation[2][0], 0.0));
+  _obbs.push_back(math::vec4f(inv_orientation[0][1], inv_orientation[1][1], inv_orientation[2][1], 0.0));
+  _obbs.push_back(math::vec4f(inv_orientation[0][2], inv_orientation[1][2], inv_orientation[2][2], 0.0));
   _obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
-  auto lbf = /* orientation * */ math::point3d(plow[0], plow[1], plow[2]);  // left, bottom, front
-  auto rbf = /* orientation * */ math::point3d(phigh[0], plow[1], plow[2]);  // right, bottom, front
-  auto rtf = /* orientation * */ math::point3d(phigh[0], phigh[1], plow[2]);  // right, top, front
-  auto ltf = /* orientation * */ math::point3d(plow[0], plow[1], plow[2]);  // left, top, front
+  auto lbf = math::point3d(plow[0], plow[1], plow[2]);  // left, bottom, front
+  auto rbf = math::point3d(phigh[0], plow[1], plow[2]);  // right, bottom, front
+  auto rtf = math::point3d(phigh[0], phigh[1], plow[2]);  // right, top, front
+  auto ltf = math::point3d(plow[0], phigh[1], plow[2]);  // left, top, front
 
-  auto lbb = /* orientation * */ math::point3d(plow[0], plow[1], phigh[2]); // left, bottom, back  
-  auto rbb = /* orientation * */ math::point3d(phigh[0], plow[1], phigh[2]); // right, bottom, back  
-  auto rtb = /* orientation * */ math::point3d(phigh[0], phigh[1], phigh[2]); // right, top, back  
-  auto ltb = /* orientation * */ math::point3d(plow[0], phigh[1], phigh[2]); // left, top, back  
+  auto lbb = math::point3d(plow[0], plow[1], phigh[2]); // left, bottom, back  
+  auto rbb = math::point3d(phigh[0], plow[1], phigh[2]); // right, bottom, back  
+  auto rtb = math::point3d(phigh[0], phigh[1], phigh[2]); // right, top, back  
+  auto ltb = math::point3d(plow[0], phigh[1], phigh[2]); // left, top, back  
 
   lbf.weight(1.0);
   rbf.weight(1.0);
