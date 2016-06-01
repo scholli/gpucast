@@ -52,12 +52,16 @@ set(Boost_USE_STATIC_LIBS ON)
 find_package( Boost 1.54.0 REQUIRED thread regex system program_options timer chrono filesystem date_time)
 ADD_DEFINITIONS("-DBOOST_ALL_NO_LIB")
 
-##glew##########################################################
-include(findGLEW)
-
 ##glut##########################################################
 set(GLUT_ROOT_PATH ${GLOBAL_EXT_DIR}/freeglut)
 find_package(GLUT REQUIRED)
+
+##glew##########################################################
+set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${GLOBAL_EXT_DIR}/glew/include)
+set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${GLOBAL_EXT_DIR}/glew/lib)
+include(findGLEW)
+set(GLEW_LIBRARY_RELEASE ${GLEW_LIBRARY})
+set(GLEW_LIBRARY_DEBUG ${GLEW_LIBRARY})
 
 ##freeimage#####################################################
 include(findFreeImage)
@@ -68,8 +72,8 @@ include(findQHull)
 ##cuda##########################################################
 IF (${ENABLE_GPUCAST_VOLUME_MODULE})
   IF (MSVC)
-	  set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5)
-	  set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA6.5/bin)
+	  set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA)
+	  set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA/bin)
 	  include(findCUDA)
   ELSE (MSVC)
 	  set(ENV{CUDA_PATH} /opt/cuda/latest/cuda/)

@@ -3,8 +3,7 @@ if(COMMAND cmake_policy)
 endif()
 
 
-LIST(APPEND CMAKE_PREFIX_PATH "${GLOBAL_EXT_DIR}/Qt5/lib/cmake")
-LIST(APPEND CMAKE_LIBRARY_PATH "C:\\\\Program Files (x86)\\\\Microsoft SDKs\\\\Windows\\\\v7.1A\\\\Lib\\\\x64")
+list(APPEND CMAKE_PREFIX_PATH "${GLOBAL_EXT_DIR}/Qt5/lib/cmake")
 
 find_package(Qt5OpenGL REQUIRED)
 find_package(Qt5Core REQUIRED)
