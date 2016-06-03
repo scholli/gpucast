@@ -44,7 +44,7 @@ IF (MSVC)
   TARGET_LINK_LIBRARIES( gpucast_glut
                          OpenGL32.lib 
                          optimized ${GLUT_glut_LIBRARY} debug ${GLUT_glut_LIBRARY}
-                         debug ${GLEW_LIBRARY_DEBUG} optimized ${GLEW_LIBRARY_RELEASE}
+                         general ${GLEW_LIBRARY}     
                        )
 
 ELSEIF (UNIX)

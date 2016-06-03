@@ -60,8 +60,6 @@ find_package(GLUT REQUIRED)
 set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${GLOBAL_EXT_DIR}/glew/include)
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${GLOBAL_EXT_DIR}/glew/lib)
 include(findGLEW)
-set(GLEW_LIBRARY_RELEASE ${GLEW_LIBRARY})
-set(GLEW_LIBRARY_DEBUG ${GLEW_LIBRARY})
 
 ##freeimage#####################################################
 include(findFreeImage)

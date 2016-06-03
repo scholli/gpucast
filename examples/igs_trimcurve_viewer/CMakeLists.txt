@@ -15,6 +15,8 @@ find_package(Qt5Widgets REQUIRED)
 ###############################################################################
 GET_FILENAME_COMPONENT(_EXE_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 SET(_EXE_NAME example_${_EXE_NAME}.out)
+PROJECT(${_EXE_NAME})
+
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 ###############################################################################

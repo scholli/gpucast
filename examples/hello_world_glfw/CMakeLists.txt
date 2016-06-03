@@ -7,6 +7,8 @@ FILE(GLOB EXAMPLE_HELLO_WORLD_GLFW_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cp
 
 GET_FILENAME_COMPONENT(_EXE_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 SET(_EXE_NAME example_${_EXE_NAME}.out)
+PROJECT(${_EXE_NAME})
+
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES( ${INCLUDE_PATHS} 
@@ -45,8 +47,8 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
                       gpucast_gl 
                       gpucast_core
 		                  general ${GLUT_glut_LIBRARY}
-                      debug ${GLFW_LIBRARY_DEBUG} optimized ${GLFW_LIBRARY_RELEASE}
-                      debug ${GLEW_LIBRARY_DEBUG} optimized ${GLEW_LIBRARY_RELEASE}
+                      general ${GLEW_LIBRARY}     
+                      optimized ${GLFW_LIBRARY_RELEASE} debug ${GLFW_LIBRARY_DEBUG}     
 		                  ${FREEIMAGE_LIBRARY}
 		                  ${FREEIMAGEPLUS_LIBRARY}
 )
@@ -70,13 +72,5 @@ ENDIF (MSVC)
 ###############################################################################
 # copy runtime libraries as a post-build process
 ###############################################################################
-IF (MSVC)
-  FOREACH(_LIB ${GPUCAST_RUNTIME_LIBRARIES})
-    get_filename_component(_FILE ${_LIB} NAME)
-    get_filename_component(_PATH ${_LIB} DIRECTORY)
-    SET(COPY_DLL_COMMAND_STRING ${COPY_DLL_COMMAND_STRING} robocopy \"${_PATH}\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" ${_FILE} /R:0 /W:0 /NP &)
-  ENDFOREACH()
-
-  SET(COPY_DLL_COMMAND_STRING ${COPY_DLL_COMMAND_STRING} robocopy \"${LIBRARY_OUTPUT_PATH}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP &)
-  ADD_CUSTOM_COMMAND ( TARGET ${_EXE_NAME} POST_BUILD COMMAND ${COPY_DLL_COMMAND_STRING} \n if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1))
-ENDIF (MSVC)
+copy_external_runtime_libraries()
+apply_debug_working_directory()
