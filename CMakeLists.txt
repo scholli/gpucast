@@ -49,7 +49,7 @@ set(BOOST_INCLUDEDIR ${GLOBAL_EXT_DIR}/boost/include)
 set(BOOST_LIBRARYDIR ${GLOBAL_EXT_DIR}/boost/lib)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
-find_package( Boost 1.54.0 REQUIRED thread regex system program_options timer chrono filesystem date_time)
+find_package( Boost 1.54.0 REQUIRED thread regex system program_options timer chrono filesystem date_time log)
 ADD_DEFINITIONS("-DBOOST_ALL_NO_LIB")
 
 ##glut##########################################################

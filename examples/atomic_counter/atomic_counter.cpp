@@ -90,7 +90,8 @@ public :
        void main(void) 
        { 
          uint nfrag = atomicCounterIncrement(counter);
-         color = vec4( float(mod(nfrag, 2048) / 2048), float(mod(nfrag, 256) / 256), float(mod(nfrag, 1024) / 1024), 1.0);
+         //color = vec4( float(mod(nfrag, 2048) / 2048), float(mod(nfrag, 256) / 256), float(mod(nfrag, 1024) / 1024), 1.0);
+         color = vec4( float(nfrag)/65536.0, float(nfrag)/65536.0, float(nfrag)/65536.0, 1.0);
        }
       )";
   

@@ -20,10 +20,12 @@
 #include <vector>
 
 // header, external
+#include <boost/optional.hpp>
 
 // header, project
 #include <gpucast/core/gpucast.hpp>
 #include <gpucast/core/nurbssurface.hpp>
+#include <gpucast/math/vec3.hpp>
 
 
 namespace gpucast {
@@ -65,9 +67,13 @@ public : // methods
   std::size_t         surfaces   () const;
   std::size_t         trimcurves () const;
 
+  boost::optional<math::vec3f> color() const { return _color; };
+  void                color(math::vec3f const& c) { _color = c; };
+
 private : // data members
 
-  surface_container _surfaces;
+  surface_container   _surfaces;
+  boost::optional<math::vec3f> _color;
 };
 
 } // namespace gpucast

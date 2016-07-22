@@ -40,7 +40,10 @@ macro(copy_external_runtime_libraries)
    endforeach()
 
    SET(COPY_DLL_COMMAND_STRING ${COPY_DLL_COMMAND_STRING} robocopy \"${LIBRARY_OUTPUT_PATH}/$(Configuration)/\" \"${EXECUTABLE_OUTPUT_PATH}/$(Configuration)/\" *.dll /R:0 /W:0 /NP &)
-   ADD_CUSTOM_COMMAND ( TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${COPY_DLL_COMMAND_STRING} \n if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1))
+   ADD_CUSTOM_COMMAND ( TARGET ${PROJECT_NAME} 
+                        POST_BUILD COMMAND ${COPY_DLL_COMMAND_STRING} \n if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1)
+                        DEPENDS gpucast gpucast_core gpucast_gl
+                        )
 
   endif (MSVC)
 endmacro(copy_external_runtime_libraries)

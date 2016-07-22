@@ -210,6 +210,28 @@ buffer::make_resident ( ) const
 {
   glMakeBufferResidentNV(target(), GL_READ_ONLY);
 }
+///////////////////////////////////////////////////////////////////////////////
+void buffer::bind_range(unsigned in_index, std::size_t in_offset, std::size_t in_size)
+{
+  if ((0 > in_offset)
+    || (0 > in_size)
+    || (_capacity < (in_offset + in_size))) {
+    std::runtime_error("buffer::bind_range(): Invalid range.\n");
+  }
+
+  if (0 < in_size) {
+    glBindBufferRange(target(), in_index, id(), in_offset, in_size);
+  }
+  else {
+    glBindBufferBase(target(), in_index, id());
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void buffer::unbind_range(unsigned in_index)
+{
+  glBindBufferBase(target(), in_index, 0);
+}
 
 
 } } // namespace gpucast / namespace gl

@@ -53,8 +53,7 @@ public :
     
   void init_shader()  
   {
-    std::string vertexshader_code = R"(
-    "#version 420 core
+    std::string vertexshader_code = R"(#version 420 core
      #extension GL_ARB_separate_shader_objects : enable 
       
       layout (location = 0) in vec4 vertex;   
@@ -75,10 +74,11 @@ public :
         fragnormal   = normalmatrix * normal; 
         fragposition = modelviewmatrix * vertex;
         gl_Position  = modelviewprojectionmatrix * vertex;
-      })"; 
 
-    std::string fragmentshader_code = R"(
-       #version 420 core
+      }
+)"; 
+
+    std::string fragmentshader_code = R"(#version 420 core
        #extension GL_ARB_separate_shader_objects : enable
 
        in vec4 fragnormal;   
@@ -95,6 +95,7 @@ public :
          color = attenuation * vec4(1.0) * dot(N,V)  +  0.1 * fragtexcoord; 
          color.w = 0.4; 
        }
+
       )";
   
     gpucast::gl::vertexshader   vs;

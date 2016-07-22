@@ -51,6 +51,7 @@
 
 #include <gpucast/core/surface_converter.hpp>
 #include <gpucast/core/import/igs.hpp>
+#include <gpucast/core/import/igs_loader.hpp>
 #include <gpucast/core/trimdomain.hpp>
 #include <gpucast/core/trimdomain_serializer_double_binary.hpp>
 #include <gpucast/core/trimdomain_serializer_contour_map_binary.hpp>
@@ -115,12 +116,19 @@ glwidget::open ( std::list<std::string> const& files )
   for ( std::string const& filename : files )
   {
     gpucast::igs_loader igs_loader; 
-    std::shared_ptr<gpucast::nurbssurfaceobject>  nobj = igs_loader.load(filename);
-    std::shared_ptr<gpucast::beziersurfaceobject> bobj = std::make_shared<gpucast::beziersurfaceobject>();
+    auto objects = igs_loader.load(filename);
+    
+    // merge bezier objects
+    std::shared_ptr<gpucast::beziersurfaceobject> bezier_object = std::make_shared<gpucast::beziersurfaceobject>();
+    _objects[filename] = bezier_object;
 
-    gpucast::surface_converter converter;
-    converter.convert(nobj, bobj);
-    _objects[filename] = bobj;
+    for (auto nurbs_object : objects) {
+      std::shared_ptr<gpucast::beziersurfaceobject> tmp = std::make_shared<gpucast::beziersurfaceobject>();
+
+      gpucast::surface_converter converter;
+      converter.convert(nurbs_object, tmp);
+      bezier_object->merge(*tmp);
+    }
   }
 }
 

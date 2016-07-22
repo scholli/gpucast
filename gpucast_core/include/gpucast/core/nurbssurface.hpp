@@ -47,6 +47,7 @@ public : // c'tor / d'tor
 
   nurbssurface  ();
   nurbssurface  ( nurbssurface const& rhs );
+  nurbssurface  ( math::nurbssurface3d const& rhs );
   ~nurbssurface ();
 
   void                      swap        ( nurbssurface& rhs );
@@ -79,7 +80,7 @@ private : // data members
     std::copy(begin, end, _trimcurves.begin());
   }*/
 
-  std::ostream& operator<<(std::ostream& os, nurbssurface const& rhs);
+GPUCAST_CORE std::ostream& operator<<(std::ostream& os, nurbssurface const& rhs);
 
 } // namespace gpucast
 

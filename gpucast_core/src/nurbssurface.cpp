@@ -37,6 +37,12 @@ namespace gpucast {
       _trimtype   ( rhs._trimtype )
   {}
 
+  //////////////////////////////////////////////////////////////////////////////
+  nurbssurface::nurbssurface(math::nurbssurface3d const& ns)
+    : gpucast::math::nurbssurface<gpucast::math::point3d>(ns),
+      _trimloops(),
+      _trimtype(true)
+  {}
 
   //////////////////////////////////////////////////////////////////////////////
   nurbssurface::~nurbssurface()

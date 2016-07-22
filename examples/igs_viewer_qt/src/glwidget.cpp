@@ -44,6 +44,7 @@
 #include <gpucast/core/nurbssurfaceobject.hpp>
 #include <gpucast/core/surface_converter.hpp>
 #include <gpucast/core/import/igs_loader.hpp>
+#include <gpucast/core/import/igs_loader.hpp>
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -589,27 +590,44 @@ void
 glwidget::_openfile ( std::string const& file, gpucast::math::axis_aligned_boundingbox<gpucast::math::point3d>& bbox )
 {
   gpucast::igs_loader         igsloader;
+
   gpucast::surface_converter  nurbsconverter;
   std::string                 extension = boost::filesystem::extension(file);
 
   if ( extension == ".igs" )
   { 
-    auto nurbsobject = igsloader.load(file);
+    auto nurbsobjects = igsloader.load(file);
 
-    auto bezierobject = std::make_shared<gpucast::beziersurfaceobject>();
-    nurbsconverter.convert(nurbsobject, bezierobject);
+    for (auto no : nurbsobjects) 
+    {
+      auto bezierobject = std::make_shared<gpucast::beziersurfaceobject>();
+      nurbsconverter.convert(no, bezierobject);
 
-    bezierobject->init();
+      bezierobject->init();
+      auto drawable = std::make_shared<gpucast::gl::bezierobject>(*bezierobject);
 
-    gpucast::gl::material mat;
-    mat.randomize(0.05f, 1.0f, 0.1f, 20.0f, 1.0f);
+      gpucast::gl::material mat;
+      if (no->color()) {
+        mat.diffuse = gpucast::math::vec4f{ no->color().get()[0], no->color().get()[1], no->color().get()[2], 1.0 };
+        mat.ambient = gpucast::math::vec4f{ 0.0, 0.0, 0.0, 0.0 };
+        mat.specular = gpucast::math::vec4f{ 0.0, 0.0, 0.0, 0.0 };
+        mat.shininess = 20.0;
+        mat.opacity = 1.0;
+      }
+      else {
+        mat.randomize(0.05f, 1.0f, 0.1f, 20.0f, 1.0f);
+      }
+      std::cout << "Setting material...\n";
+      mat.print(std::cout);
 
-    auto drawable = std::make_shared<gpucast::gl::bezierobject>(*bezierobject);
-    drawable->set_material(mat);
+      drawable->set_material(mat);
+      
+      
 
-    _objects.push_back(drawable);
+      _objects.push_back(drawable);
 
-    bbox = bezierobject->bbox();
+      bbox = bezierobject->bbox();
+    }
   }
 
   if ( extension == ".cfg" )
@@ -666,24 +684,28 @@ glwidget::_openfile ( std::string const& file, gpucast::math::axis_aligned_bound
 
     for (file_map_t::iterator i = filemap.begin(); i != filemap.end(); ++i) 
     {
-      auto nurbsobject = igsloader.load(i->second);
+      auto nurbsobjects = igsloader.load(i->second);
 
-      auto bezierobject = std::make_shared<gpucast::beziersurfaceobject>();
-      nurbsconverter.convert(nurbsobject, bezierobject);
+      for (auto nurbsobject : nurbsobjects) 
+      {
+        auto bezierobject = std::make_shared<gpucast::beziersurfaceobject>();
+        nurbsconverter.convert(nurbsobject, bezierobject);
 
-      bezierobject->init();
+        bezierobject->init();
 
-      auto drawable = std::make_shared<gpucast::gl::bezierobject>(*bezierobject);
-      drawable->set_material(i->first);
-      bbox = bezierobject->bbox();
-
-      _objects.push_back(drawable);
-
-      if ( i == filemap.begin() )
-      { 
+        auto drawable = std::make_shared<gpucast::gl::bezierobject>(*bezierobject);
+        drawable->set_material(i->first);
         bbox = bezierobject->bbox();
-      } else {
-        bbox.merge(bezierobject->bbox());
+
+        _objects.push_back(drawable);
+
+        if (i == filemap.begin())
+        {
+          bbox = bezierobject->bbox();
+        }
+        else {
+          bbox.merge(bezierobject->bbox());
+        }
       }
     }
 

@@ -86,9 +86,9 @@ public:
     for (auto const& file : filenames)
     {
       std::cout << "loading " << file << std::endl;
-      auto nurbs_object = loader.load(file);
+      auto nurbs_objects = loader.load(file);
 
-      if (nurbs_object)
+      for (auto nurbs_object : nurbs_objects)
       {
         auto bezier_object = std::make_shared<gpucast::beziersurfaceobject>();
         converter.convert(nurbs_object, bezier_object);
@@ -111,10 +111,6 @@ public:
         drawable->set_material(mat);
 
         _objects.push_back(drawable);
-      }
-      else {
-        std::cerr << "failed to load " << file << std::endl;
-        std::cerr << loader.error_message() << std::endl;
       }
     }
   }

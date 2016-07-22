@@ -104,9 +104,15 @@ public:
     for (auto const& file : filenames)
     {
       std::cout << "loading " << file << std::endl;
-      auto nurbs_object = loader.load(file);
+       
+#if 1
+      gpucast::igs_loader loader2;
+      auto nurbs_objects = loader2.load(file);
+#else
+      auto nurbs_objects = loader.load(file);
+#endif
 
-      if (nurbs_object)
+      for (auto nurbs_object : nurbs_objects)
       {
         auto bezier_object = std::make_shared<gpucast::beziersurfaceobject>();
         converter.convert(nurbs_object, bezier_object);
@@ -173,10 +179,6 @@ public:
         drawable->trimming(gpucast::beziersurfaceobject::contour_kd_partition);
 
         _objects.push_back(drawable);
-      }
-      else {
-        std::cerr << "failed to load " << file << std::endl;
-        std::cerr << loader.error_message() << std::endl;
       }
     }
 

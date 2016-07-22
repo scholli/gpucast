@@ -19,6 +19,7 @@
 // header system
 #include <string>
 #include <stdexcept>
+#include <memory>
 
 // header project
 #include <gpucast/gl/glpp.hpp>
@@ -76,9 +77,11 @@ public : // methods
 
   void            make_resident   ( ) const;
 
+  void            bind_range      (unsigned in_index, std::size_t in_offset, std::size_t in_size);
+  void            unbind_range    (unsigned in_index);
+
   virtual void    bind            ( ) const = 0;
   virtual void    unbind          ( ) const = 0;
-
   virtual GLenum  target          ( ) const = 0;
 
 private : // members
@@ -88,6 +91,7 @@ private : // members
   std::size_t     _capacity;
 };
 
+typedef std::shared_ptr<buffer>         buffer_ptr;
 
   template <typename iterator_type>
   void buffer::update ( iterator_type begin, iterator_type end)

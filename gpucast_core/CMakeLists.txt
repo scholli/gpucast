@@ -59,6 +59,8 @@ IF (MSVC)
     TARGET_LINK_LIBRARIES( gpucast_core 
                            debug ${QHULL_LIBRARY_DEBUG} optimized ${QHULL_LIBRARY_RELEASE}
                            debug ${Boost_SYSTEM_LIBRARY_DEBUG} optimized ${Boost_SYSTEM_LIBRARY_RELEASE}
+                           debug ${Boost_THREAD_LIBRARY_DEBUG} optimized ${Boost_THREAD_LIBRARY_RELEASE}
+                           debug ${Boost_LOG_LIBRARY_DEBUG} optimized ${Boost_LOG_LIBRARY_RELEASE}
                            debug ${Boost_FILESYSTEM_LIBRARY_DEBUG} optimized ${Boost_FILESYSTEM_LIBRARY_RELEASE}
                            OpenGL32.lib )
 ELSEIF (UNIX)
