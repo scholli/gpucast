@@ -24,6 +24,7 @@
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
+#include <gpucast/gl/transformfeedback.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>
 
@@ -46,6 +47,19 @@ public :
     supersampling8x8,
   };
 
+  enum fill_mode
+  {
+    FILL_SOLID = 0x00,
+    FILL_WIREFRAME,
+    FILL_POINT,
+    FILL_MODE_COUNT
+  }; 
+
+  enum render_mode {
+    raycasting = 0x00,
+    tesselation
+  };
+
   bezierobject (gpucast::beziersurfaceobject const&);
 
   bezierobject(bezierobject const&) = delete;
@@ -54,7 +68,7 @@ public :
   gpucast::beziersurfaceobject const& object() const;
 
   // draw methods
-  void                draw();
+  void                draw(render_mode mode = raycasting);
 
   // configuration
   void                max_newton_iterations ( unsigned n );
@@ -66,8 +80,8 @@ public :
   void                culling ( bool enable );
   bool                culling () const;
 
-  void                raycasting(bool enable);
-  bool                raycasting() const;
+  void                enable_raycasting(bool enable);
+  bool                enable_raycasting() const;
 
   beziersurfaceobject::trim_approach_t trimming() const;
   void                trimming(beziersurfaceobject::trim_approach_t type);
@@ -80,11 +94,17 @@ public :
 
 private :
 
+  void _draw_by_raycasting();
+  void _draw_by_tesselation();
+
   void _apply_uniforms(program const& p);
 
   void _upload();
+  void _upload_trimming_buffers();
+  void _upload_raycasting_buffers();
+  void _upload_tesselation_buffers();
 
-  // render parameters
+  // ray casting parameters
   unsigned                              _iterations    = 6;
   float                                 _epsilon       = 0.001f;
   bool                                  _culling       = true;
@@ -97,19 +117,37 @@ private :
   // object properties
   material                              _material;
 
-  // ressources
+  // gpu ressources : ray casting 
   std::size_t                           _size;
 
-  gpucast::gl::arraybuffer              _attribarray0;
-  gpucast::gl::arraybuffer              _attribarray1;
-  gpucast::gl::arraybuffer              _attribarray2;
-  gpucast::gl::arraybuffer              _attribarray3;
+  gpucast::gl::elementarraybuffer       _chull_indexarray;
 
-  gpucast::gl::elementarraybuffer       _indexarray;
+  gpucast::gl::arraybuffer              _chull_attribarray0;
+  gpucast::gl::arraybuffer              _chull_attribarray1;
+  gpucast::gl::arraybuffer              _chull_attribarray2;
+  gpucast::gl::arraybuffer              _chull_attribarray3;
+
+  gpucast::gl::vertexarrayobject        _chull_vao;
 
   gpucast::gl::texturebuffer            _controlpoints;
   gpucast::gl::texturebuffer            _obbs;
-                                        
+             
+
+  // gpu ressources : adaptive tesselation 
+  fill_mode                             _fill_mode;
+
+  gpucast::gl::vertexarrayobject        _tesselation_vertex_array;
+
+  gpucast::gl::arraybuffer              _tesselation_vertex_buffer;
+  gpucast::gl::arraybuffer              _tesselation_index_buffer;
+  gpucast::gl::arraybuffer              _tesselation_hullvertexmap;
+  gpucast::gl::arraybuffer              _tesselation_attribute_buffer;
+
+  gpucast::gl::texturebuffer            _tesselation_parametric_texture_buffer;
+  gpucast::gl::texturebuffer            _tesselation_domain_texture_buffer;
+  gpucast::gl::texturebuffer            _tesselation_attribute_texture_buffer;
+
+  // gpu ressources trimming
   gpucast::gl::texturebuffer            _cmb_partition;
   gpucast::gl::texturebuffer            _cmb_contourlist;
   gpucast::gl::texturebuffer            _cmb_curvelist;
@@ -135,8 +173,6 @@ private :
   gpucast::gl::shaderstoragebuffer      _loop_list_curves;
   gpucast::gl::shaderstoragebuffer      _loop_list_points;
   gpucast::gl::texturebuffer            _loop_list_preclassification;
-
-  gpucast::gl::vertexarrayobject        _vao;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -144,6 +180,8 @@ class GPUCAST_GL bezierobject_renderer
 {
 public: // enums, typedefs
   
+  static const unsigned MAX_XFB_BUFFER_SIZE_IN_BYTES = 1024000000; // reserve GB transform feedback buffer
+
 private: // c'tor / d'tor
 
   bezierobject_renderer();
@@ -158,7 +196,10 @@ public:
 public: // methods
 
   int            next_texunit();
-  program const& get_program() const;
+
+  std::shared_ptr<program> const& get_raycasting_program() const;
+  std::shared_ptr<program> const& get_pretesselation_program() const;
+  std::shared_ptr<program> const& get_tesselation_program() const;
 
   void           set_nearfar(float near, float far);
   void           set_background(gpucast::math::vec3f const& color);
@@ -167,29 +208,24 @@ public: // methods
   void           spheremap(std::string const& filepath);
                  
   void           diffusemap(std::string const& filepath);
-                 
-  void           cubemap(std::string const& positive_x,
-                         std::string const& negative_x,
-                         std::string const& positive_y,
-                         std::string const& negative_y,
-                         std::string const& positive_z,
-                         std::string const& negative_z);
 
   void           modelviewmatrix(gpucast::math::matrix4f const& mv);
   void           projectionmatrix(gpucast::math::matrix4f const& projection);
 
   void           recompile();
                  
-  void           bind();
-  void           unbind();
-                 
-  void           apply_uniforms();
+  void           begin_program(std::shared_ptr<program> const& p);
+  void           end_program(std::shared_ptr<program> const& p);             
+  void           apply_uniforms(std::shared_ptr<program> const& p);
 
 private : // methods
 
-  void _init_program();
+  void _init_raycasting_program();
+  void _init_pretesselation_program();
+  void _init_tesselation_program();
   void _init_hullvertexmap();
   void _init_prefilter(unsigned prefilter_resolution = 128);
+  void _init_transform_feedback();
 
 private: // attributes
 
@@ -210,10 +246,19 @@ private: // attributes
   int                           _texunit = 0;
 
   // surface_renderer global ressources
-  std::shared_ptr<program>      _program;
+  std::shared_ptr<program>      _raycasting_program;
+  std::shared_ptr<program>      _pretesselation_program;
+  std::shared_ptr<program>      _tesselation_program;
+
   std::shared_ptr<texture2d>    _spheremap;
   std::shared_ptr<texture2d>    _diffusemap;
   std::shared_ptr<texture2d>    _prefilter_texture;
+
+  struct transform_feedback_buffer {
+    std::shared_ptr<gpucast::gl::transform_feedback> _transform_feedback;
+    std::shared_ptr<gpucast::gl::vertexarrayobject>  _transform_feedback_vao;
+    std::shared_ptr<gpucast::gl::arraybuffer>        _transform_feedback_vbo;
+  };
 };
 
 

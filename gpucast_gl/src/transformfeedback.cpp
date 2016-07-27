@@ -25,6 +25,23 @@
 namespace gpucast { namespace gl {
 
   ///////////////////////////////////////////////////////////////////////////////
+  unsigned gl_primitive_type(const primitive_type p)
+  {
+    static unsigned types[] = {
+      GL_POINTS,                  // PRIMITIVE_POINTS                = 0x00,
+      GL_LINES,                   // PRIMITIVE_LINES,
+      GL_TRIANGLES                // PRIMITIVE_TRIANGLES
+    };
+
+    assert((sizeof(types) / sizeof(unsigned)) == PRIMITIVE_TYPE_COUNT);
+
+    assert((sizeof(types) / sizeof(unsigned)) == PRIMITIVE_TYPE_COUNT);
+    assert(PRIMITIVE_POINTS <= p && p < PRIMITIVE_TYPE_COUNT);
+
+    return types[p];
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
   stream_output_setup::stream_output_setup(const element& in_element){
     insert(in_element);
   }

@@ -80,21 +80,7 @@ namespace gpucast { namespace gl {
   }; // enum primitive_topology
 
 
-  unsigned gl_primitive_type(const primitive_type p)
-  {
-    static unsigned types[] = {
-      GL_POINTS,                  // PRIMITIVE_POINTS                = 0x00,
-      GL_LINES,                   // PRIMITIVE_LINES,
-      GL_TRIANGLES                // PRIMITIVE_TRIANGLES
-    };
-
-    assert((sizeof(types) / sizeof(unsigned)) == PRIMITIVE_TYPE_COUNT);
-
-    assert((sizeof(types) / sizeof(unsigned)) == PRIMITIVE_TYPE_COUNT);
-    assert(PRIMITIVE_POINTS <= p && p < PRIMITIVE_TYPE_COUNT);
-
-    return types[p];
-  }
+  GPUCAST_GL unsigned gl_primitive_type(const primitive_type p);
 
   class GPUCAST_GL stream_output_setup
   {

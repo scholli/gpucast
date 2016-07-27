@@ -221,7 +221,7 @@ contour_segment<value_t>::intersect(typename point_type::coordinate_type const& 
     throw std::runtime_error("contour_segment<value_t>::intersect(): no curves to intersect");
   }
   catch (std::exception& e) {
-    std::cout << "Warning: contour_segment<value_t>::intersect(): No intersection determined." << std::endl;
+    std::cout << "Warning: contour_segment<value_t>::intersect(): No intersection determined." << e.what() << std::endl;
     return contour_segment<value_t>::point_type{};
   }
 }

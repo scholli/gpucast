@@ -17,6 +17,7 @@
 
 // header, project
 #include <gpucast/core/hyperspace_adapter.hpp>
+#include <gpucast/core/singleton.hpp>
 #include <gpucast/core/trimdomain_serializer_double_binary.hpp>
 #include <gpucast/core/trimdomain_serializer_contour_map_binary.hpp>
 #include <gpucast/core/trimdomain_serializer_contour_map_kd.hpp>
@@ -82,10 +83,10 @@ void beziersurfaceobject::trim_approach(beziersurfaceobject::trim_approach_t app
     float index_as_float = serializer.unsigned_bits_as_float(trim_index);
 
     for (std::size_t i = surface.second.base_index; i != surface.second.base_index + surface.second.count; ++i) {
-      _attrib2[i] = math::vec4f(index_as_float, 
-                                _attrib2[i][1], 
-                                bit_cast<unsigned, float>(trim_type_and_approach), 
-                                _attrib2[i][3]);
+      _ray_casting_data.attribute_buffer_2[i] = math::vec4f(index_as_float,
+                                                              _ray_casting_data.attribute_buffer_2[i][1],
+                                                              bit_cast<unsigned, float>(trim_type_and_approach), 
+                                                              _ray_casting_data.attribute_buffer_2[i][3]);
     }
 
     _surface_trim_ids[surface.first] = trim_index;
@@ -118,101 +119,106 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
     _add(surface, fast_trim_texture_resolution);
   }
 
+  _init_adaptive_tesselation();
+
   _is_initialized = true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 bool
-beziersurfaceobject::initialized () const
-{
+beziersurfaceobject::initialized () const{
   return _is_initialized;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_vertex_base_indices() const
-{
+std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_vertex_base_indices() const{
   return _surface_vertex_base_ids;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_obb_base_indices() const
-{
+std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_obb_base_indices() const{
   return _surface_obb_base_ids;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_trim_base_indices() const
-{
+std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_trim_base_indices() const {
   return _surface_trim_ids;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<trim_double_binary_serialization> beziersurfaceobject::serialized_trimdata_as_double_binary() const
-{
+std::shared_ptr<trim_double_binary_serialization> beziersurfaceobject::serialized_trimdata_as_double_binary() const {
   return _trimdata_double_binary_serialization;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<trim_contour_binary_serialization> beziersurfaceobject::serialized_trimdata_as_contour_binary() const
-{
+std::shared_ptr<trim_contour_binary_serialization> beziersurfaceobject::serialized_trimdata_as_contour_binary() const {
   return _trimdata_contour_binary_serialization;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<trim_kd_serialization> beziersurfaceobject::serialized_trimdata_as_contour_kd() const
-{
+std::shared_ptr<trim_kd_serialization> beziersurfaceobject::serialized_trimdata_as_contour_kd() const {
   return _trimdata_kd_serialization;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<trim_loop_list_serialization> beziersurfaceobject::serialized_trimdata_as_contour_loop_list() const
-{
+std::shared_ptr<trim_loop_list_serialization> beziersurfaceobject::serialized_trimdata_as_contour_loop_list() const {
   return _trimdata_loop_list_serialization;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::math::vec3f> const& beziersurfaceobject::serialized_raycasting_data_attrib0() const
-{
-  return _attrib0;
+std::vector<gpucast::math::vec3f> const& beziersurfaceobject::serialized_raycasting_data_attrib0() const {
+  return _ray_casting_data.attribute_buffer_0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::math::vec4f>  const& beziersurfaceobject::serialized_raycasting_data_attrib1() const
-{
-  return _attrib1;
+std::vector<gpucast::math::vec4f>  const& beziersurfaceobject::serialized_raycasting_data_attrib1() const{
+  return _ray_casting_data.attribute_buffer_1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_attrib2() const
-{
-  return _attrib2;
+std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_attrib2() const{
+  return _ray_casting_data.attribute_buffer_2;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_attrib3() const
-{
-  return _attrib3;
+std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_attrib3() const{
+  return _ray_casting_data.attribute_buffer_3;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_controlpoints() const
-{
-  return _controlpoints;
+std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_controlpoints() const{
+  return _ray_casting_data.controlpoints;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_obbs() const
-{
-  return _obbs;
+std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_obbs() const{
+  return _ray_casting_data.obbs;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+std::vector<unsigned> const& beziersurfaceobject::serialized_raycasting_data_indices() const{
+  return _ray_casting_data.index_buffer;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<unsigned> const& beziersurfaceobject::serialized_raycasting_data_indices() const
-{
-  return _indices;
+std::vector<math::vec4f> const& beziersurfaceobject::serialized_tesselation_domain_buffer() const {
+  return _tesselation_data.domain_buffer;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::vector<unsigned> const& beziersurfaceobject::serialized_tesselation_index_buffer() const {
+  return _tesselation_data.index_buffer;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::vector<math::vec4f> const& beziersurfaceobject::serialized_tesselation_control_point_buffer() const {
+  return _tesselation_data.control_point_buffer;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::vector<beziersurfaceobject::patch_tesselation_data> const& beziersurfaceobject::serialized_tesselation_attribute_data() const {
+  return _tesselation_data.patch_data_buffer;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -244,21 +250,21 @@ void
 beziersurfaceobject::_clearbuffer()
 {
   // clear vertex attribute buffers
-  _attrib0.clear();
-  _attrib1.clear();
-  _attrib2.clear();
-  _attrib3.clear();
+  _ray_casting_data.attribute_buffer_0.clear();
+  _ray_casting_data.attribute_buffer_1.clear();
+  _ray_casting_data.attribute_buffer_2.clear();
+  _ray_casting_data.attribute_buffer_3.clear();
 
   // clear index buffer
-  _indices.clear();
+  _ray_casting_data.index_buffer.clear();
 
   _surface_vertex_base_ids.clear();
   _surface_obb_base_ids.clear();
   _surface_trim_ids.clear();
 
   // texture buffer need to be at least one element!
-  _controlpoints.resize(1);
-  _obbs.resize(1);
+  _ray_casting_data.controlpoints.resize(1);
+  _ray_casting_data.obbs.resize(1);
 
   // clear trimming data serializations
   _trimdata_double_binary_serialization = std::make_shared<trim_double_binary_serialization>();
@@ -269,6 +275,12 @@ beziersurfaceobject::_clearbuffer()
   // clear mappings
   _surface_index_map.clear();
   _domain_index_map.clear();
+
+  // clear tesselation data
+  _tesselation_data.domain_buffer.clear();
+  _tesselation_data.index_buffer.clear();
+  _tesselation_data.control_point_buffer.clear();
+  _tesselation_data.patch_data_buffer.clear();
 }
 
 
@@ -401,11 +413,11 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   std::size_t points_in_chull = surface->convexhull().size();
 
   // store attributes to change trimming
-  _surface_index_map[surface] = { _attrib2.size(), points_in_chull, unsigned(surface->trimtype()) };
+  _surface_index_map[surface] = { _ray_casting_data.attribute_buffer_2.size(), points_in_chull, unsigned(surface->trimtype()) };
   _domain_index_map[surface->domain()] = { db_index, cmb_index, kd_index, loop_index };
 
   // serialize obb
-  std::size_t obb_index = _obbs.size();
+  std::size_t obb_index = _ray_casting_data.obbs.size();
   _surface_obb_base_ids.insert({ surface, obb_index });
 
   auto const& obb = surface->obb();
@@ -414,22 +426,22 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   auto phigh   = math::vec4f(obb.high()[0], obb.high()[1], obb.high()[2], 0.0f);
   auto plow    = math::vec4f(obb.low()[0], obb.low()[1], obb.low()[2], 0.0f);
 
-  _obbs.push_back(pcenter);
-  _obbs.push_back(phigh);
-  _obbs.push_back(plow);
+  _ray_casting_data.obbs.push_back(pcenter);
+  _ray_casting_data.obbs.push_back(phigh);
+  _ray_casting_data.obbs.push_back(plow);
 
   auto orientation = surface->obb().orientation();
   auto inv_orientation = compute_inverse(orientation);
 
-  _obbs.push_back(math::vec4f(orientation[0][0], orientation[1][0], orientation[2][0], 0.0));
-  _obbs.push_back(math::vec4f(orientation[0][1], orientation[1][1], orientation[2][1], 0.0));
-  _obbs.push_back(math::vec4f(orientation[0][2], orientation[1][2], orientation[2][2], 0.0));
-  _obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+  _ray_casting_data.obbs.push_back(math::vec4f(orientation[0][0], orientation[1][0], orientation[2][0], 0.0));
+  _ray_casting_data.obbs.push_back(math::vec4f(orientation[0][1], orientation[1][1], orientation[2][1], 0.0));
+  _ray_casting_data.obbs.push_back(math::vec4f(orientation[0][2], orientation[1][2], orientation[2][2], 0.0));
+  _ray_casting_data.obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
-  _obbs.push_back(math::vec4f(inv_orientation[0][0], inv_orientation[1][0], inv_orientation[2][0], 0.0));
-  _obbs.push_back(math::vec4f(inv_orientation[0][1], inv_orientation[1][1], inv_orientation[2][1], 0.0));
-  _obbs.push_back(math::vec4f(inv_orientation[0][2], inv_orientation[1][2], inv_orientation[2][2], 0.0));
-  _obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+  _ray_casting_data.obbs.push_back(math::vec4f(inv_orientation[0][0], inv_orientation[1][0], inv_orientation[2][0], 0.0));
+  _ray_casting_data.obbs.push_back(math::vec4f(inv_orientation[0][1], inv_orientation[1][1], inv_orientation[2][1], 0.0));
+  _ray_casting_data.obbs.push_back(math::vec4f(inv_orientation[0][2], inv_orientation[1][2], inv_orientation[2][2], 0.0));
+  _ray_casting_data.obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
 
   auto lbf = math::point3d(plow[0], plow[1], plow[2]);  // left, bottom, front
   auto rbf = math::point3d(phigh[0], plow[1], plow[2]);  // right, bottom, front
@@ -451,15 +463,15 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   rtb.weight(1.0);
   ltb.weight(1.0);
 
-  _obbs.push_back(lbf);
-  _obbs.push_back(rbf);
-  _obbs.push_back(rtf);
-  _obbs.push_back(ltf);
+  _ray_casting_data.obbs.push_back(lbf);
+  _ray_casting_data.obbs.push_back(rbf);
+  _ray_casting_data.obbs.push_back(rtf);
+  _ray_casting_data.obbs.push_back(ltf);
 
-  _obbs.push_back(lbb);
-  _obbs.push_back(rbb);
-  _obbs.push_back(rtb);
-  _obbs.push_back(ltb);
+  _ray_casting_data.obbs.push_back(lbb);
+  _ray_casting_data.obbs.push_back(rbb);
+  _ray_casting_data.obbs.push_back(rtb);
+  _ray_casting_data.obbs.push_back(ltb);
 
   // fill header with index information
   unsigned trim_index = 0;
@@ -493,8 +505,8 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
                                             float(surface->bezierdomain().max[trimdomain::point_type::v]) );
 
   // blow attribute arrays to fill them with additional attributes
-  std::fill_n(std::back_inserter(_attrib2), points_in_chull, additional_attrib2);
-  std::fill_n(std::back_inserter(_attrib3), points_in_chull, additional_attrib3);
+  std::fill_n(std::back_inserter(_ray_casting_data.attribute_buffer_2), points_in_chull, additional_attrib2);
+  std::fill_n(std::back_inserter(_ray_casting_data.attribute_buffer_3), points_in_chull, additional_attrib3);
 
   return chull_index;
 }
@@ -504,15 +516,15 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
 std::size_t
 beziersurfaceobject::_add (  gpucast::math::pointmesh2d< gpucast::math::point3d> const& points )
 {
-  std::size_t index = _controlpoints.size();
+  std::size_t index = _ray_casting_data.controlpoints.size();
 
   for (beziersurface::point_type const& p : points)
   {
     // convert point to hyperspace
-    _controlpoints.push_back ( gpucast::math::vec4f (float (p[0] * p.weight()),
-                                            float (p[1] * p.weight()),
-                                            float (p[2] * p.weight()),
-                                            float (p.weight())));
+    _ray_casting_data.controlpoints.push_back ( gpucast::math::vec4f (float (p[0] * p.weight()),
+                                                float (p[1] * p.weight()),
+                                                float (p[2] * p.weight()),
+                                                float (p.weight())));
   }
 
   return index;
@@ -523,17 +535,17 @@ beziersurfaceobject::_add (  gpucast::math::pointmesh2d< gpucast::math::point3d>
 std::size_t
 beziersurfaceobject::_add ( convex_hull const& chull )
 {
-  int offset         = int(_attrib0.size());
-  std::size_t index  = _indices.size();
+  int offset         = int(_ray_casting_data.attribute_buffer_0.size());
+  std::size_t index  = _ray_casting_data.index_buffer.size();
 
   // copy vertices and start values into client buffer
-  std::copy(chull.vertices_begin(), chull.vertices_end(), std::back_inserter(_attrib0) );
-  std::copy(chull.uv_begin(),       chull.uv_end(),       std::back_inserter(_attrib1) );
+  std::copy(chull.vertices_begin(), chull.vertices_end(), std::back_inserter(_ray_casting_data.attribute_buffer_0) );
+  std::copy(chull.uv_begin(),       chull.uv_end(),       std::back_inserter(_ray_casting_data.attribute_buffer_1) );
 
   // copy indices into indexbuffer and add buffer offset (convex hull starts by index 0)
   std::transform ( chull.indices_begin(),   
                    chull.indices_end(),   
-                   std::back_inserter(_indices),  
+                   std::back_inserter(_ray_casting_data.index_buffer),
                    [&]( int i ) 
                    { 
                      return i + offset; // add offset to indices
@@ -541,6 +553,97 @@ beziersurfaceobject::_add ( convex_hull const& chull )
                  );
 
   return index;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void beziersurfaceobject::_init_adaptive_tesselation() 
+{
+  unsigned int patch_id = unsigned int(_tesselation_data.patch_data_buffer.size());
+
+  // serialize trim domain
+  typedef gpucast::math::domain::contour_map_kd<double> partition_type;
+  std::unordered_map<gpucast::trimdomain_serializer_contour_map_kd::curve_ptr, unsigned>       referenced_curves;
+  std::unordered_map<gpucast::trimdomain_serializer_contour_map_kd::trimdomain_ptr, unsigned>  referenced_domains;
+  std::unordered_map<partition_type::contour_segment_ptr, unsigned>      referenced_segments;
+
+  gpucast::trimdomain_serializer_contour_map_kd serializer;
+  gpucast::trim_kd_serialization serialization;
+
+  auto uint_to_float = [](unsigned const & i) { return *((float*)(&i)); }
+  ;
+
+  //  serialize patch data
+  for (auto it = begin(); it != end(); ++it, ++patch_id)
+  {
+    auto _p0 = (*it)->points().begin();
+    _tesselation_data.domain_buffer.push_back(math::vec4f((*_p0)[0], (*_p0)[1], (*_p0)[2], uint_to_float(patch_id)));
+    _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 0.0f));
+
+    auto _p1 = _p0 + (*it)->points().width() - 1;
+    _tesselation_data.domain_buffer.push_back(math::vec4f((*_p1)[0], (*_p1)[1], (*_p1)[2], uint_to_float(patch_id)));
+    _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 0.0f, 0.0f, 0.0f));
+
+    auto _p2 = (*it)->points().end() - (*it)->points().width();
+    _tesselation_data.domain_buffer.push_back(math::vec4f((*_p2)[0], (*_p2)[1], (*_p2)[2], uint_to_float(patch_id)));
+    _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 1.0f, 0.0f, 0.0f));
+
+    auto _p3 = (*it)->points().end() - 1;
+    _tesselation_data.domain_buffer.push_back(math::vec4f((*_p3)[0], (*_p3)[1], (*_p3)[2], uint_to_float(patch_id)));
+    _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 1.0f, 0.0f, 0.0f));
+
+    auto _v01 = (_p1->as_euclidian()) - (_p0->as_euclidian());
+    auto _v13 = (_p3->as_euclidian()) - (_p1->as_euclidian());
+    auto _v23 = (_p3->as_euclidian()) - (_p2->as_euclidian());
+    auto _v02 = (_p2->as_euclidian()) - (_p0->as_euclidian());
+
+    math::vec4f edge_dist(0.0, 0.0, 0.0, 0.0);
+
+    _tesselation_data.index_buffer.push_back(patch_id * 4 + 0);
+    _tesselation_data.index_buffer.push_back(patch_id * 4 + 1);
+    _tesselation_data.index_buffer.push_back(patch_id * 4 + 3);
+    _tesselation_data.index_buffer.push_back(patch_id * 4 + 2);
+
+    // serialize trim domain
+    std::size_t trim_id = serializer.serialize((*it)->domain(),
+      gpucast::kd_split_strategy::sah,
+      serialization,
+      0, 0);
+
+    // gather per patch data
+    patch_tesselation_data p;
+    p.surface_offset = _tesselation_data.control_point_buffer.size();
+    p.order_u = (*it)->order_u();
+    p.order_v = (*it)->order_v();
+    p.trim_id = trim_id;
+    auto obb_id = serialized_obb_base_indices().find((*it));
+    if (obb_id != serialized_obb_base_indices().end()) {
+      p.obb_id = obb_id->second;
+    }
+
+    p.nurbs_domain = math::vec4f((*it)->bezierdomain().min[0],
+      (*it)->bezierdomain().min[1],
+      (*it)->bezierdomain().max[0],
+      (*it)->bezierdomain().max[1]);
+    p.bbox_min = math::vec4f((*it)->bbox().min[0],
+      (*it)->bbox().min[1],
+      (*it)->bbox().min[2],
+      (float) 0.0f);
+    p.bbox_max = math::vec4f((*it)->bbox().max[0],
+      (*it)->bbox().max[1],
+      (*it)->bbox().max[2],
+      (float) 0.0f);
+    p.distance = math::vec4f(std::fabs(edge_dist[0]), std::fabs(edge_dist[1]), std::fabs(edge_dist[2]), std::fabs(edge_dist[3]));
+
+    _tesselation_data.patch_data_buffer.push_back(p);
+
+    // copy patch control points
+    int current_size = _tesselation_data.control_point_buffer.size();
+    _tesselation_data.control_point_buffer.resize(current_size + (*it)->points().size());
+
+    auto serialize_homogenous_points = [](gpucast::math::point3d const& p) { auto ph = p.as_homogenous(); return math::vec4f(ph[0], ph[1], ph[2], ph[3]); };
+    std::transform((*it)->points().begin(), (*it)->points().end(), _tesselation_data.control_point_buffer.begin() + current_size, serialize_homogenous_points);
+  }
+
 }
 
 } // namespace gpucast

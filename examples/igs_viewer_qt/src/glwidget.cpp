@@ -410,7 +410,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
         o->max_newton_iterations(std::max(1U, o->max_newton_iterations() - 1));
         break;
       case 'n':
-        o->raycasting(!o->raycasting());
+        o->enable_raycasting(!o->enable_raycasting());
         break;
       case 'b':
         o->culling(!o->culling());
@@ -607,7 +607,11 @@ glwidget::_openfile ( std::string const& file, gpucast::math::axis_aligned_bound
       auto drawable = std::make_shared<gpucast::gl::bezierobject>(*bezierobject);
 
       gpucast::gl::material mat;
-      if (no->color()) {
+
+      auto is_black = [](gpucast::math::vec3f const& c) { return c[0] == 0.0 && c[1] == 0.0 && c[2] == 0.0; };
+
+      // apply color if it has one, except black
+      if (no->color() && !is_black(no->color().get())) {
         mat.diffuse = gpucast::math::vec4f{ no->color().get()[0], no->color().get()[1], no->color().get()[2], 1.0 };
         mat.ambient = gpucast::math::vec4f{ 0.0, 0.0, 0.0, 0.0 };
         mat.specular = gpucast::math::vec4f{ 0.0, 0.0, 0.0, 0.0 };
