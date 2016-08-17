@@ -74,6 +74,9 @@ public :
   void                max_newton_iterations ( unsigned n );
   unsigned            max_newton_iterations() const;
 
+  void                max_trimming_bisections(unsigned n);
+  unsigned            max_trimming_bisections() const;
+
   void                newton_epsilon ( float epsilon );
   float               newton_epsilon() const;
 
@@ -97,7 +100,7 @@ private :
   void _draw_by_raycasting();
   void _draw_by_tesselation();
 
-  void _apply_uniforms(program const& p);
+  void _apply_uniforms(program const& p, render_mode mode);
 
   void _upload();
   void _upload_trimming_buffers();
@@ -106,6 +109,7 @@ private :
 
   // ray casting parameters
   unsigned                              _iterations    = 6;
+  unsigned                              _max_trimming_bisections = 16;
   float                                 _epsilon       = 0.001f;
   bool                                  _culling       = true;
   bool                                  _raycasting    = true;
@@ -135,6 +139,7 @@ private :
 
   // gpu ressources : adaptive tesselation 
   fill_mode                             _fill_mode;
+  int                                   _tesselation_vertex_count;
 
   gpucast::gl::vertexarrayobject        _tesselation_vertex_array;
 
@@ -144,7 +149,7 @@ private :
   gpucast::gl::arraybuffer              _tesselation_attribute_buffer;
 
   gpucast::gl::texturebuffer            _tesselation_parametric_texture_buffer;
-  gpucast::gl::texturebuffer            _tesselation_domain_texture_buffer;
+  //gpucast::gl::texturebuffer            _tesselation_domain_texture_buffer;
   gpucast::gl::texturebuffer            _tesselation_attribute_texture_buffer;
 
   // gpu ressources trimming
@@ -253,12 +258,6 @@ private: // attributes
   std::shared_ptr<texture2d>    _spheremap;
   std::shared_ptr<texture2d>    _diffusemap;
   std::shared_ptr<texture2d>    _prefilter_texture;
-
-  struct transform_feedback_buffer {
-    std::shared_ptr<gpucast::gl::transform_feedback> _transform_feedback;
-    std::shared_ptr<gpucast::gl::vertexarrayobject>  _transform_feedback_vao;
-    std::shared_ptr<gpucast::gl::arraybuffer>        _transform_feedback_vbo;
-  };
 };
 
 

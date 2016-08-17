@@ -27,6 +27,8 @@
 #include <iostream>
 #include <GL/glew.h>
 
+#include <boost/log/trivial.hpp>
+
 
 
 namespace gpucast { namespace gl {
@@ -71,7 +73,7 @@ program::link()
 
   if (is_linked_ != GL_TRUE)
   {
-    std::cerr << log() << std::endl;
+    BOOST_LOG_TRIVIAL(error) << log() << std::endl;
   }
 
   //assert(is_linked_ && "program::link() : assertion when linking program");

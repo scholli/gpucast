@@ -19,6 +19,7 @@
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/log/trivial.hpp>
 
 // header, system
 #include <iostream>
@@ -30,62 +31,90 @@
 
 #include <GL/glew.h>
 
+#include <gpucast/gl/error.hpp>
+
 // header, project
 
 namespace gpucast { namespace gl {
 
 ///////////////////////////////////////////////////////////////////////////////
-shader::shader()
-{}
+shader::shader(shader_type type)
+  : _id(0),
+    _type(type)
+{
+  _create(_type);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+shader::shader(shader_type type, std::string const& filename)
+  : _id(0),
+    _type(type)
+{
+  _create(type);
+  load(filename);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+shader::shader(shader_desc const& desc)
+  : _id(0),
+    _type(desc.type)
+{
+  _create(_type);
+  load(desc.filename);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 shader::~shader()
 {
-  glDeleteShader(id_);
+  reset();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void shader::reset() {
+  glDeleteShader(_id);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-shader::load(std::string const& fileName)
+shader::load(std::string const& filename)
 {
-  std::string file = file_content(fileName);
+  std::string file_content = _file_content(filename);
 
-  replace_includes(file);
+  _replace_includes(file_content);
 
-  std::size_t srclen = file.length();
-
-  char* src = new char[srclen+1];
-  strcpy(src, file.c_str());
-
-  set_source(src);
-
-  delete[] src;
+  set_source(file_content.c_str());
 }
+
+///////////////////////////////////////////////////////////////////////////////
+void shader::load(shader_type type, std::string const& filename)
+{
+  _create(type);
+  load(filename);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 bool
 shader::compile() const
 {
-  GLint compiled, type;
+  glCompileShader(_id);
 
-  glCompileShader(id_);
-
-  glGetShaderiv(id_, GL_COMPILE_STATUS, &compiled);
-  glGetShaderiv(id_, GL_SHADER_TYPE, &type);
+  GLint compiled = 0;
+  glGetShaderiv(_id, GL_COMPILE_STATUS, &compiled);
 
   std::string logfilename;
 
-  switch (type) {
-    case GL_VERTEX_SHADER :
+  switch (_type) {
+    case vertex_stage :
       logfilename.append("vertexshader"); break;
-    case GL_FRAGMENT_SHADER :
-      logfilename.append("fragmentshader"); break;
-    case GL_TESS_CONTROL_SHADER :
+    case tesselation_control_stage:
       logfilename.append("tessellation_controlshader"); break;
-    case GL_TESS_EVALUATION_SHADER :
+    case tesselation_evaluation_stage:
       logfilename.append("tessellation_evaluationshader"); break;
-    case GL_GEOMETRY_SHADER :
+    case geometry_stage:
       logfilename.append("geometryshader"); break;
+    case fragment_stage:
+      logfilename.append("fragmentshader"); break;
     default :
       logfilename.append("unknown_shadertype");
   };
@@ -95,11 +124,13 @@ shader::compile() const
     logfilename.append(".fail.log");
     std::fstream fstr(logfilename.c_str(), std::ios::out);
     fstr << get_source() << std::endl << std::endl << log() << std::endl;
+    fstr.close();
     return false;
   } else {
     logfilename.append(".success.log");
     std::fstream fstr(logfilename.c_str(), std::ios::out);
     fstr << get_source() << std::endl << std::endl << log() << std::endl;
+    fstr.close();
     return true;
   }
 }
@@ -108,19 +139,20 @@ shader::compile() const
 void
 shader::set_source(char const* src)
 {
-  glShaderSource(id_, 1, (const char **)&src, 0);
+  glShaderSource(_id, 1, (const char **)&src, 0);
+  compile();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 std::string
 shader::get_source() const
 {
-  GLint id_len;
-  glGetShaderiv(id_, GL_SHADER_SOURCE_LENGTH, &id_len);
+  GLint _idlen;
+  glGetShaderiv(_id, GL_SHADER_SOURCE_LENGTH, &_idlen);
 
   GLint size;
-  char* buf = new char[id_len];
-  glGetShaderSource(id_, id_len, &size, buf);
+  char* buf = new char[_idlen];
+  glGetShaderSource(_id, _idlen, &size, buf);
 
   std::string source(buf);
   delete[] buf;
@@ -130,41 +162,79 @@ shader::get_source() const
 
 ///////////////////////////////////////////////////////////////////////////////
 std::string
-shader::log ( ) const
+shader::log () const
 {
   GLint log_len;
-  glGetShaderiv(id_, GL_INFO_LOG_LENGTH, &log_len);
+  glGetShaderiv(_id, GL_INFO_LOG_LENGTH, &log_len);
 
-  GLint size;
-  char* buf = new char[log_len];
+  if (log_len != 0) {
+    GLint size;
+    std::string info_log;
+    info_log.resize(log_len);
+    
+    glGetShaderInfoLog(_id, log_len, &size, &info_log[0]);
 
-  glGetShaderInfoLog(id_, log_len, &size, buf);
-
-  std::string infolog(buf);
-  delete[] buf;
-
-  return infolog;
+    return info_log;
+  }
+  else {
+    return std::string();
+  }
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 GLuint
-shader::id()
+shader::id() const
 {
-  return (id_);
+  return (_id);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+shader_type shader::type() const
+{
+  return _type;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void shader::_create(shader_type type) 
+{
+  // delete old shaer if available
+  reset();
+
+  // store new type 
+  _type = type;
+  
+  // create GL object
+  switch (_type) {
+  case vertex_stage:
+    _id = glCreateShader(GL_VERTEX_SHADER);
+    break;
+  case tesselation_control_stage:
+    _id = glCreateShader(GL_TESS_CONTROL_SHADER);
+    break;
+  case tesselation_evaluation_stage:
+    _id = glCreateShader(GL_TESS_EVALUATION_SHADER);
+    break;
+  case geometry_stage:
+    _id = glCreateShader(GL_GEOMETRY_SHADER);
+    break;
+  case fragment_stage:
+    _id = glCreateShader(GL_FRAGMENT_SHADER);
+    break;
+  }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 std::string
-shader::file_content(std::string const& filename )
+shader::_file_content(std::string const& filename )
 {
   int length(0);
   char* buffer;
   std::ifstream input(filename.c_str());
 
   if (!input.is_open()) {
-    std::cerr << "Warning: Can't open file "<< filename << std::endl;
+    BOOST_LOG_TRIVIAL(error) << "Warning: Can't open file "<< filename << std::endl;
     return std::string();
   }
 
@@ -185,11 +255,11 @@ shader::file_content(std::string const& filename )
 
 ////////////////////////////////////////////////////////////////////////////////
 void
-shader::replace_includes(std::string& buffer)
+shader::_replace_includes(std::string& buffer)
 {
 	std::size_t b, e;
 
-	while (find_include(buffer, b, e)) 
+	while (_find_include(buffer, b, e)) 
   {
 		std::string dirline(buffer, b, e-b);
 		std::size_t fst = std::min(dirline.find('"'), dirline.find('<'));
@@ -199,7 +269,7 @@ shader::replace_includes(std::string& buffer)
 		if (fst < dirline.size() && lst < dirline.size())
     {
 			std::string filename(dirline, fst, lst-fst);
-      std::string srccode = file_content(filename.c_str());
+      std::string srccode = _file_content(filename.c_str());
 			buffer.erase(b, e-b);
 			buffer.insert(b, srccode);
 		}
@@ -208,7 +278,7 @@ shader::replace_includes(std::string& buffer)
 
 ////////////////////////////////////////////////////////////////////////////////
 bool
-shader::find_include(std::string const& buffer, std::size_t& b, std::size_t& e)
+shader::_find_include(std::string const& buffer, std::size_t& b, std::size_t& e)
 {
 	b = buffer.find("#include");
 	if (b < buffer.size()) {

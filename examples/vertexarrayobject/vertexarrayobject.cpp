@@ -19,8 +19,8 @@
 #include <gpucast/glut/window.hpp>
 
 #include <gpucast/gl/program.hpp>
-#include <gpucast/gl/vertexshader.hpp>
-#include <gpucast/gl/fragmentshader.hpp>
+#include <gpucast/gl/shader.hpp>
+#include <gpucast/gl/error.hpp>
 
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
@@ -74,17 +74,19 @@ public :
       }
     )";
   
-    gpucast::gl::vertexshader   vs;
-    gpucast::gl::fragmentshader fs;
- 
+    gpucast::gl::error("0");
+    gpucast::gl::shader vs(gpucast::gl::vertex_stage);
+    gpucast::gl::error("1");
+    gpucast::gl::shader fs(gpucast::gl::fragment_stage);
+    gpucast::gl::error("2");
     vs.set_source(vertexshader_code.c_str());
+    gpucast::gl::error("3");
     fs.set_source(fragmentshader_code.c_str());
-    
-    vs.compile();
-    fs.compile();
-
+    gpucast::gl::error("4");
     _program.add(&fs);
+    gpucast::gl::error("5");
     _program.add(&vs);
+    gpucast::gl::error("6");
 
     std::cout << "vertex shader log : " << vs.log() << std::endl;
     std::cout << "fragment shader log : " << fs.log() << std::endl;

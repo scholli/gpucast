@@ -30,23 +30,14 @@ void timer_query::end() const {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool timer_query::is_available() const {
-  GLuint64 result = GL_FALSE;
-  glGetQueryObjectui64v(id(), GL_QUERY_RESULT_AVAILABLE, &result);
-  return result != GL_FALSE;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-double timer_query::result_no_wait() const {
+double timer_query::time_in_ms(bool wait) const 
+{
+  if (wait) {
+    while (!is_available());
+  }
   GLuint64 result = 0;
   glGetQueryObjectui64v(id(), GL_QUERY_RESULT, &result);
   return double(result) / double(10e6);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-double timer_query::result_wait() const {
-  while (!is_available());
-  return result_no_wait();
 }
 
 } } // namespace gpucast / namespace gl

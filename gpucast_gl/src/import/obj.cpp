@@ -15,7 +15,7 @@
 
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
-#include <boost/bind.hpp>
+#include <boost/log/trivial.hpp>
 #include <boost/optional.hpp>
 
 
@@ -122,7 +122,7 @@ namespace gpucast { namespace gl {
             // apply appropriate handler for line
             _handler[type](line);
           } else {
-            std::cerr << "Unknown line syntax in obj. Ignoring line :" << line << std::endl;;
+            BOOST_LOG_TRIVIAL(error) << "Unknown line syntax in obj. Ignoring line :" << line << std::endl;;
           }
         }
       }
@@ -154,7 +154,7 @@ namespace gpucast { namespace gl {
     {
       _stack.vertex.push_back(gpucast::math::vec4f(vertex.x, vertex.y, vertex.z, vertex.w));
     } else {
-     std::cerr << "Wrong syntax for vertex. Ignoring line.\n"; 
+     BOOST_LOG_TRIVIAL(error) << "Wrong syntax for vertex. Ignoring line.\n"; 
     }
   }
 
@@ -169,7 +169,7 @@ namespace gpucast { namespace gl {
     {
       _stack.texcoord.push_back(gpucast::math::vec4f(texcoord.x, texcoord.y, texcoord.z, texcoord.w));
     } else {
-      std::cerr << "Wrong syntax for texcoord. Ignoring line.\n"; 
+      BOOST_LOG_TRIVIAL(error) << "Wrong syntax for texcoord. Ignoring line.\n"; 
     }
   }
 
@@ -184,7 +184,7 @@ namespace gpucast { namespace gl {
     {
       _stack.normal.push_back(gpucast::math::vec4f(normal.x, normal.y, normal.z, normal.w) );
     } else {
-      std::cerr << "Wrong syntax for normal. Ignoring line.\n"; 
+      BOOST_LOG_TRIVIAL(error) << "Wrong syntax for normal. Ignoring line.\n"; 
     }
   }
 
@@ -193,7 +193,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_parameter_space_vertex( std::string const& /* s */ )
   {
-    std::cerr << "Importing parameter space vertices not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing parameter space vertices not supported yet\n";
   }
 
 
@@ -201,7 +201,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_spline( std::string const& /* s */ )
   {
-    std::cerr << "Importing spline not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing spline not supported yet\n";
   }
 
 
@@ -209,7 +209,7 @@ namespace gpucast { namespace gl {
   void 
   fileparser_obj::_handle_degree( std::string const& /* s */ )
   {
-    std::cerr << "Importing surface degree not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing surface degree not supported yet\n";
   }
 
 
@@ -217,7 +217,7 @@ namespace gpucast { namespace gl {
   void 
   fileparser_obj::_handle_basis_matrix( std::string const& /* s */ )
   {
-    std::cerr << "Importing basis matrices not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing basis matrices not supported yet\n";
   }
 
 
@@ -225,7 +225,7 @@ namespace gpucast { namespace gl {
   void 
   fileparser_obj::_handle_stepsize( std::string const& /* s */ )
   {
-    std::cerr << "Importing step size not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing step size not supported yet\n";
   }
 
 
@@ -233,7 +233,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_point( std::string const& /* s */ )
   {
-    std::cerr << "Importing points not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing points not supported yet\n";
   }
 
 
@@ -241,7 +241,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_line( std::string const& /* s */ )
   {
-    std::cerr << "Importing lines not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing lines not supported yet\n";
   }
 
 
@@ -267,7 +267,7 @@ namespace gpucast { namespace gl {
       // ignore lines! 
       if (nvertices_in_face < 3) 
       {
-        // std::cerr << "Omitting line or point element.\n";
+        // BOOST_LOG_TRIVIAL(error) << "Omitting line or point element.\n";
         return;
       }
 
@@ -304,7 +304,7 @@ namespace gpucast { namespace gl {
             boost::spirit::qi::phrase_parse(b, vertexinfo.end(), _grammar.vertex_texcoord_normal_r, boost::spirit::ascii::space, d);
             break;
           default :
-            std::cerr << "Wrong syntax in face. Too many / per vertex\n";
+            BOOST_LOG_TRIVIAL(error) << "Wrong syntax in face. Too many / per vertex\n";
         };
 
         // store vertices of polygon for normal computation
@@ -337,7 +337,7 @@ namespace gpucast { namespace gl {
       }
      
     } else {
-      std::cerr << "Wrong syntax for face. Ignoring line.\n";  
+      BOOST_LOG_TRIVIAL(error) << "Wrong syntax for face. Ignoring line.\n";  
     }
   }
 
@@ -346,7 +346,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_curve( std::string const& /* s */ )
   {
-    std::cerr << "Importing curve not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing curve not supported yet\n";
   }
 
 
@@ -354,7 +354,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_curve2d( std::string const& /* s */ )
   {
-    std::cerr << "Importing curve 2D not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing curve 2D not supported yet\n";
   }
 
 
@@ -362,7 +362,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_surface( std::string const& /* s */ )
   {
-    std::cerr << "Importing surface not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing surface not supported yet\n";
   }
 
 
@@ -371,7 +371,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_parameter_value( std::string const& /* s */ )
   {
-    std::cerr << "Importing parameter values not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing parameter values not supported yet\n";
   }
 
 
@@ -379,7 +379,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_outer_trim_loop( std::string const& /* s */ )
   {
-    std::cerr << "Importing outer trim loops not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing outer trim loops not supported yet\n";
   }
 
 
@@ -387,14 +387,14 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_inner_trim_loop( std::string const& /* s */ )
   {
-    std::cerr << "Importing inner trim loops not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing inner trim loops not supported yet\n";
   }
 
 
   void  
   fileparser_obj::_handle_special_curve( std::string const& /* s */ )
   {
-    std::cerr << "Importing special curves not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing special curves not supported yet\n";
   }
 
 
@@ -402,7 +402,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_special_point( std::string const& /* s */ )
   {
-    std::cerr << "Importing special points not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing special points not supported yet\n";
   }
 
 
@@ -410,7 +410,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_end_statement( std::string const& /* s */ )
   {
-    std::cerr << "Importing end statements not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing end statements not supported yet\n";
   }
 
 
@@ -419,7 +419,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_connectivity( std::string const& /* s */ )
   {
-    std::cerr << "Importing connectivity not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing connectivity not supported yet\n";
   }
 
 
@@ -436,7 +436,7 @@ namespace gpucast { namespace gl {
     {
       _stack.current_group = g;
     } else {
-      std::cerr << "Wrong syntax for group. Ignoring line.\n"; 
+      BOOST_LOG_TRIVIAL(error) << "Wrong syntax for group. Ignoring line.\n"; 
     }
   }
 
@@ -451,7 +451,7 @@ namespace gpucast { namespace gl {
     {
       _stack.smoothing_group = smoothgroup;
     } else {
-      std::cerr << "Wrong syntax for smoothing group. Ignoring line.\n"; 
+      BOOST_LOG_TRIVIAL(error) << "Wrong syntax for smoothing group. Ignoring line.\n"; 
     }
   }
 
@@ -460,7 +460,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_merging_group( std::string const& /* s */ )
   {
-    std::cerr << "Importing merging groups not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing merging groups not supported yet\n";
   }
 
 
@@ -468,7 +468,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_object_name( std::string const& /* s */ )
   {
-    //std::cerr << "Importing object names not supported yet\n";
+    //BOOST_LOG_TRIVIAL(error) << "Importing object names not supported yet\n";
   }
 
 
@@ -477,7 +477,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_bevel_interpolation( std::string const& /* s */ )
   {
-    std::cerr << "Importing bevel interpolation not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing bevel interpolation not supported yet\n";
   }
 
 
@@ -485,7 +485,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_color_interpolation( std::string const& /* s */ )
   {
-    std::cerr << "Importing color interpolation not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing color interpolation not supported yet\n";
   }
 
 
@@ -493,7 +493,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_dissolve_interpolation( std::string const& /* s */ )
   {
-    std::cerr << "Importing dissolve interpolation not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing dissolve interpolation not supported yet\n";
   }
 
 
@@ -501,7 +501,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_lod( std::string const& /* s */ )
   {
-    std::cerr << "Importing level of detail not supported yet\n"; 
+    BOOST_LOG_TRIVIAL(error) << "Importing level of detail not supported yet\n"; 
   }
 
 
@@ -516,7 +516,7 @@ namespace gpucast { namespace gl {
       _create_geode();
       _stack.current_material = material_name;
     } else {
-      std::cerr << "Wrong syntax for smoothing group. Ignoring line.\n"; 
+      BOOST_LOG_TRIVIAL(error) << "Wrong syntax for smoothing group. Ignoring line.\n"; 
     }
   }
 
@@ -535,7 +535,7 @@ namespace gpucast { namespace gl {
         mtl_parser.parse(_stack.parent_path + "/" + filename, _stack.materialmap);
       }
     } else {
-      std::cerr << "Wrong syntax for smoothing group. Ignoring line.\n"; 
+      BOOST_LOG_TRIVIAL(error) << "Wrong syntax for smoothing group. Ignoring line.\n"; 
     }
   }
 
@@ -544,7 +544,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_shadow_casting( std::string const& /* s */ )
   {
-    std::cerr << "Importing shadow casting not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing shadow casting not supported yet\n";
   }
 
 
@@ -552,7 +552,7 @@ namespace gpucast { namespace gl {
   void   
   fileparser_obj::_handle_ray_tracing( std::string const& /* s */ )
   {
-    std::cerr << "Importing ray tracing not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing ray tracing not supported yet\n";
   }
 
 
@@ -560,7 +560,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_curve_approximation( std::string const& /* s */ )
   {
-    std::cerr << "Importing curve approximation not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing curve approximation not supported yet\n";
   }
 
 
@@ -568,7 +568,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_surface_approximation( std::string const& /* s */ )
   {
-    std::cerr << "Importing surface approximation not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing surface approximation not supported yet\n";
   }
 
 
@@ -577,7 +577,7 @@ namespace gpucast { namespace gl {
   void  
   fileparser_obj::_handle_call( std::string const& /* s */ )
   {
-    std::cerr << "Importing calls not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing calls not supported yet\n";
   }
 
 

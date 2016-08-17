@@ -14,9 +14,6 @@
 #include "gpucast/gl/graph/group.hpp"
 
 // header, system
-#include <boost/foreach.hpp>
-#include <boost/mem_fn.hpp>
-#include <boost/bind.hpp>
 
 // header, project
 #include <gpucast/gl/graph/visitor.hpp>
@@ -49,8 +46,7 @@ group::visit ( visitor const& v )
 /* virtual */ void 
 group::compute_bbox ()
 {
-  BOOST_FOREACH(node_ptr_t n, _children ) 
-  {
+  for(auto n : _children) {
     n->compute_bbox();
     _bbox.merge(n->bbox());
   }

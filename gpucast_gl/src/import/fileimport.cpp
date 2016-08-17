@@ -23,8 +23,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-
-#include <boost/unordered_map.hpp>
+#include <boost/log/trivial.hpp>
 
 
 namespace gpucast { namespace gl {
@@ -99,7 +98,7 @@ namespace gpucast { namespace gl {
     } 
     catch (std::exception const& e)
     {
-      std::cerr << e.what() << std::endl;
+      BOOST_LOG_TRIVIAL(error) << e.what() << std::endl;
       return std::shared_ptr<node> (new group);
     }
   }

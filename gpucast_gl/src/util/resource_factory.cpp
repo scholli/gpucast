@@ -22,12 +22,12 @@
 
 #include <boost/regex.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/log/trivial.hpp>
 
 #include <gpucast/core/config.hpp>
 
 #include <gpucast/gl/program.hpp>
-#include <gpucast/gl/vertexshader.hpp>
-#include <gpucast/gl/fragmentshader.hpp>
+#include <gpucast/gl/shader.hpp>
 
 namespace {
 
@@ -70,8 +70,9 @@ std::string resource_factory::read_plain_file(std::string const& path) const
   namespace fs = boost::filesystem;
   std::string out;
   fs::path p;
-  if (!get_file_contents(fs::path(path), fs::current_path(), out, p))
+  if (!get_file_contents(fs::path(path), fs::current_path(), out, p)) {
     throw std::runtime_error("Unable to read plain file");
+  }
 
   return out;
 }
@@ -83,9 +84,9 @@ std::string resource_factory::read_shader_file(std::string const& path) const
   namespace fs = boost::filesystem;
 
   std::string out;
-  if (!resolve_includes(fs::path(path), fs::current_path(), out))
+  if (!resolve_includes(fs::path(path), fs::current_path(), out)) {
     throw std::runtime_error("Unable to read shader from file");
-
+  }
   return std::string(GPUCAST_GLSL_VERSION_STRING) + out;
 }
 
@@ -97,8 +98,9 @@ std::string resource_factory::prepare_shader(std::string const& shader_source,
   namespace fs = boost::filesystem;
 
   std::string out = shader_source;
-  if (!resolve_includes(fs::path(), fs::current_path(), out, label))
+  if (!resolve_includes(fs::path(), fs::current_path(), out, label)) {
     throw std::runtime_error("Unable to prepare shader");
+  }
 
   return std::string(GPUCAST_GLSL_VERSION_STRING) + out;
 }
@@ -120,8 +122,7 @@ std::string resource_factory::resolve_substitutions(std::string const& shader_so
       subs = search->second;
     }
     else {
-      std::cerr << "Option \"" << match[1]
-                << "\" is unknown!" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "Option \"" << match[1] << "\" is unknown!" << std::endl;
       subs = match.str();
     }
     out += match.prefix().str() + subs;
@@ -130,47 +131,33 @@ std::string resource_factory::resolve_substitutions(std::string const& shader_so
   return out + s;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<program> resource_factory::create_program(std::string const& vertex_shader, std::string const& fragment_shader) const
-{
+std::shared_ptr<program> resource_factory::create_program(std::vector<shader_desc> const& shader_descs) const {
   try {
-    gpucast::gl::vertexshader     vs;
-    gpucast::gl::fragmentshader   fs;
+    auto new_program = std::make_shared<program>();
 
-    auto p = std::make_shared<program>();
+    for (auto desc : shader_descs) {
+      gpucast::gl::shader shader(desc.type);
+      auto shader_source = read_shader_file(desc.filename);
 
-    auto vcode = read_shader_file(vertex_shader);
-    auto fcode = read_shader_file(fragment_shader);
-
-    vs.set_source(vcode.c_str());
-    vs.compile();
-    if (!vs.log().empty()) {
-      std::cout << vertex_shader << " log : " << vs.log() << std::endl;
+      shader.set_source(shader_source.c_str());
+      if (!shader.log().empty()) {
+        BOOST_LOG_TRIVIAL(info) << desc.filename << " log : " << shader.log() << std::endl;
+      }
+      new_program->add(&shader);
     }
-    p->add(&vs);
-
-    fs.set_source(fcode.c_str());
-    fs.compile();
-
-    if (!fs.log().empty()) {
-      std::cout << fragment_shader << " log : " << fs.log() << std::endl;
-    }
-    p->add(&fs);
-
+    
     // link all shaders
-    p->link();
+    new_program->link();
 
-    if (!p->log().empty())
-    {
-      // stream log to std output
-      std::cout << " program log : " << p->log() << std::endl;
+    if (!new_program->log().empty()) {
+      BOOST_LOG_TRIVIAL(info) << " program log : " << new_program->log() << std::endl;
     }
 
-    return p;
+    return new_program;
   }
   catch (std::exception& e) {
-    std::cerr << "resource_factory::create_program(): failed to init program : " << vertex_shader << ", " << fragment_shader << "( " << e.what() << ")\n";
+    BOOST_LOG_TRIVIAL(error) << "resource_factory::create_program(): failed to init program : " << e.what() << "\n";
     return nullptr;
   }
 }
@@ -207,9 +194,9 @@ bool resource_factory::get_file_contents(boost::filesystem::path const& filename
 
   // log error if failed to find file
   if (!ifs) {
-    std::cerr << "Failed to get file: \"" << filename.string()
-              << "\" from any of the search paths:" << std::endl
-              << error_info.str() << std::endl;
+    BOOST_LOG_TRIVIAL(error) << "Failed to get file: \"" << filename.string()
+                             << "\" from any of the search paths:" << std::endl
+                             << error_info.str() << std::endl;
     contents = "";
     full_path = boost::filesystem::path();
     return false;
@@ -252,7 +239,7 @@ bool resource_factory::get_file_contents(boost::filesystem::path const& filename
 
   // log error if failed to find file
   if (!ifs) {
-    std::cerr << "Failed to get file: \"" << filename.string()
+    BOOST_LOG_TRIVIAL(error) << "Failed to get file: \"" << filename.string()
       << "\" from any of the search paths:" << std::endl
       << error_info.str() << std::endl;
     contents = L"";

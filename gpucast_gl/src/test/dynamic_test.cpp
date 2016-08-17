@@ -12,8 +12,6 @@
 // include i/f header
 #include "gpucast/gl/test/dynamic_test.hpp"
 
-#include <boost/bind.hpp>
-
 #include <gpucast/gl/glpp.hpp>
 
 namespace gpucast { namespace gl {

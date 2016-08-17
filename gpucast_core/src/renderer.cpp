@@ -264,8 +264,8 @@ namespace gpucast {
                            std::string const&                 geometryshader_filename )
   {
     try {
-      gpucast::gl::vertexshader     vs;
-      gpucast::gl::fragmentshader   fs;
+      gpucast::gl::shader     vs(gpucast::gl::vertex_stage);
+      gpucast::gl::shader   fs(gpucast::gl::fragment_stage);
       gpucast::gl::geometryshader   gs;
 
       p.reset ( new gpucast::gl::program );

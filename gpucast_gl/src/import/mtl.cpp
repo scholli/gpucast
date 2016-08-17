@@ -14,6 +14,8 @@
 #include <vector>
 #include <functional>
 
+#include <boost/log/trivial.hpp>
+
 namespace gpucast { namespace gl {
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -92,7 +94,7 @@ namespace gpucast { namespace gl {
                 // apply appropriate handler for line
                 _handler[type](line, m);
               } else {
-                std::cerr << "Ignoring unknown line syntax : " <<  line << std::endl;
+                BOOST_LOG_TRIVIAL(error) << "Ignoring unknown line syntax : " <<  line << std::endl;
               }
             }
           }
@@ -101,7 +103,7 @@ namespace gpucast { namespace gl {
       ifstr.close();
 
     } else {
-      std::cerr << "Failed to read " << filename << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "Failed to read " << filename << std::endl;
     }
   }
 
@@ -220,7 +222,7 @@ namespace gpucast { namespace gl {
   void 
   fileparser_mtl::_handle_ambientmap( std::string const& s, fileparser_mtl::material_map_type& m  )
   {
-    std::cerr << "Importing ambient map not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing ambient map not supported yet\n";
   }
 
 
@@ -228,7 +230,7 @@ namespace gpucast { namespace gl {
   void 
   fileparser_mtl::_handle_diffusemap( std::string const& s, fileparser_mtl::material_map_type& m  )
   {
-    std::cerr << "Importing diffuse map not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing diffuse map not supported yet\n";
   }
 
 
@@ -236,7 +238,7 @@ namespace gpucast { namespace gl {
   void 
   fileparser_mtl::_handle_specularmap( std::string const& s, fileparser_mtl::material_map_type& m  )
   {
-    std::cerr << "Importing specular map not supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing specular map not supported yet\n";
   }
 
 
@@ -244,14 +246,14 @@ namespace gpucast { namespace gl {
   void  
   fileparser_mtl::_handle_bumpmap( std::string const& s, fileparser_mtl::material_map_type& m  )
   {
-    std::cerr << "Importing bump map supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing bump map supported yet\n";
   }
 
   /////////////////////////////////////////////////////////////////////////////
   void  
   fileparser_mtl::_handle_opacitymap( std::string const& s, fileparser_mtl::material_map_type& m  )
   {
-    std::cerr << "Importing opacity map supported yet\n";
+    BOOST_LOG_TRIVIAL(error) << "Importing opacity map supported yet\n";
   }
 
 

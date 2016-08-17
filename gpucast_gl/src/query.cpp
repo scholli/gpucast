@@ -32,6 +32,13 @@ query::~query()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool query::is_available() const {
+  GLuint64 result = GL_FALSE;
+  glGetQueryObjectui64v(id(), GL_QUERY_RESULT_AVAILABLE, &result);
+  return result != GL_FALSE;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 unsigned query::id() const {
   return _id;
 }

@@ -17,7 +17,6 @@
 #include <gpucast/math/vec3.hpp>
 
 #include <gpucast/gl/program.hpp>
-#include <gpucast/gl/vertexshader.hpp>
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
 
@@ -121,7 +120,7 @@ void aabb::_init ( )
       } \n \
       ";
 
-  gpucast::gl::vertexshader vs;
+  gpucast::gl::shader vs(gpucast::gl::vertex_stage);
 
   vs.set_source(vs_src.c_str());
   vs.compile();

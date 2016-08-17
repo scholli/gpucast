@@ -27,7 +27,7 @@
 #include <GL/glew.h>
 
 #include <boost/shared_array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <boost/log/trivial.hpp>
 
 // header project
 #include <gpucast/math/vec3.hpp>
@@ -103,7 +103,7 @@ texture2d::load ( std::string const& in_image_path )
  
   if ( !in_image->load ( in_image_path.c_str()) ) 
   {
-    std::cerr << "texture2d::load(): " << "unable to open file: " << in_image_path << std::endl;
+    BOOST_LOG_TRIVIAL(error) << "texture2d::load(): " << "unable to open file: " << in_image_path << std::endl;
     return false;
   }
  
@@ -136,7 +136,7 @@ texture2d::load ( std::string const& in_image_path )
     case FIT_FLOAT:     image_internal_format = GL_R32F;    image_format = GL_RED;  image_value_type = GL_FLOAT;           break;
     case FIT_RGBF:      image_internal_format = GL_RGB32F;  image_format = GL_RGB;  image_value_type = GL_FLOAT;           break;
     case FIT_RGBAF:     image_internal_format = GL_RGBA32F; image_format = GL_RGBA; image_value_type = GL_FLOAT;           break;
-    default : std::cerr << "texture2d::load(): " << " unknown image format in file: " << in_image_path << std::endl; return false;
+    default : BOOST_LOG_TRIVIAL(error) << "texture2d::load(): " << " unknown image format in file: " << in_image_path << std::endl; return false;
   }
  
   teximage(0, image_internal_format, image_width, image_height, 0, image_format, image_value_type, static_cast<void*>(in_image->accessPixels()));

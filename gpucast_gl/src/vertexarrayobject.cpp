@@ -20,6 +20,8 @@
 #include <gpucast/gl/buffer.hpp>
 #include <gpucast/gl/error.hpp>
 
+#include <boost/log/trivial.hpp>
+
 namespace gpucast { namespace gl {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -92,7 +94,7 @@ vertexarrayobject::attrib_array ( buffer const& buf, std::size_t index, std::siz
     case GL_FLOAT         : glVertexArrayVertexAttribOffsetEXT (GLuint(_id), GLuint(buf.id()), GLuint(index), GLint(size), type, normalized, GLint(stride), GLintptr(offset)); break;
     case GL_BYTE          : glVertexArrayVertexAttribOffsetEXT (GLuint(_id), GLuint(buf.id()), GLuint(index), GLint(size), type, normalized, GLint(stride), GLintptr(offset)); break;
     case GL_UNSIGNED_INT  : glVertexArrayVertexAttribIOffsetEXT(GLuint(_id), GLuint(buf.id()), GLuint(index), GLint(size), type, GLint(stride), GLintptr(offset)); break;
-    default : std::cerr << "vertexarrayobject::attrib_array() : type not handled yet" << std::endl;
+    default : BOOST_LOG_TRIVIAL(error) << "vertexarrayobject::attrib_array() : type not handled yet" << std::endl;
   }
   buf.unbind();
 #else 
@@ -102,7 +104,7 @@ vertexarrayobject::attrib_array ( buffer const& buf, std::size_t index, std::siz
   {
     case GL_FLOAT         : glVertexAttribPointer(index, size, type, normalized, stride, pointer); break;
     case GL_UNSIGNED_INT  : glVertexAttribIPointer(index, size, type, stride, pointer); break;
-    default : std::cerr << "vertexarrayobject::attrib_array() : type not handled yet" << std::endl;
+    default : BOOST_LOG_TRIVIAL(error) << "vertexarrayobject::attrib_array() : type not handled yet" << std::endl;
   }
   buf.unbind();
   unbind();

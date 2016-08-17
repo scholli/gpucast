@@ -23,8 +23,7 @@
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/timer_query.hpp>
 #include <gpucast/gl/program.hpp>
-#include <gpucast/gl/vertexshader.hpp>
-#include <gpucast/gl/fragmentshader.hpp>
+#include <gpucast/gl/shader.hpp>
 #include <gpucast/glut/window.hpp>
 
 #include <gpucast/math/matrix4x4.hpp> 
@@ -215,14 +214,12 @@ public:
       }    
     )";
 
-    gpucast::gl::vertexshader vertex_shader;
+    gpucast::gl::shader vertex_shader(gpucast::gl::vertex_stage);
     vertex_shader.set_source(vtx_str.c_str());
-    vertex_shader.compile();
     std::cout << "Vertex shader log" << vertex_shader.log() << std::endl;
 
-    gpucast::gl::fragmentshader fragment_shader;
+    gpucast::gl::shader fragment_shader(gpucast::gl::fragment_stage);
     fragment_shader.set_source(frg_str.c_str());
-    fragment_shader.compile();
     std::cout << "Fragment shader log : " << fragment_shader.log() << std::endl;
 
     _program->add(&vertex_shader);
@@ -265,12 +262,12 @@ public:
     renderer.modelviewmatrix(mv);
 
     for (auto const& o : _objects) {
-      o->draw();
+      o->draw(gpucast::gl::bezierobject::tesselation);
     }
 
     _query.end();
 
-    std::cout << "fps: " << double(1000) / _query.result_wait() << "\r";
+    std::cout << "fps: " << double(1000) / _query.time_in_ms() << "\r";
 #if 1
     if (_show_obbs) {
 
@@ -328,8 +325,8 @@ public:
         std::cout << "Newton iterations set to " << o->max_newton_iterations() << std::endl;
         break;
       case 'r':
-        o->raycasting(!o->raycasting());
-        std::cout << "Raycasting set to " << o->raycasting() << std::endl;
+        o->enable_raycasting(!o->enable_raycasting());
+        std::cout << "Raycasting set to " << o->enable_raycasting() << std::endl;
         break;
       case 'o':
         _show_obbs = !_show_obbs;

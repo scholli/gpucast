@@ -38,10 +38,9 @@
 
 #include <gpucast/core/config.hpp>
 
-#include <gpucast/gl/vertexshader.hpp>
+#include <gpucast/gl/shader.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/arraybuffer.hpp>
-#include <gpucast/gl/fragmentshader.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/transferfunction.hpp>
 #include <gpucast/gl/util/resource_factory.hpp>
@@ -1348,7 +1347,7 @@ glwidget::paintGL()
   _gputimer->end();
 
   // try to get query result
-  double time_ms = _gputimer->result_wait();
+  double time_ms = _gputimer->time_in_ms();
 
   if (!_testruns.empty()) {
     _testruns.back()->data[_testruns.back()->current].time_ms = time_ms;
@@ -1501,13 +1500,40 @@ glwidget::_initialize_shader()
 {
   gpucast::gl::resource_factory program_factory;
 
-  _partition_program = program_factory.create_program("./shader/partition.vert.glsl", "./shader/partition.frag.glsl");
-  _db_program = program_factory.create_program("./shader/double_binary.vert", "./shader/double_binary.frag");
-  _tex_program = program_factory.create_program("./shader/texture_view.vert.glsl", "./shader/texture_view.frag.glsl");
-  _cmb_program = program_factory.create_program("./shader/contour_binary.vert", "./shader/contour_binary.frag");
-  _kd_program = program_factory.create_program("./shader/contour_kd.vert", "./shader/contour_kd.frag");
-  _loop_list_program = program_factory.create_program("./shader/contour_loop_list.vert", "./shader/contour_loop_list.frag");
-  _prefilter_program = program_factory.create_program("./shader/prefilter_view.vert.glsl", "./shader/prefilter_view.frag.glsl");
+  _partition_program = program_factory.create_program({ 
+    { gpucast::gl::vertex_stage, "./shader/partition.vert.glsl"}, 
+    { gpucast::gl::fragment_stage, "./shader/partition.frag.glsl"}
+  });
+
+  _db_program = program_factory.create_program({ 
+    { gpucast::gl::vertex_stage, "./shader/double_binary.vert" },
+    { gpucast::gl::fragment_stage, "./shader/double_binary.frag"}
+  });
+
+  _tex_program = program_factory.create_program({ 
+    { gpucast::gl::vertex_stage, "./shader/texture_view.vert.glsl" },
+    { gpucast::gl::fragment_stage, "./shader/texture_view.frag.glsl"}
+  });
+
+  _cmb_program = program_factory.create_program({
+    { gpucast::gl::vertex_stage, "./shader/contour_binary.vert" },
+    { gpucast::gl::fragment_stage, "./shader/contour_binary.frag"}
+  });
+
+  _kd_program = program_factory.create_program({
+    { gpucast::gl::vertex_stage, "./shader/contour_kd.vert" },
+    { gpucast::gl::fragment_stage, "./shader/contour_kd.frag"}
+  });
+
+  _loop_list_program = program_factory.create_program({
+    { gpucast::gl::vertex_stage, "./shader/contour_loop_list.vert"},
+    { gpucast::gl::fragment_stage, "./shader/contour_loop_list.frag"}
+  });
+
+  _prefilter_program = program_factory.create_program({
+    { gpucast::gl::vertex_stage, "./shader/prefilter_view.vert.glsl"},
+    { gpucast::gl::fragment_stage, "./shader/prefilter_view.frag.glsl"}
+  });
 }
 
 ///////////////////////////////////////////////////////////////////////

@@ -189,8 +189,8 @@ public:
         std::cout << "Newton iterations set to " << o->max_newton_iterations() << std::endl;
         break;
       case 'r':
-        o->raycasting(!o->raycasting());
-        std::cout << "Raycasting set to " << o->raycasting() << std::endl;
+        o->enable_raycasting(!o->enable_raycasting());
+        std::cout << "Raycasting set to " << o->enable_raycasting() << std::endl;
         break;
       }
     }

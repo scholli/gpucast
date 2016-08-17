@@ -14,6 +14,7 @@
 
 // header, system
 #include <iostream>
+#include <boost/log/trivial.hpp>
 
 #include <GL/glew.h>
 
@@ -24,48 +25,48 @@ error(std::string const& message)
 {
   GLenum err = glGetError();
 
-  std::cerr << message << " : ";
+  BOOST_LOG_TRIVIAL(error) << message << " : ";
 
   switch (err) {
 
     case GL_NO_ERROR :
-      std::cerr << "no error.\n";
+      BOOST_LOG_TRIVIAL(error) << "no error.\n";
       return true;
 
     case GL_INVALID_ENUM :
-      std::cerr << "GL_INVALID_ENUM" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "GL_INVALID_ENUM" << std::endl;
       return false;
 
     case GL_INVALID_VALUE :
-      std::cerr << "GL_INVALID_VALUE" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "GL_INVALID_VALUE" << std::endl;
       return false;
 
     case GL_INVALID_OPERATION :
-      std::cerr << "GL_INVALID_OPERATION" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "GL_INVALID_OPERATION" << std::endl;
       return false;
 
     case GL_STACK_OVERFLOW :
-      std::cerr << "GL_STACK_OVERFLOW" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "GL_STACK_OVERFLOW" << std::endl;
       return false;
 
     case GL_STACK_UNDERFLOW :
-      std::cerr << "GL_STACK_UNDERFLOW" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "GL_STACK_UNDERFLOW" << std::endl;
       return false;
 
     case GL_OUT_OF_MEMORY :
-      std::cerr << "GL_OUT_OF_MEMORY" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "GL_OUT_OF_MEMORY" << std::endl;
       return false;
 
     case GL_TABLE_TOO_LARGE :
-      std::cerr << "GL_TABLE_TOO_LARGE" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "GL_TABLE_TOO_LARGE" << std::endl;
       return false;
 
     case GL_INVALID_FRAMEBUFFER_OPERATION_EXT :
-      std::cerr << "GL_INVALID_FRAMEBUFFER_OPERATION_EXT" << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "GL_INVALID_FRAMEBUFFER_OPERATION_EXT" << std::endl;
       return false;
 
     default :
-      std::cerr << "unknwon error.\n";
+      BOOST_LOG_TRIVIAL(error) << "unknwon error.\n";
       return false;
   };
 }

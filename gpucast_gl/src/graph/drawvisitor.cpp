@@ -14,9 +14,6 @@
 #include "gpucast/gl/graph/drawvisitor.hpp"
 
 // header, system
-#include <boost/bind.hpp>
-#include <boost/mem_fn.hpp>
-
 #include <gpucast/gl/graph/geode.hpp>
 #include <gpucast/gl/graph/group.hpp>
 

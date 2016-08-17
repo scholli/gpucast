@@ -34,7 +34,7 @@ namespace gpucast { namespace gl {
 
     virtual void begin() const = 0;
     virtual void end() const = 0;
-    virtual bool is_available() const = 0;
+    virtual bool is_available() const;
 
   private : // member
 

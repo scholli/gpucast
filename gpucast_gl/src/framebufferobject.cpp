@@ -21,6 +21,8 @@
 #include <gpucast/gl/renderbuffer.hpp>
 #include <gpucast/gl/texture2d.hpp>
 
+#include <boost/log/trivial.hpp>
+
 namespace gpucast { namespace gl {
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -49,32 +51,32 @@ namespace gpucast { namespace gl {
     switch (status)
       {
       case GL_FRAMEBUFFER_COMPLETE_EXT:
-        std::cerr << "Initialize Framebufferobject: ok" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "Initialize Framebufferobject: ok" << std::endl;
         return true;
         break;
       case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
-        std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT" << std::endl;
         break;
       case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-        std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT" << std::endl;
         break;
       case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-        std::cerr << "[ERROR] : GL_FRAMEBUFFER_UNSUPPORTED_EXT" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_UNSUPPORTED_EXT" << std::endl;
         break;
       case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-        std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT" << std::endl;
         break;
       //case GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT:
-      //	std::cerr << "GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT" << std::endl;
+      //	BOOST_LOG_TRIVIAL(error) << "GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT" << std::endl;
       //	break;
       case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-        std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT" << std::endl;
         break;
       case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-        std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT" << std::endl;
         break;
       default:
-        std::cerr << "[ERROR] : UNKNOWN FRAMEBUFFER ERROR" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "[ERROR] : UNKNOWN FRAMEBUFFER ERROR" << std::endl;
         break;
     }
 
@@ -245,7 +247,7 @@ namespace gpucast { namespace gl {
       glFramebufferRenderbufferEXT( target(), attachment, renderbuffer::TARGET, 0);
       break;
     default:
-      std::cerr << "framebufferobject::unbind_attachment ERROR: Unknown attached resource type\n";
+      BOOST_LOG_TRIVIAL(error) << "framebufferobject::unbind_attachment ERROR: Unknown attached resource type\n";
     }
 
     unbind();
@@ -370,7 +372,7 @@ framebufferobject::Unattach( GLenum attachment )
     AttachTexture( GL_TEXTURE_2D, 0, attachment );
     break;
   default:
-    std::cerr << "framebufferobject::unbind_attachment ERROR: Unknown attached resource type\n";
+    BOOST_LOG_TRIVIAL(error) << "framebufferobject::unbind_attachment ERROR: Unknown attached resource type\n";
   }
   _GuardedUnbind();
 }
@@ -385,31 +387,31 @@ framebufferobject::valid()
 	switch (status)
 		{
 		case GL_FRAMEBUFFER_COMPLETE_EXT:
-			std::cerr << "GL_FRAMEBUFFER_COMPLETE_EXT" << std::endl;
+			BOOST_LOG_TRIVIAL(error) << "GL_FRAMEBUFFER_COMPLETE_EXT" << std::endl;
 			return true;
 		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
-			std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT" << std::endl;
+			BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT" << std::endl;
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-			std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT" << std::endl;
+			BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT" << std::endl;
 			break;
 		case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-			std::cerr << "[ERROR] : GL_FRAMEBUFFER_UNSUPPORTED_EXT" << std::endl;
+			BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_UNSUPPORTED_EXT" << std::endl;
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-			std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT" << std::endl;
+			BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT" << std::endl;
 			break;
 		//case GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT:
-		//	std::cerr << "GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT" << std::endl;
+		//	BOOST_LOG_TRIVIAL(error) << "GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT" << std::endl;
 		//	break;
     case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-			std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT" << std::endl;
+			BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT" << std::endl;
 			break;
     case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-			std::cerr << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT" << std::endl;
+			BOOST_LOG_TRIVIAL(error) << "[ERROR] : GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT" << std::endl;
 			break;
 		default:
-			std::cerr << "[ERROR] : unknown fbo error" << std::endl;
+			BOOST_LOG_TRIVIAL(error) << "[ERROR] : unknown fbo error" << std::endl;
 			break;
 	}
 	return false;

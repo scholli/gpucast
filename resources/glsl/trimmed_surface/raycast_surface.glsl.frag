@@ -9,71 +9,26 @@
 precision highp float;
 
 /*******************************************************************************
- *   vertexdata : control points in model coordinates
- *   trimdata   : trim curve acceleration structure
- *   urangeslist: u-intervals per v-interval
- *   curvelist  : curve lists according to a certain range [vmin vmax]
- *   curvedata  : control points of trim curves
- *
  *   trim_index : start index in trim acceleration for current surface
  *   data_index : start index in control point buffer for current surface
  *   uvrange    : parameter range of surface [umin, umax, vmin, vmax]
  *   trimtype   : 0 = inner is trimmed, 1 outer is trimmed
  ******************************************************************************/
-uniform samplerBuffer vertexdata;
-uniform samplerBuffer obbdata;
-
-uniform usamplerBuffer preclassification;
-
-uniform samplerBuffer cmb_partition;
-uniform samplerBuffer cmb_contourlist;
-uniform samplerBuffer cmb_curvelist;
-uniform samplerBuffer cmb_curvedata;
-uniform samplerBuffer cmb_pointdata;
-
-uniform samplerBuffer bp_trimdata;
-uniform samplerBuffer bp_celldata;
-uniform samplerBuffer bp_curvelist;
-uniform samplerBuffer bp_curvedata;
-
-#define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 0
-
-/*******************************************************************************
- *  Trimming for parameter pair [u,v] : DATA STRUCTURE :
- *
- *  - trimdata :
- *      [index]
- *      trim_index          : [vmin_all, vmax_all, #tdata, 0.0]
- *      trim_index + 1      : [vmin_clist, vmax_clist, urangeslist_id, 0.0]
- *      ...                    ...
- *      trim_index + #tdata : [vmin_clist, vmax_clist, urangeslist_id, 0.0]
- *
- *  - urangeslist :
- *      [index]
- *      urangeslist_id                  : [umin_all, umax_all, nr_of_uranges, 0.0]
- *      urangeslist_id + 1              : [umin,     umax, intersect_on_right, curvelist_id]
- *             ...
- *      urangeslist_id + nr_of_uranges  : [umin,     umax, intersect_on_right, curvelist_id]
- *
- *  -curvelist :
- *      [index]
- *      curvelist_id                    : [nr_of_curves]
- *      curvelist_id + 1                : [curve_id, curveorder, increasing, 0.0]
- *      ...
- *      curvelist_id + nr_of_curves     : [curve_id, curveorder, increasing, 0.0]
- *
- *  - curvedata :
- *      [index]
- *      curve_id            : [x0, y0, w0, 0.0]
- *             ...
- *      curve_id + order    : [xn, yn, wn, 0.0]
- *******************************************************************************/
 
 /*******************************************************************************
  * cubemap for reflections
  ******************************************************************************/
 uniform sampler2D   spheremap;
 uniform sampler2D   diffusemap;
+
+uniform int diffusemapping;
+uniform int spheremapping;
+
+uniform float shininess;
+uniform float opacity;
+uniform vec3 mat_ambient;
+uniform vec3 mat_diffuse;
+uniform vec3 mat_specular;
 
 /*******************************************************************************
  * VARYINGS :
@@ -96,35 +51,10 @@ flat in vec4 uvrange;
 /*******************************************************************************
  * UNIFORMS :
  ******************************************************************************/
-
-/*uniform int trim_iterations;*/
-uniform int   iterations;
-uniform float epsilon_object_space;
-uniform float nearplane;
-uniform float farplane;
-
-uniform int   spheremapping;
-uniform int   diffusemapping;
-
-/* trimming */
-uniform sampler2D prefilter_texture;
-uniform int   antialiasing;
-
-uniform int   raycasting_enabled;
-
-/* material definition */
-uniform vec3  mat_ambient;
-uniform vec3  mat_diffuse;
-uniform vec3  mat_specular;
-uniform float shininess;
-uniform float opacity;
-
-uniform mat4  modelviewmatrix;
-uniform mat4  modelviewprojectionmatrix;
-uniform mat4  normalmatrix;
-uniform mat4  modelviewmatrixinverse;
-
-uniform vec4  lightpos0;
+#include "./resources/glsl/common/camera_uniforms.glsl"
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
+#include "./resources/glsl/trimmed_surface/raycasting_uniforms.glsl"
+#include "./resources/glsl/trimming/trimming_uniforms.glsl"
 
 /*******************************************************************************
  * OUTPUT
@@ -135,7 +65,6 @@ layout (depth_any)    out float gl_FragDepth;
 /*******************************************************************************
  * include functions
  ******************************************************************************/
-#include "./resources/glsl/common/obb_area.glsl"
 #include "./resources/glsl/base/compute_depth.frag"
 #include "./resources/glsl/math/adjoint.glsl.frag"
 #include "./resources/glsl/math/euclidian_space.glsl.frag"
@@ -160,7 +89,7 @@ void main(void)
   *********************************************************************/
   vec3 n1, n2;
   float d1, d2;
-  raygen(v_modelcoord, modelviewmatrixinverse, n1, n2, d1, d2);
+  raygen(v_modelcoord, gpucast_model_view_inverse_matrix, n1, n2, d1, d2);
 
   /*********************************************************************
   * Surface intersection
@@ -171,9 +100,16 @@ void main(void)
   vec4 du = vec4(0.0);
   vec4 dv = vec4(0.0);
 
-  if ( bool(raycasting_enabled) ) 
+  if ( bool(gpucast_enable_newton_iteration) ) 
   {
-    bool surface_hit = newton(uv, 0.001f, iterations, vertexdata, data_index, order_u, order_v, n1, n2, d1, d2, p, du, dv);
+    bool surface_hit = newton(uv, 
+                              gpucast_raycasting_error_tolerance, 
+                              gpucast_raycasting_iterations, 
+                              gpucast_control_point_buffer, 
+                              data_index, 
+                              order_u, 
+                              order_v, 
+                              n1, n2, d1, d2, p, du, dv);
     if ( !surface_hit ) 
     {
       discard;
@@ -189,7 +125,7 @@ void main(void)
   // transform in NURBS parameter coordinates
   uv[0] = uvrange[0] + uv[0] * (uvrange[1] - uvrange[0]);
   uv[1] = uvrange[2] + uv[1] * (uvrange[3] - uvrange[2]);
-  int iters = 0;
+  int trim_iterations = 0;
   vec4 debug = vec4(0.0);
 
   bool is_trimmed = false;
@@ -201,51 +137,51 @@ void main(void)
 
   if (trim_approach == 1)
   {
-    is_trimmed = trimming_double_binary ( bp_trimdata, 
-                                          bp_celldata, 
-                                          bp_curvelist, 
-                                          bp_curvedata, 
-                                          preclassification,
+    is_trimmed = trimming_double_binary ( gpucast_bp_trimdata, 
+                                          gpucast_bp_celldata, 
+                                          gpucast_bp_curvelist, 
+                                          gpucast_bp_curvedata, 
+                                          gpucast_preclassification,
                                           uv, 
                                           trim_index, 
                                           trim_type, 
-                                          iters, 
-                                          0.00001, 
-                                          16 );
+                                          trim_iterations, 
+                                          gpucast_trim_error_tolerance, 
+                                          gpucast_trimming_max_bisections );
   }
   
   if (trim_approach == 2) {
-    is_trimmed= trimming_contour_double_binary ( cmb_partition, 
-                                                 cmb_contourlist,
-                                                 cmb_curvelist,
-                                                 cmb_curvedata,
-                                                 cmb_pointdata,
-                                                 preclassification,
+    is_trimmed= trimming_contour_double_binary ( gpucast_cmb_partition, 
+                                                 gpucast_cmb_contourlist,
+                                                 gpucast_cmb_curvelist,
+                                                 gpucast_cmb_curvedata,
+                                                 gpucast_cmb_pointdata,
+                                                 gpucast_preclassification,
                                                  uv, 
                                                  trim_index,
                                                  trim_type, 
-                                                 iters, 
-                                                 0.00001, 
-                                                 16 );
+                                                 trim_iterations, 
+                                                 gpucast_trim_error_tolerance, 
+                                                 gpucast_trimming_max_bisections );
   }
 
   if (trim_approach == 3) {
-    is_trimmed = trimming_contour_kd(cmb_partition,
-                                     cmb_contourlist,
-                                     cmb_curvelist,
-                                     cmb_curvedata,
-                                     cmb_pointdata,
-                                     preclassification,
+    is_trimmed = trimming_contour_kd(gpucast_kd_partition,
+                                     gpucast_kd_contourlist,
+                                     gpucast_kd_curvelist,
+                                     gpucast_kd_curvedata,
+                                     gpucast_kd_pointdata,
+                                     gpucast_preclassification,
                                      uv,
                                      trim_index,
                                      trim_type,
-                                     iters,
-                                     0.00001,
-                                     16);
+                                     trim_iterations,
+                                     gpucast_trim_error_tolerance, 
+                                     gpucast_trimming_max_bisections);
   }
 
   if (trim_approach == 4) {
-    is_trimmed = trimming_loop_list(uv, trim_index, preclassification);
+    is_trimmed = trimming_loop_list(uv, trim_index, gpucast_preclassification);
   }
 
   if ( is_trimmed )
@@ -256,18 +192,17 @@ void main(void)
   /*********************************************************************
    * depth correction
    *********************************************************************/
-  vec4 p_world = modelviewmatrix * vec4(p.xyz, 1.0);
-  float corrected_depth = compute_depth ( p_world, nearplane, farplane );
+  vec4 p_world = gpucast_model_view_matrix * vec4(p.xyz, 1.0);
+  float corrected_depth = compute_depth ( p_world, gpucast_clip_near, gpucast_clip_far );
   gl_FragDepth = corrected_depth;
   
   /*********************************************************************
    * Shading process
    ********************************************************************/
-  if (bool(raycasting_enabled)) 
+  if (bool(gpucast_enable_newton_iteration)) 
   {
-#if 1
     out_color = shade_phong_fresnel(p_world, 
-                                    normalize((normalmatrix * vec4(normal, 0.0)).xyz), 
+                                    normalize((gpucast_normal_matrix * vec4(normal, 0.0)).xyz), 
                                     vec4(1.0, 1.0, 1.0, 1.0),
                                     //vec3(0.1), vec3(0.8, 0.5, 0.2), vec3(1.0),
                                     mat_ambient, mat_diffuse, mat_specular,
@@ -277,32 +212,6 @@ void main(void)
                                     spheremap,
                                     bool(diffusemapping),
                                     diffusemap);
-
-    //float area = calculate_obb_area(modelviewprojectionmatrix, modelviewmatrixinverse, obbdata, obb_index);
-    //out_color = vec4(area, area, area, 1.0);
-
-#else 
-
-    float width = 1800.0;
-    float height = 1200.0;
-
-    vec4 dx = vec4(1.0/width, 0.0, 0.0, 0.0);
-    vec4 dy = vec4(0.0, 1.0/height, 0.0, 0.0);
-
-    vec4 dx_os = inverse(modelviewprojectionmatrix) * dx;
-    vec4 dy_os = inverse(modelviewprojectionmatrix) * dy;
-
-    //dx_os /= dx_os.w;
-    //dy_os /= dy_os.w;
-
-    vec2 dun = du.xy;
-    vec2 dvn = dv.xy;
-
-    vec2 duvdx = vec2(dot(dx_os.xy, dun), dot(dx_os.xy, dvn));
-    vec2 duvdy = vec2(dot(dy_os.xy, dun), dot(dy_os.xy, dvn));
-
-    out_color = vec4(dx_os.xy, 0.0, 1.0);
-#endif
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }

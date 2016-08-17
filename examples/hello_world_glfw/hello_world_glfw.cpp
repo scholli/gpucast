@@ -20,8 +20,7 @@
 // local includes
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/util/vsync.hpp>
-#include <gpucast/gl/vertexshader.hpp>
-#include <gpucast/gl/fragmentshader.hpp>
+#include <gpucast/gl/shader.hpp>
 #include <gpucast/gl/primitives/cube.hpp>
 #include <gpucast/gl/util/trackball.hpp>
 #include <gpucast/math/matrix4x4.hpp>
@@ -88,8 +87,8 @@ public:
       }
     )";
 
-    gpucast::gl::vertexshader   vs;
-    gpucast::gl::fragmentshader fs;
+    gpucast::gl::shader   vs(gpucast::gl::vertex_stage);
+    gpucast::gl::shader fs(gpucast::gl::fragment_stage);
 
     vs.set_source(vertexshader_code.c_str());
     fs.set_source(fragmentshader_code.c_str());

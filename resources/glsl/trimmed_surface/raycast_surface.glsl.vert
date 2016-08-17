@@ -24,10 +24,7 @@ flat out int order_v;
 flat out vec4 uvrange;
 
 // uniforms
-uniform mat4 modelviewmatrix;
-uniform mat4 modelviewprojectionmatrix;
-uniform mat4 normalmatrix;
-uniform mat4 modelviewmatrixinverse;
+#include "./resources/glsl/common/camera_uniforms.glsl"
 
 void main(void)
 {
@@ -49,5 +46,5 @@ void main(void)
   uvrange        = vattrib3;
 
   /* transform convex hull in modelview to generate fragments */
-  gl_Position = modelviewprojectionmatrix * vertex;
+  gl_Position = gpucast_model_view_projection_matrix * vertex;
 }

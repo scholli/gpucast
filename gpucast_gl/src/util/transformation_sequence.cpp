@@ -16,8 +16,7 @@
 
 #include <fstream>
 #include <boost/filesystem.hpp>
-#include <boost/bind.hpp>
-
+#include <boost/log/trivial.hpp>
 
 namespace gpucast { namespace gl {
 
@@ -79,7 +78,7 @@ namespace gpucast { namespace gl {
         throw std::runtime_error("Cannot open file.");
       }
     } catch ( std::exception& e ) {
-      std::cerr << "transformation_sequence::write() failed. " << e.what() << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "transformation_sequence::write() failed. " << e.what() << std::endl;
     }
   }
 
@@ -103,7 +102,7 @@ namespace gpucast { namespace gl {
         throw std::runtime_error("No such file.");
       }
     } catch ( std::exception& e ) {
-      std::cerr << "transformation_sequence::read() failed. " << e.what() << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "transformation_sequence::read() failed. " << e.what() << std::endl;
     }
   }
 

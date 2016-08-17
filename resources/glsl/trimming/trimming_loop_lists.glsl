@@ -3,6 +3,8 @@
 
 #include "resources/glsl/common/config.glsl"
 #include "resources/glsl/common/conversion.glsl"
+
+#include "resources/glsl/trimming/trimming_uniforms.glsl"
 #include "resources/glsl/trimming/binary_search.glsl"
 #include "resources/glsl/trimming/bisect_curve.glsl"
 #include "resources/glsl/trimming/pre_classification.glsl"
@@ -53,24 +55,21 @@ struct contour_t {
   bbox_t       bbox;
 };
 
-layout(std430) buffer loop_buffer {
+layout(std430) buffer gpucast_loop_buffer {
   loop_t loops[];
 };
 
-layout(std430) buffer contour_buffer {
+layout(std430) buffer gpucast_contour_buffer {
   contour_t contours[];
 };
 
-layout(std430) buffer curve_buffer {
+layout(std430) buffer gpucast_curve_buffer {
   curve_t curves[];
 };
 
-layout(std430) buffer point_buffer {
+layout(std430) buffer gpucast_point_buffer {
   vec4 points[];
 };
-
-uniform usamplerBuffer sampler_preclass;
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 void

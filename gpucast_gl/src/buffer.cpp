@@ -50,16 +50,16 @@ buffer::buffer( std::size_t bytes, GLenum usage )
 buffer::~buffer()
 {
 #if 0
-  std::cout << "entering buffer::~buffer( )" << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "entering buffer::~buffer( )" << std::endl;
   error("gl error? : ");
 
-  std::cout << "Buffer ID ? : " << _id << std::endl;
-  std::cout << "glIsBuffer? : " << (glIsBuffer(_id) == GL_TRUE) << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "Buffer ID ? : " << _id << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "glIsBuffer? : " << (glIsBuffer(_id) == GL_TRUE) << std::endl;
 
-  std::cout << "access ? : " << parameter( GL_BUFFER_ACCESS ) << std::endl;
-  std::cout << "mapped ? : " << parameter( GL_BUFFER_MAPPED ) << std::endl;
-  std::cout << "size ?   : " << parameter( GL_BUFFER_SIZE ) << std::endl;
-  std::cout << "usage ?  : " << parameter( GL_BUFFER_USAGE )<< std::endl;
+  BOOST_LOG_TRIVIAL(info) << "access ? : " << parameter( GL_BUFFER_ACCESS ) << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "mapped ? : " << parameter( GL_BUFFER_MAPPED ) << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "size ?   : " << parameter( GL_BUFFER_SIZE ) << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "usage ?  : " << parameter( GL_BUFFER_USAGE )<< std::endl;
 #endif
   glDeleteBuffers(1, &_id);
 }

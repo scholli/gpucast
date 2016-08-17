@@ -26,8 +26,7 @@
 
 #include <gpucast/core/config.hpp>
 
-#include <gpucast/gl/fragmentshader.hpp>
-#include <gpucast/gl/vertexshader.hpp>
+#include <gpucast/gl/shader.hpp>
 #include <gpucast/gl/util/init_glew.hpp>
 #include <gpucast/gl/util/timer.hpp>
 #include <gpucast/gl/util/vsync.hpp>
@@ -127,7 +126,10 @@ glwidget::recompile ( )
   gpucast::gl::bezierobject_renderer::instance().recompile();
 
   gpucast::gl::resource_factory program_factory;
-  _fbo_program = program_factory.create_program("resources/glsl/base/render_from_texture_sao.vert", "resources/glsl/base/render_from_texture_sao.frag");
+  _fbo_program = program_factory.create_program({
+    {gpucast::gl::vertex_stage,   "resources/glsl/base/render_from_texture_sao.vert"},
+    {gpucast::gl::fragment_stage, "resources/glsl/base/render_from_texture_sao.frag"}
+  });
 }
 
 
@@ -251,7 +253,7 @@ glwidget::paintGL()
   gpucast::gl::time_duration cpu_elapsed = _cputimer->result();
   double cputime_seconds = cpu_elapsed.fractional_seconds + cpu_elapsed.seconds; // discard minutes
   _cputime += cputime_seconds;
-  _gputime += _gputimer->result_wait();
+  _gputime += _gputimer->time_in_ms();
 
 
   _cputimer->start();
@@ -287,7 +289,7 @@ glwidget::paintGL()
 #endif
 
   _gputimer->end();
-  double postprocess = _gputimer->result_wait();
+  double postprocess = _gputimer->time_in_ms();
 
   // show message and reset counter if more than 1s passed
   if (_gputime > 500 || _frames > 10)

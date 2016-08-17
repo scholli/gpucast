@@ -17,6 +17,8 @@
 #include <iomanip> // setprecision
 #include <sstream>
 
+#include <boost/log/trivial.hpp>
+
 namespace gpucast { namespace gl {
 
 
@@ -28,16 +30,16 @@ GPUCAST_GL void print_contextinfo ( std::ostream& os )
   GLint context_profile;
   glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &context_profile);
 
-  std::cout << "OpenGL Version String : " << gl_version << std::endl;
-  std::cout << "GLSL Version String   : " << glsl_version << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "OpenGL Version String : " << gl_version << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "GLSL Version String   : " << glsl_version << std::endl;
 
   switch (context_profile) {
     case GL_CONTEXT_CORE_PROFILE_BIT :
-      std::cout << "Core Profile" << std::endl; break;
+      BOOST_LOG_TRIVIAL(info) << "Core Profile" << std::endl; break;
     case GL_CONTEXT_COMPATIBILITY_PROFILE_BIT :
-      std::cout << "Compatibility Profile" << std::endl; break;
+      BOOST_LOG_TRIVIAL(info) << "Compatibility Profile" << std::endl; break;
     default :
-      std::cout << "Unknown Profile" << std::endl;
+      BOOST_LOG_TRIVIAL(info) << "Unknown Profile" << std::endl;
   };
 }
 

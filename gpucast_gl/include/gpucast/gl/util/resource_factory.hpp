@@ -20,6 +20,7 @@
 #include <boost/filesystem.hpp>
 
 #include <gpucast/gl/glpp.hpp>
+#include <gpucast/gl/shader.hpp>
 
 namespace gpucast {
   namespace gl {
@@ -31,6 +32,8 @@ namespace gpucast {
     class GPUCAST_GL resource_factory {
 
     public:
+
+      
 
       resource_factory(std::vector<std::string> const& search_directories = std::vector<std::string>());
 
@@ -45,10 +48,9 @@ namespace gpucast {
       std::string  prepare_shader(std::string const& shader_source,
         std::string const& label) const;
 
-      std::string  resolve_substitutions(std::string const& shader_source,
-        substition_map const& smap) const;
+      std::string  resolve_substitutions(std::string const& shader_source, substition_map const& smap) const;
 
-      std::shared_ptr<program> create_program(std::string const& vertex_shader, std::string const& fragment_shader) const;
+      std::shared_ptr<program> create_program(std::vector<shader_desc> const& shader_descs) const;
 
     private:
 
