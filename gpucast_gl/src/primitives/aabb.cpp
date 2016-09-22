@@ -104,21 +104,21 @@ void aabb::_init ( )
   _program.reset      ( new gpucast::gl::program );
 
   // compile shader and link program
-  std::string const vs_src = 
-    "#version 330 compatibility \n \
-     #extension GL_EXT_gpu_shader4 : enable \n \
+  std::string const vs_src = R"(
+    "#version 430 core 
+     #extension GL_EXT_gpu_shader4 : enable 
       \n\
       layout (location = 0) in vec4 vertex; \n\
       layout (location = 1) in vec4 color;  \n\
-      \n \
-      uniform mat4 mvp; \n \
-      \n \
-      void main(void) \n \
-      { \n \
-        gl_Position   = mvp * vertex; \n \
-        gl_FrontColor = color; \n \
-      } \n \
-      ";
+      
+      uniform mat4 mvp; 
+      
+      void main(void) 
+      { 
+        gl_Position   = mvp * vertex; 
+        gl_FrontColor = color; 
+      } 
+      )";
 
   gpucast::gl::shader vs(gpucast::gl::vertex_stage);
 

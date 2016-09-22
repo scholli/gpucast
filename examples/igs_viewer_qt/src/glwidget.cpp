@@ -123,7 +123,7 @@ glwidget::add ( std::list<std::string> const& files )
 void                
 glwidget::recompile ( )
 {
-  gpucast::gl::bezierobject_renderer::instance().recompile();
+  gpucast::gl::bezierobject_renderer::instance()->recompile();
 
   gpucast::gl::resource_factory program_factory;
   _fbo_program = program_factory.create_program({
@@ -213,8 +213,8 @@ glwidget::paintGL()
   float nearplane = 0.01f * _boundingbox.size().abs();
   float farplane  = 2.0f  * _boundingbox.size().abs();
 
-  auto& renderer = gpucast::gl::bezierobject_renderer::instance();
-  renderer.set_nearfar(nearplane, farplane);
+  auto renderer = gpucast::gl::bezierobject_renderer::instance();
+  renderer->set_nearfar(nearplane, farplane);
 
   gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
                                      0.0f, 0.0f, 0.0f, 
@@ -231,8 +231,8 @@ glwidget::paintGL()
   gpucast::math::matrix4f mvp  = proj * mv;
   gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
 
-  renderer.projectionmatrix(proj);
-  renderer.modelviewmatrix(mv);
+  renderer->projectionmatrix(proj);
+  renderer->modelviewmatrix(mv);
 
   for (auto const& o : _objects)
   {
@@ -372,7 +372,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   switch (key)
   {
     case 'r':
-      gpucast::gl::bezierobject_renderer::instance().recompile();
+      gpucast::gl::bezierobject_renderer::instance()->recompile();
       break;
   }
 
@@ -430,7 +430,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   glwidget::load_spheremap                ( )
   {
     QString in_image_path = QFileDialog::getOpenFileName(this, tr("Open Image"), ".", tr("Image Files (*.jpg *.jpeg *.hdr *.bmp *.png *.tiff *.tif)"));
-    gpucast::gl::bezierobject_renderer::instance().spheremap(in_image_path.toStdString());
+    gpucast::gl::bezierobject_renderer::instance()->spheremap(in_image_path.toStdString());
   }
 
 
@@ -439,7 +439,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   glwidget::load_diffusemap               ( )
   {
     QString in_image_path = QFileDialog::getOpenFileName(this, tr("Open Image"), ".", tr("Image Files (*.jpg *.jpeg *.hdr *.bmp *.png *.tiff *.tif)"));
-    gpucast::gl::bezierobject_renderer::instance().diffusemap(in_image_path.toStdString());
+    gpucast::gl::bezierobject_renderer::instance()->diffusemap(in_image_path.toStdString());
   }
 
 
@@ -501,11 +501,11 @@ glwidget::_init()
   gpucast::gl::init_glew ();
   _print_contextinfo();
 
-  auto& renderer = gpucast::gl::bezierobject_renderer::instance();
+  auto renderer = gpucast::gl::bezierobject_renderer::instance();
 
-  renderer.add_search_path("../../../");
-  renderer.add_search_path("../../");
-  renderer.recompile();
+  renderer->add_search_path("../../../");
+  renderer->add_search_path("../../");
+  renderer->recompile();
 
   _trackball.reset       ( new gpucast::gl::trackball );
 

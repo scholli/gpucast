@@ -19,8 +19,8 @@ flat out float vertex_final_tesselation;
 ///////////////////////////////////////////////////////////////////////////////
 void main()                       
 {                                 
-  vertex_position  = position;        
-  vertex_index     = index;           
-  vertex_tessCoord = tesscoord;   
+  vertex_position          = position;        
+  vertex_index             = index;           
+  vertex_tessCoord         = tesscoord;   
   vertex_final_tesselation = final_tesselation;  
 } 

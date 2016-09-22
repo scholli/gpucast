@@ -314,16 +314,23 @@ namespace gpucast { namespace gl {
         _stack.vertexbuffer.push_back     (_stack.vertex    [d.get<0>() - 1]);
 
         // optionally add texture coordinate
-        has_texcoord  = d.get<1>() != 0;
+        has_texcoord  = d.get<1>().is_initialized();
         if (has_texcoord) {
-          _stack.texcoordbuffer.push_back (_stack.texcoord  [d.get<1>().get() - 1]);
+          auto id = d.get<1>().get() - 1;
+          if (id < _stack.texcoord.size()) {
+            _stack.texcoordbuffer.push_back(_stack.texcoord[id]);
+          }
         }
 
         // optionally add vertex normal
-        has_normal = d.get<2>() != 0;
+        has_normal = d.get<2>().is_initialized();
         if (has_normal) {
-          _stack.normalbuffer.push_back   (_stack.normal    [d.get<2>().get() - 1]);
+          auto id = d.get<2>().get() - 1;
+          if (id < _stack.normal.size()) {
+            _stack.normalbuffer.push_back(_stack.normal[id]);
+          }
         }
+
       }
 
       // add normal and texture coordinates if not set

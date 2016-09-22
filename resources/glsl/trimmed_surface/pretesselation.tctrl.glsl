@@ -23,13 +23,7 @@ out float control_final_tesselation[];
 uniform samplerBuffer gpucast_parametric_buffer;  
 uniform samplerBuffer gpcuast_attribute_buffer;              
 uniform samplerBuffer gpucast_obb_buffer;
-          
-uniform float gua_tesselation_max_error;   
-uniform float gua_max_pre_tesselation;
-                                                          
-uniform float gua_texel_width;                    
-uniform float gua_texel_height;     
-                                  
+                                                                    
 #define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
 #define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
 
@@ -49,18 +43,16 @@ void main()
   control_index[gl_InvocationID]     = vertex_index[gl_InvocationID];                                                  
   control_tesscoord[gl_InvocationID] = vertex_tesscoord[gl_InvocationID];                                              
      
-#if 0        
-  // project oriented boudning box to screen and estimate area 
-  mat4 mvp_matrix = gpucast_projection_matrix * gpucast_model_view_matrix;             
-  int obb_index = retrieve_obb_index(int(vertex_index[gl_InvocationID]));
-  float area = calculate_obb_area(mvp_matrix, gpucast_model_view_inverse_matrix, obb_texture, obb_index);
+#if 0
+  // project oriented boudning box to screen and estimate area          
+  int obb_index     = retrieve_obb_index(int(vertex_index[gl_InvocationID]));
+  float area        = calculate_obb_area(gpucast_model_view_projection_matrix, gpucast_model_view_inverse_matrix, gpucast_obb_buffer, obb_index);
   float area_pixels = gpucast_resolution.x * gpucast_resolution.y * area;
 
-  // derive desired tesselation based on projected area estimate
+  //// derive desired tesselation based on projected area estimate
   float total_tess_level = sqrt(area_pixels) / gpucast_tesselation_max_error;
   float pre_tess_level = clamp(total_tess_level, 1.0, gpucast_max_pre_tesselation);
   float final_tess_level = total_tess_level / pre_tess_level;
-  control_final_tesselation[gl_InvocationID] = final_tess_level;
 
   // in low-quality shadow mode - don't bother with much tesselation
   if ( gpucast_shadow_mode == 1 ) {
@@ -74,19 +66,32 @@ void main()
     final_tess_level = total_tess_level / 4.0;
   }
   
+  control_final_tesselation[gl_InvocationID] = final_tess_level;
+
   gl_TessLevelInner[0] = pre_tess_level;
   gl_TessLevelOuter[1] = pre_tess_level;
   gl_TessLevelOuter[3] = pre_tess_level;
   gl_TessLevelInner[1] = pre_tess_level;
   gl_TessLevelOuter[0] = pre_tess_level;
-  gl_TessLevelOuter[2] = pre_tess_level;               
+  gl_TessLevelOuter[2] = pre_tess_level;        
 #else
-  control_final_tesselation[gl_InvocationID] = 4.0;
-  gl_TessLevelInner[0] = 4.0;
-  gl_TessLevelOuter[1] = 4.0;
-  gl_TessLevelOuter[3] = 4.0;
-  gl_TessLevelInner[1] = 4.0;
-  gl_TessLevelOuter[0] = 4.0;
-  gl_TessLevelOuter[2] = 4.0;               
-#endif
+  // project oriented boudning box to screen and estimate area          
+  int obb_index     = retrieve_obb_index(int(vertex_index[gl_InvocationID]));
+  float area        = calculate_obb_area(gpucast_model_view_projection_matrix, gpucast_model_view_inverse_matrix, gpucast_obb_buffer, obb_index);
+  float area_pixels = gpucast_resolution.x * gpucast_resolution.y * area;
+
+  //// derive desired tesselation based on projected area estimate
+  float total_tess_level = sqrt(area_pixels) / gpucast_tesselation_max_error;
+  float pre_tess_level = clamp(total_tess_level, 1.0, gpucast_max_pre_tesselation);
+  float final_tess_level = total_tess_level / pre_tess_level;
+
+  control_final_tesselation[gl_InvocationID] = area_pixels;
+
+  gl_TessLevelInner[0] = float(obb_index+1);
+  gl_TessLevelOuter[1] = area_pixels;
+  gl_TessLevelOuter[3] = area_pixels;
+  gl_TessLevelInner[1] = area_pixels;
+  gl_TessLevelOuter[0] = area_pixels;
+  gl_TessLevelOuter[2] = area_pixels;    
+#endif       
 }

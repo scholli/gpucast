@@ -25,12 +25,12 @@ error(std::string const& message)
 {
   GLenum err = glGetError();
 
-  BOOST_LOG_TRIVIAL(error) << message << " : ";
+  BOOST_LOG_TRIVIAL(info) << message << " : ";
 
   switch (err) {
 
     case GL_NO_ERROR :
-      BOOST_LOG_TRIVIAL(error) << "no error.\n";
+      BOOST_LOG_TRIVIAL(info) << "no error.\n";
       return true;
 
     case GL_INVALID_ENUM :

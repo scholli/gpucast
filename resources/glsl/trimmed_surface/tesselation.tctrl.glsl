@@ -65,17 +65,23 @@ void main()
   int surface_order_v = 0;
   retrieve_patch_data(int(vertex_index[gl_InvocationID]), surface_index, surface_order_u, surface_order_v);
 
-  //vec4 curve_factor = clamp(retrieve_patch_distance(int(vertex_index[gl_InvocationID])), 1, 4);
-
   vec4 bboxmin, bboxmax;
   retrieve_patch_bbox(int(vertex_index[gl_InvocationID]), bboxmin, bboxmax);
 
   float final_tess_level = vertex_final_tesselation[0];
-
+#if 0
   gl_TessLevelInner[0] = clamp(final_tess_level, 1.0, 64.0);
   gl_TessLevelOuter[1] = clamp(final_tess_level, 1.0, 64.0);
   gl_TessLevelOuter[3] = clamp(final_tess_level, 1.0, 64.0);
   gl_TessLevelInner[1] = clamp(final_tess_level, 1.0, 64.0);
   gl_TessLevelOuter[0] = clamp(final_tess_level, 1.0, 64.0);
   gl_TessLevelOuter[2] = clamp(final_tess_level, 1.0, 64.0);                                                                                                                
+#else
+  gl_TessLevelInner[0] = 2.0;
+  gl_TessLevelOuter[1] = 2.0;
+  gl_TessLevelOuter[3] = 2.0;
+  gl_TessLevelInner[1] = 2.0;
+  gl_TessLevelOuter[0] = 2.0;
+  gl_TessLevelOuter[2] = 2.0;
+#endif
 }           

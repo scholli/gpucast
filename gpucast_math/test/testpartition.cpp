@@ -76,7 +76,7 @@ SUITE (partition_class)
     std::shared_ptr<beziercurve2d> bc(new beziercurve2d());
     std::shared_ptr<beziercurve2d> ca(new beziercurve2d());
     std::shared_ptr<beziercurve2d> acba(new beziercurve2d());
-	  //boost::shared_ptr<beziercurve2d> circle(new beziercurve2d(create_circle()));
+	  //std::shared_ptr<beziercurve2d> circle(new beziercurve2d(create_circle()));
 
 	  ab->add(pA);
 	  ab->add(pB);
@@ -129,7 +129,7 @@ SUITE (partition_class)
 
 	  }
 
-	  //boost::shared_ptr<interval<beziercurve2d::point_type::value_type>> i(new
+	  //std::shared_ptr<interval<beziercurve2d::point_type::value_type>> i(new
 	  //	interval<beziercurve2d::point_type::value_type>(p.get_vertical_interval()));
 
   }

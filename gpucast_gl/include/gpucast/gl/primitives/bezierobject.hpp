@@ -13,6 +13,7 @@
 #define GPUCAST_GL_BEZIEROBJECT_HPP
 
 #include <gpucast/core/beziersurfaceobject.hpp>
+#include <gpucast/core/singleton.hpp>
 
 #include <gpucast/gl/util/material.hpp>
 #include <gpucast/gl/util/hullvertexmap.hpp>
@@ -144,13 +145,11 @@ private :
   gpucast::gl::vertexarrayobject        _tesselation_vertex_array;
 
   gpucast::gl::arraybuffer              _tesselation_vertex_buffer;
-  gpucast::gl::arraybuffer              _tesselation_index_buffer;
+  gpucast::gl::elementarraybuffer       _tesselation_index_buffer;
   gpucast::gl::arraybuffer              _tesselation_hullvertexmap;
-  gpucast::gl::arraybuffer              _tesselation_attribute_buffer;
+  gpucast::gl::shaderstoragebuffer      _tesselation_attribute_buffer;
 
   gpucast::gl::texturebuffer            _tesselation_parametric_texture_buffer;
-  //gpucast::gl::texturebuffer            _tesselation_domain_texture_buffer;
-  gpucast::gl::texturebuffer            _tesselation_attribute_texture_buffer;
 
   // gpu ressources trimming
   gpucast::gl::texturebuffer            _cmb_partition;
@@ -181,22 +180,17 @@ private :
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-class GPUCAST_GL bezierobject_renderer
+class GPUCAST_GL bezierobject_renderer : public singleton<bezierobject_renderer>
 {
 public: // enums, typedefs
   
   static const unsigned MAX_XFB_BUFFER_SIZE_IN_BYTES = 1024000000; // reserve GB transform feedback buffer
-
-private: // c'tor / d'tor
+  static const unsigned GPUCAST_HULLVERTEXMAP_SSBO_BINDING = 1;
+  static const unsigned GPUCAST_ATTRIBUTE_SSBO_BINDING = 2;
+public: // c'tor / d'tor
 
   bezierobject_renderer();
-  bezierobject_renderer(bezierobject_renderer const& other) = delete;
-  bezierobject_renderer& operator=(bezierobject_renderer const& other) = delete;
-
-public:
-
   ~bezierobject_renderer();
-  static bezierobject_renderer& instance();
 
 public: // methods
 
@@ -207,6 +201,7 @@ public: // methods
   std::shared_ptr<program> const& get_tesselation_program() const;
 
   void           set_nearfar(float near, float far);
+  void           set_resolution(unsigned width, unsigned height);
   void           set_background(gpucast::math::vec3f const& color);
   void           add_search_path(std::string const& path);
 
@@ -237,6 +232,8 @@ private: // attributes
   float                         _nearplane;
   float                         _farplane;
                               
+  gpucast::math::vec2i          _resolution;
+
   gpucast::math::matrix4f       _modelviewmatrix;
   gpucast::math::matrix4f       _modelviewmatrixinverse;
   gpucast::math::matrix4f       _projectionmatrix;

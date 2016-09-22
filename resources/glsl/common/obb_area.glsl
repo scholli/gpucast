@@ -19,8 +19,8 @@ struct hull_vertex_entry {
   unsigned char vertices[6];
 };
 
-layout(std430, binding = GPUCAST_HULLVERTEXMAP_SSBO_BINDING) buffer hullvertexmap{
-  hull_vertex_entry hvm[];
+layout(std430, binding = GPUCAST_HULLVERTEXMAP_SSBO_BINDING) buffer gpucast_hullvertexmap_ssbo{
+  hull_vertex_entry gpucast_hvm[];
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ float calculate_obb_area(mat4           modelview_projection,
           + (int(eye_obb_space.z > bbox[6].z) << 5);  // 32 = back   |         planes
 
   // look up according number of visible vertices
-  int n_visible_vertices = int(hvm[pos].num_visible_vertices);
+  int n_visible_vertices = int(gpucast_hvm[pos].num_visible_vertices);
   if (n_visible_vertices == 0) {
     return 0.0;
   }

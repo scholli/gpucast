@@ -48,7 +48,7 @@ uniform samplerBuffer attribute_texture;
 ///////////////////////////////////////////////////////////////////////////////
 void main()                                                                          
 {              
-#if 0                                                               
+#if 1                                                             
     vec2 maxmax_tesscoord = max(max(eval_tesscoord[0], eval_tesscoord[1]), eval_tesscoord[2]);
     vec2 minmin_tesscoord = min(min(eval_tesscoord[0], eval_tesscoord[1]), eval_tesscoord[2]);
                                                                                              

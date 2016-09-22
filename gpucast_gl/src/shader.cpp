@@ -121,12 +121,14 @@ shader::compile() const
 
   if (!compiled)
   {
+    BOOST_LOG_TRIVIAL(info) << "Compiling " << logfilename << " failed." << std::endl;
     logfilename.append(".fail.log");
     std::fstream fstr(logfilename.c_str(), std::ios::out);
     fstr << get_source() << std::endl << std::endl << log() << std::endl;
     fstr.close();
     return false;
   } else {
+    BOOST_LOG_TRIVIAL(info) << "Compiling " << logfilename << " succeed." << std::endl;
     logfilename.append(".success.log");
     std::fstream fstr(logfilename.c_str(), std::ios::out);
     fstr << get_source() << std::endl << std::endl << log() << std::endl;

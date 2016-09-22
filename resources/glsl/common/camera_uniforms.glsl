@@ -19,7 +19,7 @@ uniform mat4 gpucast_projection_inverse_matrix;
 uniform mat4 gpucast_projection_view_matrix;
 uniform mat4 gpucast_projection_view_inverse_matrix;
   
-uniform uvec2 gpucast_resolution;
+uniform vec2 gpucast_resolution;
 
 uniform float gpucast_clip_near;
 uniform float gpucast_clip_far;

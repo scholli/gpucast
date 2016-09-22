@@ -73,7 +73,11 @@ program::link()
 
   if (is_linked_ != GL_TRUE)
   {
+    BOOST_LOG_TRIVIAL(error) << "Linking program failed." << std::endl;
     BOOST_LOG_TRIVIAL(error) << log() << std::endl;
+  }
+  else {
+    BOOST_LOG_TRIVIAL(info) << "Linking program succeed." << std::endl;
   }
 
   //assert(is_linked_ && "program::link() : assertion when linking program");
@@ -575,10 +579,14 @@ void
 program::set_shaderstoragebuffer(char const* varname, shaderstoragebuffer& ssbo, unsigned binding_point) const
 {
   GLuint location = glGetProgramResourceIndex(id_, GL_SHADER_STORAGE_BLOCK, varname);
-
-  ssbo.bind();
-  glShaderStorageBlockBinding(id_, location, binding_point);
-  ssbo.unbind();
+  
+  if (location == GL_INVALID_INDEX) {
+    BOOST_LOG_TRIVIAL(warning) << "program::set_shaderstoragebuffer(): " << varname << "not found in program.\n" << std::endl;
+  }
+  else {
+    ssbo.bind_buffer_base(binding_point);
+    glShaderStorageBlockBinding(id_, location, binding_point);
+  }
 }
 
 

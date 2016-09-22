@@ -17,13 +17,14 @@
 
 // header project
 #include <gpucast/gl/glpp.hpp>
+#include <gpucast/gl/texture.hpp>
 
 #include <boost/noncopyable.hpp>
 
 
 namespace gpucast { namespace gl {
 
-  class GPUCAST_GL cubemap : boost::noncopyable
+  class GPUCAST_GL cubemap : public texture, public boost::noncopyable
   {
   public :
     
@@ -40,7 +41,7 @@ namespace gpucast { namespace gl {
                               std::string const& imgfile_posz,
                               std::string const& imgfile_negz );
 
-    GLuint        id        ( ) const;
+    GLuint const  id        ( ) const override;
 
     void          bind      ( );
 

@@ -97,10 +97,11 @@ void main()
                                            int(trim_index), 1, tmp, 0.0001f, 16);
 
   // fully discard trimmed fragments
+#if 0
   if ( trimmed ) {
       discard;
   }
-
+#endif
   vec3 corrected_normal = force_front_facing_normal(geometry_normal);
 
   out_color = vec4(corrected_normal, 1.0);
