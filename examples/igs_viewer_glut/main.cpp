@@ -37,8 +37,8 @@
 #include <gpucast/core/beziersurfaceobject.hpp>
 #include <gpucast/core/nurbssurfaceobject.hpp>
 
-static const unsigned resolution_x = 1920;
-static const unsigned resolution_y = 1080;
+static unsigned const initial_window_width = 1920;
+static unsigned const initial_window_height = 1080;
 
 class application : public gpucast::gl::trackball
 {
@@ -56,7 +56,9 @@ private :
 
   gpucast::gl::timer_query                          _query;
   gpucast::math::bbox3f                             _bbox;
-  
+
+  unsigned                                          _resolution_x = initial_window_width;
+  unsigned                                          _resolution_y = initial_window_height;
 
 public:
   
@@ -240,9 +242,10 @@ public:
     auto renderer = gpucast::gl::bezierobject_renderer::instance();
 
     float nearclip = 0.01f * _bbox.size().abs();
-    float farclip = 3.0f * _bbox.size().abs();
+    float farclip = 5.0f * _bbox.size().abs();
 
     renderer->set_nearfar(nearclip, farclip);
+    renderer->set_resolution(_resolution_x, _resolution_y);
 
     gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_bbox.size().abs()),
       0.0f, 0.0f, 0.0f,
@@ -253,23 +256,29 @@ public:
     gpucast::math::matrix4f model = gpucast::math::make_translation(shiftx(), shifty(), distance()) * rotation() *
                                     gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
 
-    gpucast::math::matrix4f proj = gpucast::math::perspective(30.0f, float(resolution_x) / float(resolution_y), nearclip, farclip);
-    gpucast::math::matrix4f mv = view * model;
-    gpucast::math::matrix4f mvp = proj * mv;
-    gpucast::math::matrix4f nm = mv.normalmatrix();
+    gpucast::math::matrix4f proj = gpucast::math::perspective(30.0f, float(_resolution_x) / float(_resolution_y), nearclip, farclip);
 
-    renderer->projectionmatrix(proj);
-    renderer->modelviewmatrix(mv);
+    renderer->current_modelmatrix(model);
+    renderer->current_viewmatrix(view);
+    renderer->current_projectionmatrix(proj);
 
     for (auto const& o : _objects) {
-      o->draw(gpucast::gl::bezierobject::tesselation);
+      if (o->enable_raycasting()) {
+        o->draw(gpucast::gl::bezierobject::raycasting);
+      }
+      else {
+        o->draw(gpucast::gl::bezierobject::tesselation);
+      }
     }
 
     _query.end();
 
     std::cout << "fps: " << double(1000) / _query.time_in_ms() << "\r";
 #if 1
+
     if (_show_obbs) {
+      gpucast::math::matrix4f mv = view * model;
+      gpucast::math::matrix4f mvp = proj * mv;
 
       _program->begin();
       _program->set_uniform_matrix4fv("mvp", 1, false, &mvp[0]);
@@ -286,6 +295,8 @@ public:
   void resize(int w, int h)
   {
     glViewport(0, 0, w, h);
+    _resolution_x = 1920;
+    _resolution_y = 1080;
   }
 
 public:
@@ -308,8 +319,22 @@ public:
     {
       switch (key)
       {
-      case 'w':
+      case 'c':
         renderer->recompile();
+        std::cout << "Recompiling shaders..." << std::endl;
+        break;
+      case 'w':
+        switch (o->fillmode()) {
+        case gpucast::gl::bezierobject::FILL_SOLID : 
+          o->fillmode(gpucast::gl::bezierobject::FILL_WIREFRAME); 
+          break;
+        case gpucast::gl::bezierobject::FILL_WIREFRAME : 
+          o->fillmode(gpucast::gl::bezierobject::FILL_POINT);
+          break;
+        case gpucast::gl::bezierobject::FILL_POINT : 
+          o->fillmode(gpucast::gl::bezierobject::FILL_SOLID);
+          break;
+        }
         std::cout << "Recompiling shaders..." << std::endl;
         break;
       case 'b':
@@ -339,7 +364,7 @@ public:
 
 int main(int argc, char** argv)
 {
-  gpucast::gl::glutwindow::init(argc, argv, resolution_x, resolution_y, 100, 100, 4, 4, true);
+  gpucast::gl::glutwindow::init(argc, argv, 1920, 1080, 100, 100, 4, 4, true);
   auto& win = gpucast::gl::glutwindow::instance();
 
   gpucast::gl::init_glew(std::cout);
@@ -357,3 +382,4 @@ int main(int argc, char** argv)
 
   return 0;
 }
+

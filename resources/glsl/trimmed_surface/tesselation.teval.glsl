@@ -21,8 +21,9 @@ flat out vec4   tePosition;
 ///////////////////////////////////////////////////////////////////////////////
 #include "./resources/glsl/common/camera_uniforms.glsl"                
                                                             
-uniform samplerBuffer parameter_texture;            
-uniform samplerBuffer attribute_texture;            
+uniform samplerBuffer gpucast_parametric_buffer;   
+uniform samplerBuffer gpcuast_attribute_buffer;      
+uniform samplerBuffer gpucast_obb_buffer;         
 
 #define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
 #define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
@@ -56,7 +57,7 @@ void main()
                                                                                
   uv = clamp(mix(p1, p2, gl_TessCoord.y), 0.0, 1.0);                   
                                                                                
-  evaluateSurface(parameter_texture,                                   
+  evaluateSurface(gpucast_parametric_buffer,                                   
                   surface_index,                                  
                   surface_order_u,                                
                   surface_order_v,                                
@@ -65,12 +66,5 @@ void main()
   tePosition  = vec4(p.xyz, 1.0);                                                                     
   teIndex     = tcIndex[0];                                            
   teTessCoord = uv;                                                    
-  teNormal    = vec4(normalize(cross(du.xyz, dv.xyz)), 0.0);           
-                                                                               
-  vec4 nview  = gpucast_normal_matrix * teNormal;                          
-  vec4 pview  = gpucast_view_matrix * gpucast_model_matrix * tePosition;       
-                                                                               
-  if ( dot(normalize(nview.xyz), -normalize(pview.xyz)) < 0.0f ) {     
-    teNormal = -teNormal;                                              
-  }                                                                    
+  teNormal    = vec4(normalize(cross(du.xyz, dv.xyz)), 0.0);                                                                                                                                               
 }     

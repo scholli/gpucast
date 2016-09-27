@@ -135,7 +135,7 @@ program::set_uniform1f(char const* varname, GLfloat v0) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform1fEXT(id_, location, v0);
+    glProgramUniform1f(id_, location, v0);
 #else 
     glUniform1f(location, v0);
 #endif
@@ -152,7 +152,7 @@ program::set_uniform2f(char const* varname, GLfloat v0, GLfloat v1) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform2fEXT(id_, location, v0, v1);
+    glProgramUniform2f(id_, location, v0, v1);
 #else 
     glUniform2f(location, v0, v1);
 #endif
@@ -169,7 +169,7 @@ program::set_uniform3f(char const* varname, GLfloat v0, GLfloat v1, GLfloat v2) 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform3fEXT(id_, location, v0, v1, v2);
+    glProgramUniform3f(id_, location, v0, v1, v2);
 #else 
     glUniform3f(location, v0, v1, v2);
 #endif
@@ -186,7 +186,7 @@ program::set_uniform4f(char const* varname, GLfloat v0, GLfloat v1, GLfloat v2, 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform4fEXT(id_, location, v0, v1, v2, v3);
+    glProgramUniform4f(id_, location, v0, v1, v2, v3);
 #else 
     glUniform4f(location, v0, v1, v2, v3);
 #endif
@@ -205,7 +205,7 @@ program::set_uniform1i(char const* varname, GLint v0) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform1iEXT(id_, location, v0);
+    glProgramUniform1i(id_, location, v0);
 #else 
     glUniform1i(location, v0);
 #endif
@@ -222,7 +222,7 @@ program::set_uniform2i(char const* varname, GLint v0, GLint v1) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform2iEXT(id_, location, v0, v1);
+    glProgramUniform2i(id_, location, v0, v1);
 #else 
     glUniform2i(location, v0, v1);
 #endif
@@ -239,7 +239,7 @@ program::set_uniform3i(char const* varname, GLint v0, GLint v1, GLint v2) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform3iEXT(id_, location, v0, v1, v2);
+    glProgramUniform3i(id_, location, v0, v1, v2);
 #else 
     glUniform3i(location, v0, v1, v2);
 #endif
@@ -256,7 +256,7 @@ program::set_uniform4i(char const* varname, GLint v0, GLint v1, GLint v2, GLint 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform4iEXT(id_, location, v0, v1, v2, v3);
+    glProgramUniform4i(id_, location, v0, v1, v2, v3);
 #else 
     glUniform4i(location, v0, v1, v2, v3);
 #endif
@@ -273,7 +273,7 @@ program::set_uniform1fv(char const* varname, GLsizei count, GLfloat* value) cons
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform1fvEXT(id_, location, count, value);
+    glProgramUniform1fv(id_, location, count, value);
 #else 
     glUniform1fv(location, count, value);
 #endif
@@ -290,7 +290,7 @@ program::set_uniform2fv(char const* varname, GLsizei count, GLfloat* value) cons
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform2fvEXT(id_, location, count, value);
+    glProgramUniform2fv(id_, location, count, value);
 #else 
     glUniform2fv(location, count, value);
 #endif
@@ -307,7 +307,7 @@ program::set_uniform3fv(char const* varname, GLsizei count, GLfloat* value) cons
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform3fvEXT(id_, location, count, value);
+    glProgramUniform3fv(id_, location, count, value);
 #else 
     glUniform3fv(location, count, value);
 #endif
@@ -324,7 +324,7 @@ program::set_uniform4fv(char const* varname, GLsizei count, GLfloat* value) cons
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform4fvEXT(id_, location, count, value);
+    glProgramUniform4fv(id_, location, count, value);
 #else 
     glUniform4fv(location, count, value);
 #endif
@@ -341,7 +341,7 @@ program::set_uniform1iv(char const* varname, GLsizei count, GLint* value) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform1ivEXT(id_, location, count, value);
+    glProgramUniform1iv(id_, location, count, value);
 #else 
     glUniform1iv(location, count, value);
 #endif
@@ -358,7 +358,7 @@ program::set_uniform2iv(char const* varname, GLsizei count, GLint* value) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform2ivEXT(id_, location, count, value);
+    glProgramUniform2iv(id_, location, count, value);
 #else 
     glUniform2iv(location, count, value);
 #endif
@@ -375,7 +375,7 @@ program::set_uniform3iv(char const* varname, GLsizei count, GLint* value) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform3ivEXT(id_, location, count, value);
+    glProgramUniform3iv(id_, location, count, value);
 #else 
     glUniform3iv(location, count, value);
 #endif
@@ -392,7 +392,7 @@ program::set_uniform4iv(char const* varname, GLsizei count, GLint* value) const
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniform4ivEXT(id_, location, count, value);
+    glProgramUniform4iv(id_, location, count, value);
 #else 
     glUniform4iv(location, count, value);
 #endif
@@ -409,7 +409,7 @@ program::set_uniform_matrix2fv(char const* varname, GLsizei count, GLboolean tra
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix2fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix2fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix2fv(location, count, transpose, value);
 #endif
@@ -426,7 +426,7 @@ program::set_uniform_matrix3fv(char const* varname, GLsizei count, GLboolean tra
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix3fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix3fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix3fv(location, count, transpose, value);
 #endif
@@ -443,7 +443,7 @@ program::set_uniform_matrix4fv(char const* varname, GLsizei count, GLboolean tra
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix4fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix4fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix4fv(location, count, transpose, value);
 #endif
@@ -460,7 +460,7 @@ program::set_uniform_matrix2x3fv( char const* varname, GLsizei count, GLboolean 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix2x3fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix2x3fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix2x3fv(location, count, transpose, value);
 #endif
@@ -477,7 +477,7 @@ program::set_uniform_matrix2x4fv( char const* varname, GLsizei count, GLboolean 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix2x4fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix2x4fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix2x4fv(location, count, transpose, value);
 #endif
@@ -494,7 +494,7 @@ program::set_uniform_matrix3x2fv( char const* varname, GLsizei count, GLboolean 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix3x2fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix3x2fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix3x2fv(location, count, transpose, value);
 #endif
@@ -511,7 +511,7 @@ program::set_uniform_matrix3x4fv( char const* varname, GLsizei count, GLboolean 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix3x4fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix3x4fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix3x4fv(location, count, transpose, value);
 #endif
@@ -528,7 +528,7 @@ program::set_uniform_matrix4x2fv( char const* varname, GLsizei count, GLboolean 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix4x2fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix4x2fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix4x2fv(location, count, transpose, value);
 #endif
@@ -545,7 +545,7 @@ program::set_uniform_matrix4x3fv( char const* varname, GLsizei count, GLboolean 
   if (location >= 0) 
   {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-    glProgramUniformMatrix4x3fvEXT(id_, location, count, transpose, value);
+    glProgramUniformMatrix4x3fv(id_, location, count, transpose, value);
 #else 
     glUniformMatrix4x3fv(location, count, transpose, value);
 #endif
@@ -579,7 +579,7 @@ void
 program::set_shaderstoragebuffer(char const* varname, shaderstoragebuffer& ssbo, unsigned binding_point) const
 {
   GLuint location = glGetProgramResourceIndex(id_, GL_SHADER_STORAGE_BLOCK, varname);
-  
+
   if (location == GL_INVALID_INDEX) {
     BOOST_LOG_TRIVIAL(warning) << "program::set_shaderstoragebuffer(): " << varname << "not found in program.\n" << std::endl;
   }

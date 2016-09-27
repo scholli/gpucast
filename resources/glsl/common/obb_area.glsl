@@ -19,7 +19,7 @@ struct hull_vertex_entry {
   unsigned char vertices[6];
 };
 
-layout(std430, binding = GPUCAST_HULLVERTEXMAP_SSBO_BINDING) buffer gpucast_hullvertexmap_ssbo{
+layout(std430, binding = GPUCAST_HULLVERTEXMAP_SSBO_BINDING) buffer gpucast_hullvertexmap_ssbo {
   hull_vertex_entry gpucast_hvm[];
 };
 

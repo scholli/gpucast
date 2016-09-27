@@ -23,19 +23,12 @@ layout (location = 0) out vec4  out_color;
 ///////////////////////////////////////////////////////////////////////////////
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////  
-uniform samplerBuffer parameter_texture;      
-uniform samplerBuffer attribute_texture;
-
-uniform samplerBuffer trim_partition;
-uniform samplerBuffer trim_contourlist;
-uniform samplerBuffer trim_curvelist;
-uniform samplerBuffer trim_curvedata;
-uniform samplerBuffer trim_pointdata;
-uniform samplerBuffer trim_preclassification;
-
-uniform mat4 gua_view_inverse_matrix;
+uniform samplerBuffer gpucast_parametric_buffer;   
+uniform samplerBuffer gpcuast_attribute_buffer;      
+uniform samplerBuffer gpucast_obb_buffer;       
 
 #include "./resources/glsl/common/camera_uniforms.glsl"
+#include "./resources/glsl/trimming/trimming_uniforms.glsl"
 
 #define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
 #define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
@@ -76,7 +69,6 @@ void main()
   /////////////////////////////////////////////////////
   // 1. perform trimming based on uv value
   /////////////////////////////////////////////////////
-  
   // retrieve patch information from ssbo
   vec4 nurbs_domain = retrieve_patch_domain(int(gIndex));
   int trim_index    = retrieve_trim_index(int(gIndex));
@@ -87,24 +79,22 @@ void main()
 
   // classify trimming by point-in-curve test
   int tmp = 0;
-  bool trimmed      = trimming_contour_kd (trim_partition,
-                                           trim_contourlist,
-                                           trim_curvelist,
-                                           trim_curvedata,
-                                           trim_pointdata,
-                                           trim_preclassification,
+  bool trimmed      = trimming_contour_kd (gpucast_kd_partition,
+                                           gpucast_kd_contourlist,
+                                           gpucast_kd_curvelist,
+                                           gpucast_kd_curvedata,
+                                           gpucast_kd_pointdata,
+                                           gpucast_preclassification,
                                            uv_nurbs,
                                            int(trim_index), 1, tmp, 0.0001f, 16);
 
   // fully discard trimmed fragments
-#if 0
   if ( trimmed ) {
-      discard;
+    discard;
   }
-#endif
-  vec3 corrected_normal = force_front_facing_normal(geometry_normal);
 
-  out_color = vec4(corrected_normal, 1.0);
+  vec4 viewspace_normal = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
+  out_color = vec4(force_front_facing_normal(normalize(viewspace_normal.xyz)), 1.0);
 
   //gl_FragDepth = gl_FragCoord.z;
 }

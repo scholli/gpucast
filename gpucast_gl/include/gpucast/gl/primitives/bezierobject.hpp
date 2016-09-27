@@ -93,6 +93,9 @@ public :
   void                antialiasing(enum anti_aliasing_mode);
   anti_aliasing_mode  antialiasing() const;
 
+  void                fillmode(fill_mode mode);
+  fill_mode           fillmode() const;
+
   void                set_material(material const& m);
   material const&     get_material() const;
 
@@ -139,7 +142,7 @@ private :
              
 
   // gpu ressources : adaptive tesselation 
-  fill_mode                             _fill_mode;
+  fill_mode                             _fill_mode = FILL_SOLID;
   int                                   _tesselation_vertex_count;
 
   gpucast::gl::vertexarrayobject        _tesselation_vertex_array;
@@ -209,8 +212,9 @@ public: // methods
                  
   void           diffusemap(std::string const& filepath);
 
-  void           modelviewmatrix(gpucast::math::matrix4f const& mv);
-  void           projectionmatrix(gpucast::math::matrix4f const& projection);
+  void           current_viewmatrix(gpucast::math::matrix4f const& m);
+  void           current_modelmatrix(gpucast::math::matrix4f const& m);
+  void           current_projectionmatrix(gpucast::math::matrix4f const& m);
 
   void           recompile();
                  
@@ -234,9 +238,18 @@ private: // attributes
                               
   gpucast::math::vec2i          _resolution;
 
+  gpucast::math::matrix4f       _modelmatrix;
+  gpucast::math::matrix4f       _modelmatrixinverse;
+
+  gpucast::math::matrix4f       _viewmatrix;
+  gpucast::math::matrix4f       _viewmatrixinverse;
+
   gpucast::math::matrix4f       _modelviewmatrix;
   gpucast::math::matrix4f       _modelviewmatrixinverse;
+
   gpucast::math::matrix4f       _projectionmatrix;
+  gpucast::math::matrix4f       _projectionmatrixinverse;
+
   gpucast::math::matrix4f       _normalmatrix;
   gpucast::math::matrix4f       _modelviewprojectionmatrix;
   gpucast::math::matrix4f       _modelviewprojectionmatrixinverse;

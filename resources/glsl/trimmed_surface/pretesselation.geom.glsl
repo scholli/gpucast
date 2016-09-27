@@ -28,9 +28,8 @@ layout (xfb_offset=24) out float transform_final_tesselation;
 ///////////////////////////////////////////////////////////////////////////////
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////
-uniform samplerBuffer parameter_texture;       
-uniform samplerBuffer attribute_texture;          
- 
+uniform samplerBuffer gpucast_parametric_buffer;       
+
 #define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
 #define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
 
@@ -47,8 +46,7 @@ uniform samplerBuffer attribute_texture;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void main()                                                                          
-{              
-#if 1                                                             
+{                                                                          
     vec2 maxmax_tesscoord = max(max(eval_tesscoord[0], eval_tesscoord[1]), eval_tesscoord[2]);
     vec2 minmin_tesscoord = min(min(eval_tesscoord[0], eval_tesscoord[1]), eval_tesscoord[2]);
                                                                                              
@@ -91,13 +89,16 @@ void main()
     int surface_order_v = 0;
     retrieve_patch_data(int(eval_index[0]), surface_index, surface_order_u, surface_order_v);
                                                                                            
-    evaluateSurface ( parameter_texture,                                             
+    evaluateSurface ( gpucast_parametric_buffer,                                             
                       int(surface_index),                                            
                       int(surface_order_u),                                          
                       int(surface_order_v),                                          
                       new_tesscoord,                                                 
                       new_puv );                                                     
-                                                                                                
+  
+    if (surface_order_v != 5 && surface_order_u != 5) return;
+  
+                                                                                 
     for ( int i = 0; i != 4; ++i )                                                   
     {                                                                                
         index               = order[i];                                                    
@@ -108,15 +109,4 @@ void main()
         EmitVertex();                                                                
     }                                                                                
     EndPrimitive(); 
-#else
-    for ( int i = 0; i != 4; ++i )                                                   
-    {                                                                                                                               
-        transform_position 	        = vec3(0.0);            
-        transform_index 	          = 0;                                                  
-        transform_tesscoord         = vec2(0.0);      
-        transform_final_tesselation = 4.0;                        
-        EmitVertex();                                                                
-    }                                                                                
-    EndPrimitive(); 
-#endif
   }          

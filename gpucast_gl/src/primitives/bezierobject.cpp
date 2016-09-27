@@ -157,6 +157,18 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::fillmode(bezierobject::fill_mode mode)
+    {
+      _fill_mode = mode;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    bezierobject::fill_mode bezierobject::fillmode() const
+    {
+      return _fill_mode;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     void bezierobject::set_material(material const& m)
     {
       _material = m;
@@ -201,10 +213,8 @@ namespace gpucast {
       auto const& pretesselation_program = renderer->get_pretesselation_program();
       auto const& tesselation_program = renderer->get_tesselation_program();
       auto tfbuffer = singleton<transform_feedback_buffer>::instance();
-   
-      gl::error("begin draw xfb: ");
 
-#define QUERY_XFB_PRIMITIVE_COUNT 1
+#define QUERY_XFB_PRIMITIVE_COUNT 0
 #if QUERY_XFB_PRIMITIVE_COUNT
       unsigned primitive_query;
       glGenQueries(1, &primitive_query);
@@ -214,6 +224,18 @@ namespace gpucast {
       // configure transform feedback pass
       glEnable(GL_RASTERIZER_DISCARD);
       glPatchParameteri(GL_PATCH_VERTICES, 4);
+
+      switch (_fill_mode) {
+      case FILL_POINT : 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        break;
+      case FILL_SOLID :
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        break;
+      case FILL_WIREFRAME :
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        break;
+      }
 
       renderer->begin_program(pretesselation_program);
       {
@@ -225,11 +247,9 @@ namespace gpucast {
         _apply_uniforms(*pretesselation_program, tesselation);
         renderer->apply_uniforms(pretesselation_program);
 
-        BOOST_LOG_TRIVIAL(info) << "draw patches : " << _tesselation_vertex_count << std::endl;
         tfbuffer->feedback->bind();
         tfbuffer->feedback->begin(GL_POINTS);
         {
-          gl::error("before draw elements: ");
           glDrawElements(GL_PATCHES, _tesselation_vertex_count, GL_UNSIGNED_INT, 0);
         }
         tfbuffer->feedback->end();
@@ -240,7 +260,6 @@ namespace gpucast {
       }
       renderer->end_program(pretesselation_program);
 
-      gl::error("end xfb: ");
 #if QUERY_XFB_PRIMITIVE_COUNT
       glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
       int ready = GL_FALSE;
@@ -255,32 +274,23 @@ namespace gpucast {
       glDeleteQueries(1, &primitive_query);
 #endif
 
-      gl::error("begin draw: ");
       glDisable(GL_RASTERIZER_DISCARD);
-      gl::error("begin A: ");
       renderer->begin_program(tesselation_program);
       {
-        gl::error("begin B: ");
         // apply uniforms to final tesselation program
         _apply_uniforms(*tesselation_program, tesselation);
-        gl::error("begin C2: ");
         renderer->apply_uniforms(tesselation_program);
 
-        gl::error("begin C: ");
         // bind transform feedback buffer and draw
         tfbuffer->vertex_array_object->bind();
         glDrawTransformFeedback(GL_PATCHES, tfbuffer->feedback->id());
-        gl::error("begin D: ");
       }
       renderer->end_program(tesselation_program);
-      gl::error("end draw: ");
     }
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject::_apply_uniforms(program const& p, render_mode mode)
     {
-      BOOST_LOG_TRIVIAL(info) << "bezierobject::_apply_uniforms()" << std::endl;
-
       // render parameters
       p.set_uniform1i("gpucast_raycasting_iterations", _iterations);
       p.set_uniform1i("gpucast_trimming_max_bisections", _max_trimming_bisections);
@@ -302,10 +312,12 @@ namespace gpucast {
       case raycasting :
         p.set_texturebuffer("gpucast_control_point_buffer", _controlpoints, renderer->next_texunit());
         p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer->next_texunit());
+        break;
       case tesselation : 
         p.set_texturebuffer("gpucast_parametric_buffer", _tesselation_parametric_texture_buffer, renderer->next_texunit());
         p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer->next_texunit());
         p.set_shaderstoragebuffer("gpucast_attribute_ssbo", _tesselation_attribute_buffer, bezierobject_renderer::GPUCAST_ATTRIBUTE_SSBO_BINDING);
+        break;
       }
 
       switch (_trimming) 
@@ -334,16 +346,10 @@ namespace gpucast {
         p.set_texturebuffer("gpucast_preclassification", _kd_preclassification, renderer->next_texunit());
         break;
       case beziersurfaceobject::contour_list:
-        _loop_list_loops.bind_buffer_base(1);
+
         p.set_shaderstoragebuffer("gpucast_loop_buffer", _loop_list_loops, 1);
-
-        _loop_list_contours.bind_buffer_base(2);
         p.set_shaderstoragebuffer("gpucast_contour_buffer", _loop_list_contours, 2);
-
-        _loop_list_curves.bind_buffer_base(3);
         p.set_shaderstoragebuffer("gpucast_curve_buffer", _loop_list_curves, 3);
-
-        _loop_list_points.bind_buffer_base(4);
         p.set_shaderstoragebuffer("gpucast_point_buffer", _loop_list_points, 4);
 
         p.set_texturebuffer("gpucast_preclassification", _loop_list_preclassification, renderer->next_texunit());
@@ -602,22 +608,42 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject_renderer::modelviewmatrix(gpucast::math::matrix4f const& m)
+    void bezierobject_renderer::current_viewmatrix(gpucast::math::matrix4f const& m)
     {
-      _modelviewmatrix = m;
+      _viewmatrix = m;
+      _viewmatrixinverse = gpucast::math::inverse(_viewmatrix);
 
-      _modelviewmatrixinverse = m;
-      _modelviewmatrixinverse.invert();
+      // update other matrices
+      _modelviewmatrix = _viewmatrix * _modelmatrix;
+      _modelviewmatrixinverse = gpucast::math::inverse(_modelviewmatrix);
 
-      _normalmatrix = m.normalmatrix();
+      _normalmatrix = _modelviewmatrix.normalmatrix();
+
       _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
+      _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::current_modelmatrix(gpucast::math::matrix4f const& m)
+    {
+      _modelmatrix = m;
+      _modelmatrixinverse = gpucast::math::inverse(_modelmatrix);
+
+      // update other matrices
+      _modelviewmatrix = _viewmatrix * _modelmatrix;
+      _modelviewmatrixinverse = gpucast::math::inverse(_modelviewmatrix);
+
+      _normalmatrix = _modelviewmatrix.normalmatrix();
+
+      _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
+      _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
+    }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject_renderer::projectionmatrix(gpucast::math::matrix4f const& m)
+    void bezierobject_renderer::current_projectionmatrix(gpucast::math::matrix4f const& m)
     {
       _projectionmatrix = m;
+      _projectionmatrixinverse = gpucast::math::inverse(_projectionmatrix);
 
       _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
       _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
@@ -629,7 +655,7 @@ namespace gpucast {
     {
       _nearplane = near;
       _farplane = far;
-      projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
+      current_projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
     }
 
     void bezierobject_renderer::set_resolution(unsigned width, unsigned height)
@@ -686,26 +712,34 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::apply_uniforms(std::shared_ptr<program> const& p)
     {
-      BOOST_LOG_TRIVIAL(info) << "bezierobject_renderer::apply_uniforms()" << std::endl;
       // view parameters
       p->set_uniform1f("gpucast_clip_near", _nearplane);
       p->set_uniform1f("gpucast_clip_far", _farplane);
 
       // TODO: parameterize
-      p->set_uniform1f("gpucast_tesselation_max_error", 4.0f);
-      p->set_uniform1f("gpucast_max_pre_tesselation", 16.0f);
+      p->set_uniform1f("gpucast_tesselation_max_error", 8.0f);
+      p->set_uniform1f("gpucast_max_pre_tesselation", 32.0f);
       p->set_uniform1i("gpucast_shadow_mode", 0);
-      p->set_uniform2i("gpucast_resolution", _resolution[0], _resolution[1]);
 
-      if (p == _pretesselation_program || p == _tesselation_program) {
+      p->set_uniform2i("gpucast_resolution", _resolution[0], _resolution[1]);
+      if (p == _tesselation_program || p == _pretesselation_program) {
         p->set_shaderstoragebuffer("gpucast_hullvertexmap_ssbo", *_hullvertexmap, GPUCAST_HULLVERTEXMAP_SSBO_BINDING);
       }
 
       // camera block
       p->set_uniform_matrix4fv("gpucast_projection_matrix", 1, false, &_projectionmatrix[0]);
+      p->set_uniform_matrix4fv("gpucast_projection_inverse_matrix", 1, false, &_projectionmatrixinverse[0]);
+
+      p->set_uniform_matrix4fv("gpucast_model_matrix", 1, false, &_modelmatrix[0]);
+      p->set_uniform_matrix4fv("gpucast_model_inverse_matrix", 1, false, &_modelmatrixinverse[0]);
+
+      p->set_uniform_matrix4fv("gpucast_view_matrix", 1, false, &_viewmatrix[0]);
+      p->set_uniform_matrix4fv("gpucast_view_inverse_matrix", 1, false, &_viewmatrixinverse[0]);
+
       p->set_uniform_matrix4fv("gpucast_normal_matrix", 1, false, &_normalmatrix[0]);
       p->set_uniform_matrix4fv("gpucast_model_view_matrix", 1, false, &_modelviewmatrix[0]);
       p->set_uniform_matrix4fv("gpucast_model_view_inverse_matrix", 1, false, &_modelviewmatrixinverse[0]);
+
       p->set_uniform_matrix4fv("gpucast_model_view_projection_matrix", 1, false, &_modelviewprojectionmatrix[0]);
       p->set_uniform_matrix4fv("gpucast_model_view_projection_inverse_matrix", 1, false, &_modelviewprojectionmatrixinverse[0]);
 
@@ -728,6 +762,7 @@ namespace gpucast {
     void bezierobject_renderer::_init_raycasting_program()
     {
       BOOST_LOG_TRIVIAL(info) << "_init_raycasting_program()" << std::endl;
+
       gpucast::gl::resource_factory factory;
 
       _raycasting_program = factory.create_program({ 
@@ -741,6 +776,7 @@ namespace gpucast {
     void bezierobject_renderer::_init_pretesselation_program()
     {
       BOOST_LOG_TRIVIAL(info) << "_init_pretesselation_program()" << std::endl;
+
       gpucast::gl::resource_factory factory;
 
       _pretesselation_program = factory.create_program({ 
@@ -768,6 +804,7 @@ namespace gpucast {
     void bezierobject_renderer::_init_tesselation_program()
     {
       BOOST_LOG_TRIVIAL(info) << "_init_tesselation_program()" << std::endl;
+
       gpucast::gl::resource_factory factory;
       
       _tesselation_program = factory.create_program({ 

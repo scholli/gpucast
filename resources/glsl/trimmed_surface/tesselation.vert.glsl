@@ -13,12 +13,12 @@ flat out vec3  vertex_position;
 flat out uint  vertex_index;                     
 flat out vec2  vertex_tessCoord; 
 flat out float vertex_final_tesselation;                     
-    
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void main()                       
-{                                 
+{
   vertex_position          = position;        
   vertex_index             = index;           
   vertex_tessCoord         = tesscoord;   

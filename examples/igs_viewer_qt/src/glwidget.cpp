@@ -231,8 +231,9 @@ glwidget::paintGL()
   gpucast::math::matrix4f mvp  = proj * mv;
   gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
 
-  renderer->projectionmatrix(proj);
-  renderer->modelviewmatrix(mv);
+  renderer->current_projectionmatrix(proj);
+  renderer->current_viewmatrix(view);
+  renderer->current_modelmatrix(model);
 
   for (auto const& o : _objects)
   {
