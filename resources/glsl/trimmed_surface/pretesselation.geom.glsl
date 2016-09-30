@@ -13,7 +13,7 @@ layout(triangles) in;
 in vec3  eval_position[3];                          
 in uint  eval_index[3];                             
 in vec2  eval_tesscoord[3];   
-in float eval_final_tesselation[3];          
+in vec3  eval_final_tesselation[3];          
                                                                                             
 ///////////////////////////////////////////////////////////////////////////////
 // output
@@ -23,7 +23,7 @@ layout(xfb_buffer = 0, points, max_vertices = 4) out;
 layout (xfb_offset=0)  out vec3 transform_position;    
 layout (xfb_offset=12) out uint transform_index;       
 layout (xfb_offset=16) out vec2 transform_tesscoord;                                                 
-layout (xfb_offset=24) out float transform_final_tesselation;     
+layout (xfb_offset=24) out vec3 transform_final_tesselation;     
 
 ///////////////////////////////////////////////////////////////////////////////
 // uniforms
@@ -101,10 +101,10 @@ void main()
                                                                                  
     for ( int i = 0; i != 4; ++i )                                                   
     {                                                                                
-        index               = order[i];                                                    
-        transform_position 	= order[i] == -1 ? new_puv.xyz : eval_position[index];            
-        transform_index 	  = eval_index[0];                                                  
-        transform_tesscoord = tesscoords[i];      
+        index                       = order[i];                                                    
+        transform_position 	        = order[i] == -1 ? new_puv.xyz : eval_position[index];            
+        transform_index 	          = eval_index[0];                                                  
+        transform_tesscoord         = tesscoords[i];      
         transform_final_tesselation = eval_final_tesselation[0];                        
         EmitVertex();                                                                
     }                                                                                

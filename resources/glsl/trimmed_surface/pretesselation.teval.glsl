@@ -8,7 +8,7 @@ layout(quads, equal_spacing, ccw) in;
 in vec3  control_position[];                         
 in uint  control_index[];                            
 in vec2  control_tesscoord[];                        
-in float control_final_tesselation[];
+in vec3 control_final_tesselation[];
         
 ///////////////////////////////////////////////////////////////////////////////
 // output
@@ -16,7 +16,7 @@ in float control_final_tesselation[];
 out vec3 eval_position;                           
 out uint eval_index;                              
 out vec2 eval_tesscoord;     
-out float eval_final_tesselation;                     
+out vec3 eval_final_tesselation;                     
          
 ///////////////////////////////////////////////////////////////////////////////                                                   
 // uniforms                                         
@@ -27,11 +27,14 @@ uniform samplerBuffer attribute_texture;
 #define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
 
 #include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"                          
+#include "./resources/glsl/common/camera_uniforms.glsl"
 
 ///////////////////////////////////////////////////////////////////////////////
 // functions
 ///////////////////////////////////////////////////////////////////////////////
-#include "./resources/glsl/math/horner_surface.glsl.frag"
+#include "./resources/glsl/math/horner_surface.glsl.frag"  
+#include "./resources/glsl/common/conversion.glsl"
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -50,14 +53,17 @@ void main()
 
   vec4 puv, du, dv;                                                    
   evaluateSurface(parameter_texture,                                   
-                  int(surface_index),                                  
-                  int(surface_order_u),                                
-                  int(surface_order_v),                                
+                  surface_index,                                  
+                  surface_order_u,                                
+                  surface_order_v,                                
                   uv,                                                  
                   puv);                                                
                                                                                
   eval_position  = puv.xyz;                                               
   eval_index     = control_index[0];                                            
-  eval_tesscoord = uv;                                                 
+  eval_tesscoord = uv;                                       
   eval_final_tesselation = control_final_tesselation[0];
+                    
 }  
+
+

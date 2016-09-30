@@ -33,6 +33,22 @@ uint uint4ToUInt ( in uvec4 input )
   return result;
 }
 
+uint uint2ToUInt ( in uvec2 input )
+{
+  uint result = 0U;
+  result |= (input.y & 0x0000FFFF) << 16U;
+  result |= (input.x & 0x0000FFFF);
+  return result;
+}
+
+int uint2ToInt ( in uvec2 input )
+{
+  int result = 0;
+  result |= (int(input.y) & 0x0000FFFF) << 16U;
+  result |= (int(input.x) & 0x0000FFFF);
+  return result;
+}
+
 uint bvec4ToUInt ( in bvec4 input )
 {
   uint result = 0U;

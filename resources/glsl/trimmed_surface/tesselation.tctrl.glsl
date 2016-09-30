@@ -6,7 +6,7 @@
 flat in vec3  vertex_position[];                        
 flat in uint  vertex_index[];                           
 flat in vec2  vertex_tessCoord[];  
-flat in float vertex_final_tesselation[];           
+flat in vec3  vertex_final_tesselation[];           
 
 ///////////////////////////////////////////////////////////////////////////////
 // output
@@ -26,7 +26,9 @@ uniform samplerBuffer gpcuast_attribute_buffer;
 
 #include "./resources/glsl/common/obb_area.glsl"   
 #include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"                          
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
 #include "./resources/glsl/common/camera_uniforms.glsl"   
+#include "./resources/glsl/common/conversion.glsl"   
             
 ///////////////////////////////////////////////////////////////////////////////
 // functions
@@ -49,7 +51,23 @@ void main()
 {                                                                                                                         
   tcIndex[gl_InvocationID]     = vertex_index[gl_InvocationID];                                                                                           
   tcTessCoord[gl_InvocationID] = vertex_tessCoord[gl_InvocationID];                                                                                       
-  float final_tess_level       = vertex_final_tesselation[0];
+  float final_tess_level       = vertex_final_tesselation[0].x;
+
+#if 1
+  vec2 final_tess_edges = vertex_final_tesselation[0].yz;
+
+  uvec2 u_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[0].y)); 
+  uvec2 v_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[0].z));
+
+  float umax = float(max(u_edge_lengths.x, u_edge_lengths.y));
+  float vmax = float(max(v_edge_lengths.x, v_edge_lengths.y));
+
+  float tess_umax = umax / gpucast_tesselation_max_error;
+  float tess_vmax = vmax / gpucast_tesselation_max_error;
+  float tess_edge = max(tess_umax, tess_vmax);
+
+  final_tess_level = max(tess_edge, final_tess_level);
+#endif 
 
   gl_TessLevelInner[0] = clamp(final_tess_level, 1.0, 64.0);
   gl_TessLevelOuter[1] = clamp(final_tess_level, 1.0, 64.0);
