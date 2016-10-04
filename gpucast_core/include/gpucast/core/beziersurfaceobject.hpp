@@ -52,8 +52,9 @@ public : // enums, typedefs
   struct patch_tesselation_data
   {
     unsigned surface_offset;
-    unsigned short order_u;
-    unsigned short order_v;
+    unsigned char order_u;
+    unsigned char order_v;
+    unsigned short trim_type;
     unsigned trim_id;
     unsigned obb_id;
 
@@ -142,7 +143,7 @@ private : // auxilliary methods
 
   std::size_t             _add            ( convex_hull const& chull );
 
-  void                    _init_adaptive_tesselation ();
+  void                    _init_adaptive_tesselation (trim_approach_t trimtype);
 
 private : // data members
 

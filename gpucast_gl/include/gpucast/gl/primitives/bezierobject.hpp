@@ -69,7 +69,7 @@ public :
   gpucast::beziersurfaceobject const& object() const;
 
   // draw methods
-  void                draw(render_mode mode = raycasting);
+  void                draw();
 
   // configuration
   void                max_newton_iterations ( unsigned n );
@@ -86,6 +86,9 @@ public :
 
   void                enable_raycasting(bool enable);
   bool                enable_raycasting() const;
+
+  void                rendermode(render_mode mode);
+  render_mode         rendermode() const;
 
   beziersurfaceobject::trim_approach_t trimming() const;
   void                trimming(beziersurfaceobject::trim_approach_t type);
@@ -117,6 +120,8 @@ private :
   float                                 _epsilon       = 0.001f;
   bool                                  _culling       = true;
   bool                                  _raycasting    = true;
+
+  render_mode                           _rendermode    = tesselation;
   anti_aliasing_mode                    _antialiasing  = no_anti_aliasing;
   beziersurfaceobject::trim_approach_t  _trimming      = beziersurfaceobject::contour_kd_partition;
     

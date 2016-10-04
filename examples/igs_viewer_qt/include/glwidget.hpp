@@ -79,8 +79,9 @@ public Q_SLOTS :
   void                    vsync                         ( int );
   void                    ambient_occlusion             ( int );
 
+  void                    rendermode                    (gpucast::gl::bezierobject::render_mode mode);
   void                    antialiasing                  (antialiasing_mode);
-  void                    trimming(gpucast::beziersurfaceobject::trim_approach_t);
+  void                    trimming                      (gpucast::beziersurfaceobject::trim_approach_t);
 
 protected:
 

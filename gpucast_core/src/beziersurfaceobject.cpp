@@ -91,6 +91,9 @@ void beziersurfaceobject::trim_approach(beziersurfaceobject::trim_approach_t app
 
     _surface_trim_ids[surface.first] = trim_index;
   }
+
+  // apply also for adaptive tesselation
+  _init_adaptive_tesselation(approach);
 }
 
 
@@ -119,7 +122,7 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
     _add(surface, fast_trim_texture_resolution);
   }
 
-  _init_adaptive_tesselation();
+  _init_adaptive_tesselation(_trim_approach);
 
   _is_initialized = true;
 }
@@ -556,18 +559,15 @@ beziersurfaceobject::_add ( convex_hull const& chull )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void beziersurfaceobject::_init_adaptive_tesselation() 
+void beziersurfaceobject::_init_adaptive_tesselation(trim_approach_t trimtype)
 {
+  // make sure to clear old buffers
+  _tesselation_data.domain_buffer.clear();
+  _tesselation_data.index_buffer.clear();
+  _tesselation_data.control_point_buffer.clear();
+  _tesselation_data.patch_data_buffer.clear();
+
   unsigned int patch_id = unsigned int(_tesselation_data.patch_data_buffer.size());
-
-  // serialize trim domain
-  typedef gpucast::math::domain::contour_map_kd<double> partition_type;
-  std::unordered_map<gpucast::trimdomain_serializer_contour_map_kd::curve_ptr, unsigned>       referenced_curves;
-  std::unordered_map<gpucast::trimdomain_serializer_contour_map_kd::trimdomain_ptr, unsigned>  referenced_domains;
-  std::unordered_map<partition_type::contour_segment_ptr, unsigned>      referenced_segments;
-
-  gpucast::trimdomain_serializer_contour_map_kd serializer;
-  gpucast::trim_kd_serialization serialization;
 
   auto uint_to_float = [](unsigned const & i) { return *((float*)(&i)); }
   ;
@@ -603,18 +603,32 @@ void beziersurfaceobject::_init_adaptive_tesselation()
     _tesselation_data.index_buffer.push_back(patch_id * 4 + 3);
     _tesselation_data.index_buffer.push_back(patch_id * 4 + 2);
 
-    // serialize trim domain
-    std::size_t trim_id = serializer.serialize((*it)->domain(),
-      gpucast::kd_split_strategy::sah,
-      serialization,
-      0, 0);
-
     // gather per patch data
     patch_tesselation_data p;
     p.surface_offset = _tesselation_data.control_point_buffer.size();
     p.order_u = (*it)->order_u();
     p.order_v = (*it)->order_v();
-    p.trim_id = trim_id;
+    
+    p.trim_type = (*it)->trimtype();
+
+    switch (trimtype) {
+      case no_trimming: 
+        p.trim_id = 0; 
+        break;
+      case curve_binary_partition: 
+        p.trim_id = _domain_index_map[(*it)->domain()].double_binary_index;
+        break;
+      case contour_binary_partition : 
+        p.trim_id = _domain_index_map[(*it)->domain()].contour_binary_index;
+        break;
+      case contour_kd_partition : 
+        p.trim_id = _domain_index_map[(*it)->domain()].contour_kd_index;
+        break;
+      case contour_list : 
+        p.trim_id = _domain_index_map[(*it)->domain()].loop_list_index;
+        break;
+    }
+
     auto obb_id = serialized_obb_base_indices().find((*it));
     if (obb_id != serialized_obb_base_indices().end()) {
       p.obb_id = obb_id->second;

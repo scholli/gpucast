@@ -1,8 +1,9 @@
 struct per_patch_data
 {
   uint surface_offset;
-  uint16_t order_u;
-  uint16_t order_v;
+  uint8_t order_u;
+  uint8_t order_v;
+  uint16_t trim_type;
   uint trim_id;
   uint obb_id;
 
@@ -21,10 +22,16 @@ layout(std430, binding = GPUCAST_ATTRIBUTE_SSBO_BINDING) buffer gpucast_attribut
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////
+int retrieve_trim_type(in int index) {
+  return int(gpucast_attribute_data[index].trim_type);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 void retrieve_patch_order(in int index, out int order_u, out int order_v) 
 {
-  order_u = clamp(int(gpucast_attribute_data[index].order_u), 1, 10);
-  order_v = clamp(int(gpucast_attribute_data[index].order_v), 1, 10);
+  order_u = int(gpucast_attribute_data[index].order_u);
+  order_v = int(gpucast_attribute_data[index].order_v);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

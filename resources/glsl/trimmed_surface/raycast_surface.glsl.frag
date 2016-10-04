@@ -212,6 +212,8 @@ void main(void)
                                     spheremap,
                                     bool(diffusemapping),
                                     diffusemap);
+    out_color = vec4(float(trim_index)/800);
+    out_color = vec4(uv/100, 1.0, 1.0);
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }

@@ -52,6 +52,7 @@ private slots: // slot events
   void openfile                       ();
   void addfile                        ();
 
+  void rendering();
   void trimming();
   void antialiasing();
 
@@ -67,8 +68,9 @@ private: // attributes
   unsigned              _width;
   unsigned              _height;
 
+  std::map<gpucast::gl::bezierobject::render_mode, std::string>        _rendering_modes;
   std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string> _trimming_modes;
-  std::map<glwidget::antialiasing_mode, std::string> _antialiasing_modes;
+  std::map<glwidget::antialiasing_mode, std::string>                   _antialiasing_modes;
 
   // menubar and menubar actions
   QMenu*                _file_menu;
@@ -84,6 +86,7 @@ private: // attributes
   QCheckBox*            _checkbox_diffusemap;
   QCheckBox*            _checkbox_spheremap;
 
+  QComboBox*            _combobox_rendering;
   QComboBox*            _combobox_antialiasing;
   QComboBox*            _combobox_trimming;
 

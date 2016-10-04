@@ -54,6 +54,7 @@ void main()
   float final_tess_level       = vertex_final_tesselation[0].x;
 
 #if 1
+  // todo : double check! maybe there is something not 100% accurate?
   vec2 final_tess_edges = vertex_final_tesselation[0].yz;
 
   uvec2 u_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[0].y)); 

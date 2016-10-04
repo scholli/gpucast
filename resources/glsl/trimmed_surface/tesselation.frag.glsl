@@ -35,6 +35,7 @@ uniform samplerBuffer gpucast_obb_buffer;
 
 #include "./resources/glsl/common/obb_area.glsl"   
 #include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
 
 ///////////////////////////////////////////////////////////////////////////////
 // methods
@@ -42,9 +43,11 @@ uniform samplerBuffer gpucast_obb_buffer;
 #include "./resources/glsl/math/horner_curve.glsl"
 #include "./resources/glsl/math/horner_surface_derivatives.glsl.frag"
 #include "./resources/glsl/trimming/binary_search.glsl"
-#include "./resources/glsl/trimming/bisect_curve.glsl"
+#include "./resources/glsl/trimming/bisect_curve.glsl" 
 #include "./resources/glsl/trimming/trimming_contour_double_binary.glsl"
 #include "./resources/glsl/trimming/trimming_contour_kd.glsl"
+#include "./resources/glsl/trimming/trimming_double_binary.glsl"
+#include "./resources/glsl/trimming/trimming_loop_lists.glsl"
 
 
 // normal is assumed to be normalized already
@@ -66,35 +69,81 @@ vec3 force_front_facing_normal(vec3 normal)
 ///////////////////////////////////////////////////////////////////////////////
 void main()
 {
-  /////////////////////////////////////////////////////
-  // 1. perform trimming based on uv value
-  /////////////////////////////////////////////////////
-  // retrieve patch information from ssbo
+  // retrieve NURBS patch information
   vec4 nurbs_domain = retrieve_patch_domain(int(gIndex));
   int trim_index    = retrieve_trim_index(int(gIndex));
 
-  // transform bezier coordinates to knot span of according NURBS element
+  // transform Bezier uv-coordinates to nurbs knot span
   vec2 domain_size  = vec2(nurbs_domain.z - nurbs_domain.x, nurbs_domain.w - nurbs_domain.y);
   vec2 uv_nurbs     = geometry_texcoords.xy * domain_size + nurbs_domain.xy;
-
-  // classify trimming by point-in-curve test
+  
+  bool is_trimmed = false;
+  int trim_type = retrieve_trim_type(int(gIndex));
   int tmp = 0;
-  bool trimmed      = trimming_contour_kd (gpucast_kd_partition,
-                                           gpucast_kd_contourlist,
-                                           gpucast_kd_curvelist,
-                                           gpucast_kd_curvedata,
-                                           gpucast_kd_pointdata,
-                                           gpucast_preclassification,
-                                           uv_nurbs,
-                                           int(trim_index), 1, tmp, 0.0001f, 16);
 
-  // fully discard trimmed fragments
-  if ( trimmed ) {
+  if (gpucast_trimming_method == 0)
+  {
+    is_trimmed = false;
+  }
+
+  if (gpucast_trimming_method == 1)
+  {
+    is_trimmed = trimming_double_binary ( gpucast_bp_trimdata, 
+                                          gpucast_bp_celldata, 
+                                          gpucast_bp_curvelist, 
+                                          gpucast_bp_curvedata, 
+                                          gpucast_preclassification,
+                                          uv_nurbs, 
+                                          trim_index, 
+                                          trim_type, 
+                                          tmp,
+                                          gpucast_trim_error_tolerance, 
+                                          gpucast_trimming_max_bisections );
+  }
+  
+  if (gpucast_trimming_method == 2) {
+    is_trimmed= trimming_contour_double_binary ( gpucast_cmb_partition, 
+                                                 gpucast_cmb_contourlist,
+                                                 gpucast_cmb_curvelist,
+                                                 gpucast_cmb_curvedata,
+                                                 gpucast_cmb_pointdata,
+                                                 gpucast_preclassification,
+                                                 uv_nurbs, 
+                                                 trim_index,
+                                                 trim_type, 
+                                                 tmp,
+                                                 gpucast_trim_error_tolerance, 
+                                                 gpucast_trimming_max_bisections );
+  }
+
+  if (gpucast_trimming_method == 3) {
+    is_trimmed = trimming_contour_kd(gpucast_kd_partition,
+                                     gpucast_kd_contourlist,
+                                     gpucast_kd_curvelist,
+                                     gpucast_kd_curvedata,
+                                     gpucast_kd_pointdata,
+                                     gpucast_preclassification,
+                                     uv_nurbs,
+                                     trim_index,
+                                     trim_type,
+                                     tmp,
+                                     gpucast_trim_error_tolerance, 
+                                     gpucast_trimming_max_bisections);
+  }
+
+  if (gpucast_trimming_method == 4) {
+    is_trimmed = trimming_loop_list(uv_nurbs, trim_index, gpucast_preclassification);
+  }
+
+  if ( is_trimmed )
+  {
     discard;
   }
 
   vec4 viewspace_normal = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
-  out_color = vec4(force_front_facing_normal(normalize(viewspace_normal.xyz)), 1.0);
+  //out_color = vec4(force_front_facing_normal(normalize(viewspace_normal.xyz)), 1.0);
+  out_color = vec4(float(trim_index)/800);
+  out_color = vec4(uv_nurbs/100, 1.0, 1.0);
 
   //gl_FragDepth = gl_FragCoord.z;
 }

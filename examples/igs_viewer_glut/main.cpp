@@ -106,12 +106,8 @@ public:
     {
       std::cout << "loading " << file << std::endl;
        
-#if 1
-      gpucast::igs_loader loader2;
-      auto nurbs_objects = loader2.load(file);
-#else
+      gpucast::igs_loader loader;
       auto nurbs_objects = loader.load(file);
-#endif
 
       for (auto nurbs_object : nurbs_objects)
       {
@@ -263,12 +259,7 @@ public:
     renderer->current_projectionmatrix(proj);
 
     for (auto const& o : _objects) {
-      if (o->enable_raycasting()) {
-        o->draw(gpucast::gl::bezierobject::raycasting);
-      }
-      else {
-        o->draw(gpucast::gl::bezierobject::tesselation);
-      }
+      o->draw();
     }
 
     _query.end();
@@ -295,8 +286,8 @@ public:
   void resize(int w, int h)
   {
     glViewport(0, 0, w, h);
-    _resolution_x = 1920;
-    _resolution_y = 1080;
+    _resolution_x = w;
+    _resolution_y = h;
   }
 
 public:
@@ -304,6 +295,7 @@ public:
   virtual void keyboard(unsigned char key, int x, int y) override
   {
     auto renderer = gpucast::gl::bezierobject_renderer::instance();
+    using namespace gpucast::gl;
 
     // renderer operations
     switch (key)
@@ -341,6 +333,30 @@ public:
         o->culling(!o->culling());
         std::cout << "Backface culling set to " << o->culling() << std::endl;
         break;
+      case 't':
+        switch (o->trimming()) {
+        case gpucast::beziersurfaceobject::no_trimming: 
+          std::cout << "Set gpucast::beziersurfaceobject::curve_binary_partition.\n";
+          o->trimming(gpucast::beziersurfaceobject::curve_binary_partition);
+          break;
+        case gpucast::beziersurfaceobject::curve_binary_partition: 
+          std::cout << "Set gpucast::beziersurfaceobject::contour_binary_partition.\n";
+          o->trimming(gpucast::beziersurfaceobject::contour_binary_partition);
+          break;
+        case gpucast::beziersurfaceobject::contour_binary_partition: 
+          std::cout << "Set gpucast::beziersurfaceobject::contour_kd_partition.\n";
+          o->trimming(gpucast::beziersurfaceobject::contour_kd_partition);
+          break;
+        case gpucast::beziersurfaceobject::contour_kd_partition: 
+          std::cout << "Set gpucast::beziersurfaceobject::contour_list.\n";
+          o->trimming(gpucast::beziersurfaceobject::contour_list);
+          break;
+        case gpucast::beziersurfaceobject::contour_list: 
+          std::cout << "Set gpucast::beziersurfaceobject::no_trimming.\n";
+          o->trimming(gpucast::beziersurfaceobject::no_trimming);
+          break;
+        }
+        break;
       case 'i':
         o->max_newton_iterations(std::max(1U, o->max_newton_iterations() - 1));
         std::cout << "Newton iterations set to " << o->max_newton_iterations() << std::endl;
@@ -350,8 +366,7 @@ public:
         std::cout << "Newton iterations set to " << o->max_newton_iterations() << std::endl;
         break;
       case 'r':
-        o->enable_raycasting(!o->enable_raycasting());
-        std::cout << "Raycasting set to " << o->enable_raycasting() << std::endl;
+        o->rendermode(o->rendermode() == bezierobject::raycasting ? bezierobject::tesselation : bezierobject::raycasting);
         break;
       case 'o':
         _show_obbs = !_show_obbs;

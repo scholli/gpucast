@@ -36,6 +36,9 @@ uniform samplerBuffer gpucast_parametric_buffer;
 #include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"                          
 #include "./resources/glsl/common/obb_area.glsl"  
 
+// redundant, not used -> but necessary to prevent warning of unused SSBO
+#include "./resources/glsl/trimming/trimming_loop_lists.glsl"
+
 ///////////////////////////////////////////////////////////////////////////////
 // methods
 ///////////////////////////////////////////////////////////////////////////////
@@ -95,10 +98,7 @@ void main()
                       int(surface_order_v),                                          
                       new_tesscoord,                                                 
                       new_puv );                                                     
-  
-    if (surface_order_v != 5 && surface_order_u != 5) return;
-  
-                                                                                 
+                                                                        
     for ( int i = 0; i != 4; ++i )                                                   
     {                                                                                
         index                       = order[i];                                                    

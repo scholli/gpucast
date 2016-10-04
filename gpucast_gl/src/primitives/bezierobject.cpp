@@ -37,7 +37,8 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     bezierobject::bezierobject(gpucast::beziersurfaceobject const& b)
       : _object(b),
-        _trimming(b.trim_approach())
+        _trimming(b.trim_approach()),
+        _rendermode(tesselation)
     {
       _material.randomize();
 
@@ -53,15 +54,16 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::draw(bezierobject::render_mode mode)
+    void bezierobject::draw()
     {
-      switch (mode) {
-      case raycasting:
-        _draw_by_raycasting();
-        break;
-      case tesselation:
-        _draw_by_tesselation();
-        break;
+      switch (_rendermode) 
+      {
+        case raycasting:
+          _draw_by_raycasting();
+          break;
+        case tesselation:
+          _draw_by_tesselation();
+          break;
       }
     }
 
@@ -122,6 +124,18 @@ namespace gpucast {
     bool bezierobject::enable_raycasting() const
     {
       return _raycasting;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::rendermode(render_mode mode)
+    {
+      _rendermode = mode;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    bezierobject::render_mode bezierobject::rendermode() const
+    {
+      return _rendermode;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -347,10 +361,10 @@ namespace gpucast {
         break;
       case beziersurfaceobject::contour_list:
 
-        p.set_shaderstoragebuffer("gpucast_loop_buffer", _loop_list_loops, 1);
-        p.set_shaderstoragebuffer("gpucast_contour_buffer", _loop_list_contours, 2);
-        p.set_shaderstoragebuffer("gpucast_curve_buffer", _loop_list_curves, 3);
-        p.set_shaderstoragebuffer("gpucast_point_buffer", _loop_list_points, 4);
+        p.set_shaderstoragebuffer("gpucast_loop_buffer", _loop_list_loops, 3);
+        p.set_shaderstoragebuffer("gpucast_contour_buffer", _loop_list_contours, 4);
+        p.set_shaderstoragebuffer("gpucast_curve_buffer", _loop_list_curves, 5);
+        p.set_shaderstoragebuffer("gpucast_point_buffer", _loop_list_points, 6);
 
         p.set_texturebuffer("gpucast_preclassification", _loop_list_preclassification, renderer->next_texunit());
         break;

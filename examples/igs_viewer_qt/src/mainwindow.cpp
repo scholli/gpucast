@@ -34,6 +34,12 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
     _height ( height )
 {
   /////////////////////////////////////
+  // surface rendering modes
+  /////////////////////////////////////
+  _rendering_modes.insert(std::make_pair(gpucast::gl::bezierobject::raycasting, "Ray Casting"));
+  _rendering_modes.insert(std::make_pair(gpucast::gl::bezierobject::tesselation, "Tesselation"));
+  
+  /////////////////////////////////////
   // anti-aliasing modes
   /////////////////////////////////////
   _antialiasing_modes.insert(std::make_pair(glwidget::disabled, "No Anti-Aliasing"));
@@ -168,6 +174,21 @@ void mainwindow::antialiasing()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+void mainwindow::rendering()
+{
+  std::string str = _combobox_rendering->currentText().toStdString();
+  gpucast::gl::bezierobject::render_mode mode = gpucast::gl::bezierobject::raycasting;
+
+  for (auto m : _rendering_modes)
+  {
+    if (m.second == str)
+      mode = m.first;
+  }
+
+  _glwindow->rendermode(mode);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 /* private */ void 
 mainwindow::_create_actions()
 {
@@ -192,6 +213,7 @@ mainwindow::_create_actions()
 
   connect(_combobox_antialiasing, SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
   connect(_combobox_trimming, SIGNAL(currentIndexChanged(int)), this, SLOT(trimming()));
+  connect(_combobox_rendering, SIGNAL(currentIndexChanged(int)), this, SLOT(rendering()));
 
   _file_menu->addSeparator();
   _file_menu->addAction   (_action_loadfile);
@@ -210,7 +232,6 @@ mainwindow::_create_widgets( int argc, char** argv )
   QGLFormat context_options;
 
   context_options.setVersion ( 4, 4 );
-  //context_options.setProfile ( QGLFormat::CompatibilityProfile );
   context_options.setProfile ( QGLFormat::CoreProfile );
   context_options.setRgba    ( true );
 
@@ -248,9 +269,11 @@ mainwindow::_create_menus()
   _checkbox_vsync        = new QCheckBox("Enable VSync", _menu);
   _checkbox_sao          = new QCheckBox("Enable Ambient Occlusion", _menu);
   
+  _combobox_rendering = new QComboBox;
   _combobox_antialiasing = new QComboBox;
   _combobox_trimming     = new QComboBox;
 
+  std::for_each(_rendering_modes.begin(), _rendering_modes.end(), [&](std::map<gpucast::gl::bezierobject::render_mode, std::string>::value_type const& p) { _combobox_rendering->addItem(p.second.c_str()); });
   std::for_each(_antialiasing_modes.begin(), _antialiasing_modes.end(), [&](std::map<glwidget::antialiasing_mode, std::string>::value_type const& p) { _combobox_antialiasing->addItem(p.second.c_str()); });
   std::for_each(_trimming_modes.begin(), _trimming_modes.end(), [&](std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string>::value_type const& p) { _combobox_trimming->addItem(p.second.c_str()); });
 
@@ -269,6 +292,7 @@ mainwindow::_create_menus()
   layout->addWidget(_combobox_trimming, row++, 0);
 
   layout->addWidget(new QLabel("=========Rendering========="), row++, 0);
+  layout->addWidget(_combobox_rendering, row++, 0);
 
   layout->addWidget(new QLabel("==========Shading=========="), row++, 0);
   layout->addWidget(_checkbox_spheremap, row++, 0);

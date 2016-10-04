@@ -176,7 +176,7 @@ glwidget::resizeGL(int width, int height)
 void 
 glwidget::paintGL()
 {
-#define FBO 1
+#define FBO 0
 
   // draw pre-evaluated stuff... 
   if (!_initialized)
@@ -204,17 +204,16 @@ glwidget::paintGL()
 #endif
 
   glEnable(GL_DEPTH_TEST);
+  //glEnable(GL_CULL_FACE);
 
   glClearColor(_background[0], _background[1], _background[2], 1.0f);
-  glClearDepth(1.0f);
+  //glClearDepth(1.0f);
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-  
-  float nearplane = 0.01f * _boundingbox.size().abs();
-  float farplane  = 2.0f  * _boundingbox.size().abs();
 
-  auto renderer = gpucast::gl::bezierobject_renderer::instance();
-  renderer->set_nearfar(nearplane, farplane);
+  // compute render parameters
+  float nearplane = 0.01f * _boundingbox.size().abs();
+  float farplane  = 5.0f  * _boundingbox.size().abs();
 
   gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_boundingbox.size().abs()), 
                                      0.0f, 0.0f, 0.0f, 
@@ -222,25 +221,29 @@ glwidget::paintGL()
 
   gpucast::math::vec3f translation = _boundingbox.center();
 
-  gpucast::math::matrix4f model    = gpucast::math::make_translation(_trackball->shiftx(), _trackball->shifty(), 
-                                   _trackball->distance()) *_trackball->rotation() * 
-                                   gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
+  gpucast::math::matrix4f model    = gpucast::math::make_translation(_trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
+                                     gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
 
-  gpucast::math::matrix4f proj = gpucast::math::perspective(60.0f, float(_width) / _height, nearplane, farplane); 
-  gpucast::math::matrix4f mv   = view * model;
-  gpucast::math::matrix4f mvp  = proj * mv;
-  gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
+  gpucast::math::matrix4f proj = gpucast::math::perspective(70.0f, float(_width) / _height, nearplane, farplane); 
 
-  renderer->current_projectionmatrix(proj);
-  renderer->current_viewmatrix(view);
+  // apply camera setup to renderer
+  auto renderer = gpucast::gl::bezierobject_renderer::instance();
+
+  renderer->set_nearfar(nearplane, farplane);
+  renderer->set_resolution(_width, _height);
+
   renderer->current_modelmatrix(model);
+  renderer->current_viewmatrix(view);
+  renderer->current_projectionmatrix(proj);
 
-  for (auto const& o : _objects)
-  {
+  for (auto const& o : _objects) {
     o->draw();
   }
 
 #if FBO
+
+  gpucast::math::matrix4f mvp = proj * view * model;
+  gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
 
   _fbo->unbind();
 
@@ -265,7 +268,7 @@ glwidget::paintGL()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   _fbo_program->begin();
   
-  _fbo_program->set_uniform_matrix4fv ("modelviewprojectioninverse", 1, false, &mvpi[0]);
+  _fbo_program->set_uniform_matrix4fv ( "modelviewprojectioninverse", 1, false, &mvpi[0]);
   _fbo_program->set_uniform_matrix4fv ( "modelviewprojection", 1,       false, &mvp[0]);
 
   _fbo_program->set_texture2d         ( "colorbuffer",       *_colorattachment,   1);
@@ -473,6 +476,14 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   glwidget::ambient_occlusion             ( int i )
   {
     _ambient_occlusion = i;
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::rendermode(gpucast::gl::bezierobject::render_mode mode)
+  {
+    for (auto o : _objects) {
+      o->rendermode(mode);
+    }
   }
 
   ///////////////////////////////////////////////////////////////////////
