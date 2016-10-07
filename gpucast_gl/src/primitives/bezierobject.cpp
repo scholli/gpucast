@@ -34,6 +34,11 @@
 namespace gpucast {
   namespace gl {
 
+    const float bezierobject::default_render_configuration::raycasting_error_tolerance     = 0.001f;
+    const float bezierobject::default_render_configuration::trimming_error_tolerance       = 0.001f;
+    const float bezierobject::default_render_configuration::tesselation_max_pixel_error    = 4.0f;
+    const float bezierobject::default_render_configuration::tesselation_max_pretesselation = 64.0f;
+
     /////////////////////////////////////////////////////////////////////////////
     bezierobject::bezierobject(gpucast::beziersurfaceobject const& b)
       : _object(b),
@@ -62,44 +67,82 @@ namespace gpucast {
           _draw_by_raycasting();
           break;
         case tesselation:
+        case shadow:
+        case shadow_lowres:
           _draw_by_tesselation();
           break;
       }
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::max_newton_iterations(unsigned n)
+    void bezierobject::raycasting_max_iterations(unsigned n)
     {
-      _iterations = n;
+      _raycasting_max_iterations = n;
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    unsigned bezierobject::max_newton_iterations() const
+    unsigned bezierobject::raycasting_max_iterations() const
     {
-      return _iterations;
+      return _raycasting_max_iterations;
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::max_trimming_bisections(unsigned n)
+    void bezierobject::trimming_max_bisections(unsigned n)
     {
-      _max_trimming_bisections = n;
+      _trimming_max_bisections = n;
     }
     /////////////////////////////////////////////////////////////////////////////
-    unsigned bezierobject::max_trimming_bisections() const
+    unsigned bezierobject::trimming_max_bisections() const
     {
-      return _max_trimming_bisections;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::newton_epsilon(float epsilon)
-    {
-      _epsilon = epsilon;
+      return _trimming_max_bisections;
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    float bezierobject::newton_epsilon() const
+    void bezierobject::raycasting_error_tolerance(float epsilon)
     {
-      return _epsilon;
+      _raycasting_error_tolerance = epsilon;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    float bezierobject::raycasting_error_tolerance() const
+    {
+      return _raycasting_error_tolerance;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::trimming_error_tolerance(float epsilon)
+    {
+      _trimming_error_tolerance = epsilon;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    float bezierobject::trimming_error_tolerance() const
+    {
+      return _trimming_error_tolerance;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::tesselation_max_pixel_error(float px)
+    {
+      _tesselation_max_pixel_error = px;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    float bezierobject::tesselation_max_pixel_error() const
+    {
+      return _tesselation_max_pixel_error;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::tesselation_max_pretesselation(float t)
+    {
+      _tesselation_max_pretesselation = t;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    float bezierobject::tesselation_max_pretesselation() const
+    {
+      return _tesselation_max_pretesselation;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -200,6 +243,14 @@ namespace gpucast {
       auto renderer = bezierobject_renderer::instance();
       auto const& raycasting_program = renderer->get_raycasting_program();
 
+      if (_culling) {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+      }
+      else {
+        glDisable(GL_CULL_FACE);
+      }
+
       // draw proxy geometry
       _chull_vao.bind();
       _chull_indexarray.bind();
@@ -240,13 +291,13 @@ namespace gpucast {
       glPatchParameteri(GL_PATCH_VERTICES, 4);
 
       switch (_fill_mode) {
-      case FILL_POINT : 
+      case points : 
         glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
         break;
-      case FILL_SOLID :
+      case solid :
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         break;
-      case FILL_WIREFRAME :
+      case wireframe :
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         break;
       }
@@ -306,11 +357,16 @@ namespace gpucast {
     void bezierobject::_apply_uniforms(program const& p, render_mode mode)
     {
       // render parameters
-      p.set_uniform1i("gpucast_raycasting_iterations", _iterations);
-      p.set_uniform1i("gpucast_trimming_max_bisections", _max_trimming_bisections);
-      p.set_uniform1i("gpucast_trimming_method", int(_trimming) );
       p.set_uniform1i("gpucast_enable_newton_iteration", _raycasting);
-      p.set_uniform1f("gpucast_raycasting_error_tolerance", _epsilon);
+      p.set_uniform1i("gpucast_raycasting_iterations", _raycasting_max_iterations);
+      p.set_uniform1f("gpucast_raycasting_error_tolerance", _raycasting_error_tolerance);
+      p.set_uniform1f("gpucast_tesselation_max_error", _tesselation_max_pixel_error);
+      p.set_uniform1f("gpucast_max_pre_tesselation", _tesselation_max_pretesselation);
+      p.set_uniform1i("gpucast_shadow_mode", _rendermode);
+
+      p.set_uniform1i("gpucast_trimming_max_bisections", _trimming_max_bisections);
+      p.set_uniform1f("gpucast_trimmig_error_tolerance", _trimming_error_tolerance);
+      p.set_uniform1i("gpucast_trimming_method", int(_trimming) );
 
       // material properties
       p.set_uniform3f("mat_ambient", _material.ambient[0], _material.ambient[1], _material.ambient[2]);
@@ -328,6 +384,7 @@ namespace gpucast {
         p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer->next_texunit());
         break;
       case tesselation : 
+        
         p.set_texturebuffer("gpucast_parametric_buffer", _tesselation_parametric_texture_buffer, renderer->next_texunit());
         p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer->next_texunit());
         p.set_shaderstoragebuffer("gpucast_attribute_ssbo", _tesselation_attribute_buffer, bezierobject_renderer::GPUCAST_ATTRIBUTE_SSBO_BINDING);
@@ -529,6 +586,8 @@ namespace gpucast {
       _init_hullvertexmap();
       _init_prefilter();
       _init_transform_feedback();
+
+      _counter = std::make_shared<atomicbuffer>(2 * sizeof(unsigned), GL_DYNAMIC_COPY);
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -569,8 +628,6 @@ namespace gpucast {
       _modelviewmatrix = _viewmatrix * _modelmatrix;
       _modelviewmatrixinverse = gpucast::math::inverse(_modelviewmatrix);
 
-      _normalmatrix = _modelviewmatrix.normalmatrix();
-
       _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
       _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
     }
@@ -585,7 +642,7 @@ namespace gpucast {
       _modelviewmatrix = _viewmatrix * _modelmatrix;
       _modelviewmatrixinverse = gpucast::math::inverse(_modelviewmatrix);
 
-      _normalmatrix = _modelviewmatrix.normalmatrix();
+      _normalmatrix = _modelmatrix.normalmatrix();
 
       _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
       _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
@@ -631,12 +688,14 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::spheremap(std::string const& filepath)
     {
+      _spheremap = std::make_shared<texture2d>();
       _spheremap->load(filepath);
     }
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::diffusemap(std::string const& filepath)
     {
+      _diffusemap = std::make_shared<texture2d>();
       _diffusemap->load(filepath);
     }
 
@@ -668,14 +727,15 @@ namespace gpucast {
       p->set_uniform1f("gpucast_clip_near", _nearplane);
       p->set_uniform1f("gpucast_clip_far", _farplane);
 
-      // TODO: parameterize
-      p->set_uniform1f("gpucast_tesselation_max_error", 8.0f);
-      p->set_uniform1f("gpucast_max_pre_tesselation", 32.0f);
-      p->set_uniform1i("gpucast_shadow_mode", 0);
-
       p->set_uniform2i("gpucast_resolution", _resolution[0], _resolution[1]);
       if (p == _tesselation_program || p == _pretesselation_program) {
         p->set_shaderstoragebuffer("gpucast_hullvertexmap_ssbo", *_hullvertexmap, GPUCAST_HULLVERTEXMAP_SSBO_BINDING);
+      }
+
+      if (_enable_count)
+      {
+        p->set_uniform1i("gpucast_enable_counting", _enable_count);
+        _counter->bind_buffer_base(bezierobject_renderer::GPUCAST_ATOMIC_COUNTER_BINDING);
       }
 
       // camera block
@@ -708,6 +768,52 @@ namespace gpucast {
       } else {
         p->set_uniform1i("diffusemapping", 0);
       }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::enable_counting(bool b)
+    {
+      _enable_count = b;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    bool bezierobject_renderer::enable_counting() const
+    {
+      return _enable_count;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    unsigned bezierobject_renderer::get_triangle_count() const
+    {
+      _counter->bind();
+      unsigned* mapped_mem_read = (unsigned*)_counter->map_range(0, sizeof(unsigned), GL_MAP_READ_BIT);
+      unsigned result = mapped_mem_read[0];
+      _counter->unmap();
+      _counter->unbind();
+      return result;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    unsigned bezierobject_renderer::get_fragment_count() const
+    {
+      _counter->bind();
+      unsigned* mapped_mem_read = (unsigned*)_counter->map_range(0, sizeof(unsigned), GL_MAP_READ_BIT);
+      unsigned result = mapped_mem_read[1];
+      _counter->unmap();
+      _counter->unbind();
+      return result;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::reset_count() const
+    {
+      // initialize buffer with 0
+      _counter->bind();
+      unsigned* mapped_mem_write = (unsigned*)_counter->map_range(0, 2 * sizeof(unsigned), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+      mapped_mem_write[0] = 0; // triangle count
+      mapped_mem_write[1] = 0; // fragment count
+      _counter->unmap();
+      _counter->unbind();
     }
 
     /////////////////////////////////////////////////////////////////////////////

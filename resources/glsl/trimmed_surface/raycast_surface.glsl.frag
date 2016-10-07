@@ -146,7 +146,7 @@ void main(void)
                                           trim_index, 
                                           trim_type, 
                                           trim_iterations, 
-                                          gpucast_trim_error_tolerance, 
+                                          gpucast_trimming_error_tolerance, 
                                           gpucast_trimming_max_bisections );
   }
   
@@ -161,7 +161,7 @@ void main(void)
                                                  trim_index,
                                                  trim_type, 
                                                  trim_iterations, 
-                                                 gpucast_trim_error_tolerance, 
+                                                 gpucast_trimming_error_tolerance, 
                                                  gpucast_trimming_max_bisections );
   }
 
@@ -176,7 +176,7 @@ void main(void)
                                      trim_index,
                                      trim_type,
                                      trim_iterations,
-                                     gpucast_trim_error_tolerance, 
+                                     gpucast_trimming_error_tolerance, 
                                      gpucast_trimming_max_bisections);
   }
 
@@ -192,8 +192,19 @@ void main(void)
   /*********************************************************************
    * depth correction
    *********************************************************************/
-  vec4 p_world = gpucast_model_view_matrix * vec4(p.xyz, 1.0);
-  float corrected_depth = compute_depth ( p_world, gpucast_clip_near, gpucast_clip_far );
+  vec4 position_world = gpucast_model_matrix * vec4(p.xyz, 1.0);
+  vec4 normal_world   = gpucast_normal_matrix * vec4(normal, 0.0);
+  vec4 viewer         = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
+
+  vec4 position_view  = gpucast_view_matrix * position_world;
+  vec4 normal_view    = gpucast_view_matrix * vec4(normal_world.xyz, 0.0);
+
+  if (dot(normalize(-position_view.xyz), normalize(normal_view.xyz)) < 0.0 ) {
+    normal_world *= -1.0f;
+  }
+
+
+  float corrected_depth = compute_depth ( gpucast_view_matrix * position_world, gpucast_clip_near, gpucast_clip_far );
   gl_FragDepth = corrected_depth;
   
   /*********************************************************************
@@ -201,9 +212,10 @@ void main(void)
    ********************************************************************/
   if (bool(gpucast_enable_newton_iteration)) 
   {
-    out_color = shade_phong_fresnel(p_world, 
-                                    normalize((gpucast_normal_matrix * vec4(normal, 0.0)).xyz), 
-                                    vec4(1.0, 1.0, 1.0, 1.0),
+    out_color = shade_phong_fresnel(position_world, 
+                                    normalize(normal_world.xyz), 
+                                    normalize(viewer.xyz),
+                                    vec4(0.0, 0.0, 10000.0, 1.0),
                                     //vec3(0.1), vec3(0.8, 0.5, 0.2), vec3(1.0),
                                     mat_ambient, mat_diffuse, mat_specular,
                                     shininess,
@@ -212,8 +224,7 @@ void main(void)
                                     spheremap,
                                     bool(diffusemapping),
                                     diffusemap);
-    out_color = vec4(float(trim_index)/800);
-    out_color = vec4(uv/100, 1.0, 1.0);
+
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }

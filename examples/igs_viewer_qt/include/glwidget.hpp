@@ -79,10 +79,19 @@ public Q_SLOTS :
   void                    vsync                         ( int );
   void                    ambient_occlusion             ( int );
 
+  void                    backface_culling              (int);
   void                    rendermode                    (gpucast::gl::bezierobject::render_mode mode);
+  void                    fillmode                      (gpucast::gl::bezierobject::fill_mode mode);
   void                    antialiasing                  (antialiasing_mode);
   void                    trimming                      (gpucast::beziersurfaceobject::trim_approach_t);
+  void                    enable_counter                (int);
 
+  void                    trim_max_bisections           (int);
+  void                    trim_error_tolerance          (float);
+  void                    tesselation_max_pixel_error   (float);
+  void                    raycasting_max_iterations     (int);
+  void                    raycasting_error_tolerance    (float);
+  
 protected:
 
   /* virtual */ void      initializeGL                  ();

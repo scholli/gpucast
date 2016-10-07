@@ -15,6 +15,7 @@ env_long_lat(in vec3 v)
 ****************************************************/
 vec4 shade_phong_fresnel ( in vec4        p_world,
                            in vec3        n_world,
+                           in vec3        view_direction,
                            in vec4        light0,
                            in vec3        matambient,
                            in vec3        matdiffuse,
@@ -32,15 +33,10 @@ vec4 shade_phong_fresnel ( in vec4        p_world,
 
   /* for all light sources */
   vec4 color_non_reflective = vec4(0.0);
-  vec3 V = normalize(-p_world.xyz); // point to viewer
+  vec3 V = view_direction;          // vector to viewer
   vec3 R = vec3(0.0);               // reflected lightray
   vec3 L = vec3(0.0);               // point to lightsource
   
-  /* correct normal, if backfacing */
-  if (dot(V, n_world) < 0.0)
-  {
-    n_world *= -1.0;
-  }
   vec3 N = normalize(n_world);
 
   const vec4 lightcolor0 = vec4(1.0);
@@ -73,7 +69,6 @@ vec4 shade_phong_fresnel ( in vec4        p_world,
   if ( spheremapping )
   {
     float R_phi    = shininess + (1.0f - shininess) * pow(1.0 - dot(n_world, V), 5);
-
     vec4 color_reflective = R_phi * vec4(matspecular, opacity) * texture(spheremap, spherecoords_R);
     result += color_reflective;
   } else {

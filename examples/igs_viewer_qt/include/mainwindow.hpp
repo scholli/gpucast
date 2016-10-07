@@ -19,7 +19,6 @@
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QDockWidget>
-#include <QtWidgets/QSlider>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QCheckBox>
@@ -28,6 +27,7 @@
 #include <glwidget.hpp>
 
 #include <gpucast/math/interval.hpp>
+#include <slidergroup.hpp>
 
 
 class mainwindow : public QMainWindow
@@ -41,6 +41,7 @@ public: // c'tor / d'tor
 
   void update_interface               ();
   void show_fps                       ( double cputime, double gputime, double postprocess );
+  void update_count(unsigned tri_count, unsigned frag_count);
 
 protected:
 
@@ -53,6 +54,7 @@ private slots: // slot events
   void addfile                        ();
 
   void rendering();
+  void fillmode();
   void trimming();
   void antialiasing();
 
@@ -69,6 +71,7 @@ private: // attributes
   unsigned              _height;
 
   std::map<gpucast::gl::bezierobject::render_mode, std::string>        _rendering_modes;
+  std::map<gpucast::gl::bezierobject::fill_mode, std::string>          _fill_modes;
   std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string> _trimming_modes;
   std::map<glwidget::antialiasing_mode, std::string>                   _antialiasing_modes;
 
@@ -85,8 +88,19 @@ private: // attributes
   QCheckBox*            _checkbox_sao;
   QCheckBox*            _checkbox_diffusemap;
   QCheckBox*            _checkbox_spheremap;
+  QCheckBox*            _checkbox_culling;
+  QCheckBox*            _checkbox_counting;
+
+  QLabel*               _counting_result;
+
+  SlidersGroup*         _slider_trim_max_bisections;
+  FloatSlidersGroup*    _slider_trim_error_tolerance;
+  FloatSlidersGroup*    _slider_tesselation_max_pixel_error;
+  SlidersGroup*         _slider_raycasting_max_iterations;
+  FloatSlidersGroup*    _slider_raycasting_error_tolerance;
 
   QComboBox*            _combobox_rendering;
+  QComboBox*            _combobox_fillmode;
   QComboBox*            _combobox_antialiasing;
   QComboBox*            _combobox_trimming;
 

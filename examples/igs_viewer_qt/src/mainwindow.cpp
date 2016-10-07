@@ -38,7 +38,16 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   /////////////////////////////////////
   _rendering_modes.insert(std::make_pair(gpucast::gl::bezierobject::raycasting, "Ray Casting"));
   _rendering_modes.insert(std::make_pair(gpucast::gl::bezierobject::tesselation, "Tesselation"));
+  _rendering_modes.insert(std::make_pair(gpucast::gl::bezierobject::shadow, "ShadowMode"));
+  _rendering_modes.insert(std::make_pair(gpucast::gl::bezierobject::shadow_lowres, "ShadowMode LowQuality"));
   
+  /////////////////////////////////////
+  // fill modes
+  /////////////////////////////////////
+  _fill_modes.insert(std::make_pair(gpucast::gl::bezierobject::solid, "Solid"));
+  _fill_modes.insert(std::make_pair(gpucast::gl::bezierobject::wireframe, "Wireframe"));
+  _fill_modes.insert(std::make_pair(gpucast::gl::bezierobject::points, "Points"));
+
   /////////////////////////////////////
   // anti-aliasing modes
   /////////////////////////////////////
@@ -118,6 +127,15 @@ mainwindow::show_fps ( double cputime, double gputime, double postprocess )
   statusBar()->showMessage(message);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::update_count(unsigned tri_count, unsigned frag_count)
+{
+  QString message = "Triangles : ";
+  message.append(QString("%1").arg(tri_count));
+  message.append(QString(" , Fragments : %1").arg(frag_count));
+  _counting_result->setText(message);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
@@ -172,6 +190,20 @@ void mainwindow::antialiasing()
 
   _glwindow->antialiasing(aa_mode);
 }
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::fillmode()
+{
+  std::string str = _combobox_fillmode->currentText().toStdString();
+  gpucast::gl::bezierobject::fill_mode mode = gpucast::gl::bezierobject::solid;
+
+  for (auto m : _fill_modes)
+  {
+    if (m.second == str)
+      mode = m.first;
+  }
+
+  _glwindow->fillmode(mode);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::rendering()
@@ -179,10 +211,10 @@ void mainwindow::rendering()
   std::string str = _combobox_rendering->currentText().toStdString();
   gpucast::gl::bezierobject::render_mode mode = gpucast::gl::bezierobject::raycasting;
 
-  for (auto m : _rendering_modes)
-  {
-    if (m.second == str)
+  for (auto m : _rendering_modes) {
+    if (m.second == str) {
       mode = m.first;
+    }
   }
 
   _glwindow->rendermode(mode);
@@ -210,10 +242,19 @@ mainwindow::_create_actions()
   connect(_checkbox_fxaa,                   SIGNAL( stateChanged(int) ), _glwindow,    SLOT( fxaa(int) ));
   connect(_checkbox_vsync,                  SIGNAL( stateChanged(int) ), _glwindow,    SLOT( vsync(int) ));
   connect(_checkbox_sao,                    SIGNAL( stateChanged(int) ), _glwindow,    SLOT( ambient_occlusion(int) ));
-
-  connect(_combobox_antialiasing, SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
-  connect(_combobox_trimming, SIGNAL(currentIndexChanged(int)), this, SLOT(trimming()));
-  connect(_combobox_rendering, SIGNAL(currentIndexChanged(int)), this, SLOT(rendering()));
+  connect(_checkbox_culling,                SIGNAL(stateChanged(int)),   _glwindow,    SLOT( backface_culling(int)));
+  connect(_checkbox_counting,               SIGNAL(stateChanged(int)),   _glwindow,    SLOT( enable_counter(int)));
+  
+  connect(_combobox_antialiasing,           SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
+  connect(_combobox_trimming,               SIGNAL(currentIndexChanged(int)), this, SLOT(trimming()));
+  connect(_combobox_rendering,              SIGNAL(currentIndexChanged(int)), this, SLOT(rendering()));
+  connect(_combobox_fillmode,               SIGNAL(currentIndexChanged(int)), this, SLOT(fillmode()));
+  
+  connect(_slider_trim_max_bisections,          SIGNAL(valueChanged(int)),    _glwindow, SLOT(trim_max_bisections(int)));
+  connect(_slider_trim_error_tolerance,         SIGNAL(valueChanged(float)),  _glwindow, SLOT(trim_error_tolerance(float)));
+  connect(_slider_tesselation_max_pixel_error,  SIGNAL(valueChanged(float)),  _glwindow, SLOT(tesselation_max_pixel_error(float)));
+  connect(_slider_raycasting_max_iterations,    SIGNAL(valueChanged(int)),    _glwindow, SLOT(raycasting_max_iterations(int)));
+  connect(_slider_raycasting_error_tolerance,   SIGNAL(valueChanged(float)),  _glwindow, SLOT(raycasting_error_tolerance(float)));
 
   _file_menu->addSeparator();
   _file_menu->addAction   (_action_loadfile);
@@ -250,56 +291,105 @@ mainwindow::_create_menus()
   
   _menu = new QDockWidget(this);
 
-  auto widget = new QWidget{ _menu };
+  auto widget = new QWidget { _menu };
   _menu->setWidget(widget);
-  _menu->setFixedWidth(600);
-  _menu->setFixedHeight(1200);
+  _menu->setFixedWidth(800);
+  //_menu->setFixedHeight(1400);
   this->addDockWidget(Qt::RightDockWidgetArea, _menu);
 
-  auto layout = new QGridLayout;
+  auto layout = new QVBoxLayout;
   layout->setAlignment(Qt::AlignTop);
   widget->setLayout(layout);
 
+  _counting_result = new QLabel("", _menu);
+
+  // init buttons
   _button_recompile      = new QPushButton("Recompile Shaders", _menu);
   _button_set_spheremap  = new QPushButton("Choose Spheremap", _menu);
   _button_set_diffusemap = new QPushButton("Choose Diffusemap", _menu);
+
+  // init check boxes
   _checkbox_spheremap    = new QCheckBox("Enable Spheremapping", _menu);
   _checkbox_diffusemap   = new QCheckBox("Enable Diffusemapping", _menu);
-  _checkbox_fxaa         = new QCheckBox("Enable FXAA", _menu);
+  _checkbox_fxaa         = new QCheckBox("Enable screen-space FXAA", _menu);
   _checkbox_vsync        = new QCheckBox("Enable VSync", _menu);
   _checkbox_sao          = new QCheckBox("Enable Ambient Occlusion", _menu);
-  
+  _checkbox_culling      = new QCheckBox("Backface Culling", _menu);
+  _checkbox_counting     = new QCheckBox("Enable Triangle/Fragment Counter", _menu);
+
+  // init combo boxes
   _combobox_rendering = new QComboBox;
   _combobox_antialiasing = new QComboBox;
   _combobox_trimming     = new QComboBox;
+  _combobox_fillmode = new QComboBox;
 
   std::for_each(_rendering_modes.begin(), _rendering_modes.end(), [&](std::map<gpucast::gl::bezierobject::render_mode, std::string>::value_type const& p) { _combobox_rendering->addItem(p.second.c_str()); });
   std::for_each(_antialiasing_modes.begin(), _antialiasing_modes.end(), [&](std::map<glwidget::antialiasing_mode, std::string>::value_type const& p) { _combobox_antialiasing->addItem(p.second.c_str()); });
   std::for_each(_trimming_modes.begin(), _trimming_modes.end(), [&](std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string>::value_type const& p) { _combobox_trimming->addItem(p.second.c_str()); });
+  std::for_each(_fill_modes.begin(), _fill_modes.end(), [&](std::map<gpucast::gl::bezierobject::fill_mode, std::string>::value_type const& p) { _combobox_fillmode->addItem(p.second.c_str()); });
+
+  _combobox_rendering->setCurrentText(tr(_rendering_modes[gpucast::gl::bezierobject::tesselation].c_str()));
+  _combobox_trimming->setCurrentText(tr(_trimming_modes[gpucast::beziersurfaceobject::contour_kd_partition].c_str()));
+
+  _slider_trim_max_bisections = new SlidersGroup(Qt::Horizontal, tr("max. bisections"), 1, 32, this);
+  _slider_trim_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. error tolerance"), 0.0001f, 0.1f,  this);
+  _slider_tesselation_max_pixel_error = new FloatSlidersGroup(Qt::Horizontal,tr("max. pixel error"), 0.5f, 64.0f,  this);
+  _slider_raycasting_max_iterations = new SlidersGroup(Qt::Horizontal,tr("max. newton iterations"),  1, 16, this);
+  _slider_raycasting_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. raycasting error"), 0.0001f, 0.1f,  this);
+
+  // apply default values
+  _slider_trim_max_bisections->setValue(gpucast::gl::bezierobject::default_render_configuration::trimming_max_bisections);
+  _slider_trim_error_tolerance->setValue(gpucast::gl::bezierobject::default_render_configuration::trimming_error_tolerance);
+  _slider_tesselation_max_pixel_error->setValue(gpucast::gl::bezierobject::default_render_configuration::tesselation_max_pixel_error);
+  _slider_raycasting_max_iterations->setValue(gpucast::gl::bezierobject::default_render_configuration::raycasting_max_iterations);
+  _slider_raycasting_error_tolerance->setValue(gpucast::gl::bezierobject::default_render_configuration::raycasting_error_tolerance);
 
   // apply widget into layout
-  unsigned row = 0;
-  layout->addWidget(new QLabel("==========System=========="), row++, 0);
-  layout->addWidget(_button_recompile, row++, 0);
-  layout->addWidget(_checkbox_vsync, row++, 0);
+  QGroupBox* system_desc = new QGroupBox("System", this);
+  QVBoxLayout* system_desc_layout = new QVBoxLayout;
+  system_desc_layout->addWidget(_button_recompile);
+  system_desc_layout->addWidget(_checkbox_vsync);
+  system_desc_layout->addWidget(_checkbox_counting);
+  system_desc_layout->addWidget(_counting_result);
+  system_desc->setLayout(system_desc_layout);
+  layout->addWidget(system_desc);
 
-  layout->addWidget(new QWidget, row++, 0);
-  layout->addWidget(new QLabel("=======Anti-Aliasing======="), row++, 0);
-  layout->addWidget(_checkbox_fxaa, row++, 0);
-  layout->addWidget(_combobox_antialiasing, row++, 0);
+  QGroupBox* aa_desc = new QGroupBox("Anti-Aliasing", this);
+  QVBoxLayout* aa_desc_layout = new QVBoxLayout;
+  aa_desc_layout->addWidget(_checkbox_fxaa);
+  aa_desc_layout->addWidget(new QLabel("Shader-based anti-aliasing"));
+  aa_desc_layout->addWidget(_combobox_antialiasing);
+  aa_desc->setLayout(aa_desc_layout);
+  layout->addWidget(aa_desc);
 
-  layout->addWidget(new QLabel("=======Trimming======="), row++, 0);
-  layout->addWidget(_combobox_trimming, row++, 0);
+  QGroupBox* trim_desc = new QGroupBox("Trimming", this);
+  QVBoxLayout* trim_desc_layout = new QVBoxLayout;
+  trim_desc_layout->addWidget(_combobox_trimming);
+  trim_desc_layout->addWidget(_slider_trim_max_bisections);
+  trim_desc_layout->addWidget(_slider_trim_error_tolerance);
+  trim_desc->setLayout(trim_desc_layout);
+  layout->addWidget(trim_desc);
 
-  layout->addWidget(new QLabel("=========Rendering========="), row++, 0);
-  layout->addWidget(_combobox_rendering, row++, 0);
+  QGroupBox* rendering_desc = new QGroupBox("Rendering", this);
+  QVBoxLayout* rendering_desc_layout = new QVBoxLayout;
+  rendering_desc_layout->addWidget(_combobox_rendering);
+  rendering_desc_layout->addWidget(_combobox_fillmode);
+  rendering_desc_layout->addWidget(_checkbox_culling);
+  rendering_desc_layout->addWidget(_slider_tesselation_max_pixel_error);
+  rendering_desc_layout->addWidget(_slider_raycasting_max_iterations);
+  rendering_desc_layout->addWidget(_slider_raycasting_error_tolerance);
+  rendering_desc->setLayout(rendering_desc_layout);
+  layout->addWidget(rendering_desc);
 
-  layout->addWidget(new QLabel("==========Shading=========="), row++, 0);
-  layout->addWidget(_checkbox_spheremap, row++, 0);
-  layout->addWidget(_button_set_spheremap, row++, 0);
-  layout->addWidget(_checkbox_diffusemap, row++, 0);
-  layout->addWidget(_button_set_diffusemap, row++, 0);
-  layout->addWidget(_checkbox_sao, row++, 0);
+  QGroupBox* shading_desc = new QGroupBox("Shading", this);
+  QVBoxLayout* shading_desc_layout = new QVBoxLayout;
+  shading_desc_layout->addWidget(_checkbox_spheremap);
+  shading_desc_layout->addWidget(_button_set_spheremap);
+  shading_desc_layout->addWidget(_checkbox_diffusemap);
+  shading_desc_layout->addWidget(_button_set_diffusemap);
+  shading_desc_layout->addWidget(_checkbox_sao);
+  shading_desc->setLayout(shading_desc_layout);
+  layout->addWidget(shading_desc);
 }
 
 

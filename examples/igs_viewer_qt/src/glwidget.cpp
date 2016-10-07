@@ -211,6 +211,8 @@ glwidget::paintGL()
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+  gpucast::gl::bezierobject_renderer::instance()->reset_count();
+
   // compute render parameters
   float nearplane = 0.01f * _boundingbox.size().abs();
   float farplane  = 5.0f  * _boundingbox.size().abs();
@@ -238,6 +240,15 @@ glwidget::paintGL()
 
   for (auto const& o : _objects) {
     o->draw();
+  }
+
+  if (gpucast::gl::bezierobject_renderer::instance()->enable_counting()) {
+    unsigned triangles = gpucast::gl::bezierobject_renderer::instance()->get_triangle_count();
+    unsigned fragments = gpucast::gl::bezierobject_renderer::instance()->get_fragment_count();
+    mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
+    if (mainwin) {
+      mainwin->update_count(triangles, fragments);
+    }
   }
 
 #if FBO
@@ -410,10 +421,10 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
         };
         break;
       case 'I':
-        o->max_newton_iterations(o->max_newton_iterations() + 1);
+        o->raycasting_max_iterations(o->raycasting_max_iterations() + 1);
         break;
       case 'i':
-        o->max_newton_iterations(std::max(1U, o->max_newton_iterations() - 1));
+        o->raycasting_max_iterations(std::max(1U, o->raycasting_max_iterations() - 1));
         break;
       case 'n':
         o->enable_raycasting(!o->enable_raycasting());
@@ -479,10 +490,25 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   }
 
   ///////////////////////////////////////////////////////////////////////
+  void glwidget::backface_culling(int i) {
+    for (auto o : _objects) {
+      o->culling(i != 0);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////
   void glwidget::rendermode(gpucast::gl::bezierobject::render_mode mode)
   {
     for (auto o : _objects) {
       o->rendermode(mode);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::fillmode(gpucast::gl::bezierobject::fill_mode mode)
+  {
+    for (auto o : _objects) {
+      o->fillmode(mode);
     }
   }
 
@@ -498,12 +524,59 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
 
   ///////////////////////////////////////////////////////////////////////
   void
-    glwidget::trimming(gpucast::beziersurfaceobject::trim_approach_t t)
+  glwidget::trimming(gpucast::beziersurfaceobject::trim_approach_t t)
   {
     for (auto o : _objects) {
       o->trimming(t);
     }
   }
+
+  ///////////////////////////////////////////////////////////////////////
+  void
+  glwidget::enable_counter(int i) {
+    gpucast::gl::bezierobject_renderer::instance()->enable_counting(i);
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::trim_max_bisections(int i)
+  {
+    for (auto o : _objects) {
+      o->trimming_max_bisections(i);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::trim_error_tolerance(float f)
+  {
+    for (auto o : _objects) {
+      o->trimming_error_tolerance(f);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::tesselation_max_pixel_error(float f)
+  {
+    for (auto o : _objects) {
+      o->tesselation_max_pixel_error(f);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::raycasting_max_iterations(int i)
+  {
+    for (auto o : _objects) {
+      o->raycasting_max_iterations(i);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::raycasting_error_tolerance(float f)
+  {
+    for (auto o : _objects) {
+      o->raycasting_error_tolerance(f);
+    }
+  }
+
 
 
 ///////////////////////////////////////////////////////////////////////

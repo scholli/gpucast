@@ -589,7 +589,6 @@ program::set_shaderstoragebuffer(char const* varname, shaderstoragebuffer& ssbo,
   }
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 void 
 program::set_texture1d(char const* varname, texture1d& t, GLint unit) const

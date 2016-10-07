@@ -317,14 +317,14 @@ public:
         break;
       case 'w':
         switch (o->fillmode()) {
-        case gpucast::gl::bezierobject::FILL_SOLID : 
-          o->fillmode(gpucast::gl::bezierobject::FILL_WIREFRAME); 
+        case gpucast::gl::bezierobject::solid : 
+          o->fillmode(gpucast::gl::bezierobject::wireframe); 
           break;
-        case gpucast::gl::bezierobject::FILL_WIREFRAME : 
-          o->fillmode(gpucast::gl::bezierobject::FILL_POINT);
+        case gpucast::gl::bezierobject::wireframe:
+          o->fillmode(gpucast::gl::bezierobject::points);
           break;
-        case gpucast::gl::bezierobject::FILL_POINT : 
-          o->fillmode(gpucast::gl::bezierobject::FILL_SOLID);
+        case gpucast::gl::bezierobject::points : 
+          o->fillmode(gpucast::gl::bezierobject::solid);
           break;
         }
         std::cout << "Recompiling shaders..." << std::endl;
@@ -358,15 +358,19 @@ public:
         }
         break;
       case 'i':
-        o->max_newton_iterations(std::max(1U, o->max_newton_iterations() - 1));
-        std::cout << "Newton iterations set to " << o->max_newton_iterations() << std::endl;
+        o->raycasting_max_iterations(std::max(1U, o->raycasting_max_iterations() - 1));
+        std::cout << "Newton iterations set to " << o->raycasting_max_iterations() << std::endl;
         break;
       case 'I':
-        o->max_newton_iterations(o->max_newton_iterations() + 1);
-        std::cout << "Newton iterations set to " << o->max_newton_iterations() << std::endl;
+        o->raycasting_max_iterations(o->raycasting_max_iterations() + 1);
+        std::cout << "Newton iterations set to " << o->raycasting_max_iterations() << std::endl;
         break;
       case 'r':
         o->rendermode(o->rendermode() == bezierobject::raycasting ? bezierobject::tesselation : bezierobject::raycasting);
+        break;
+      case 'n':
+        o->enable_raycasting(!o->enable_raycasting());
+        std::cout << "Enable_raycasting set to " << o->enable_raycasting() << std::endl;
         break;
       case 'o':
         _show_obbs = !_show_obbs;

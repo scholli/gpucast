@@ -25,6 +25,7 @@ out vec2 geometry_texcoords;
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////                                                                      
 #include "./resources/glsl/common/camera_uniforms.glsl"
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,7 +59,7 @@ void main()
     // write built-in input for material
     ///////////////////////////////////////////////////////
     geometry_world_position   = (gpucast_model_matrix * tePosition[i]).xyz;
-    geometry_normal           = teNormal[i].xyz;
+    geometry_normal           = float(increment) * teNormal[i].xyz; // invert normal if necessary
     geometry_texcoords        = teTessCoord[i];
     ///////////////////////////////////////////////////////
                       
@@ -66,5 +67,9 @@ void main()
 
     EmitVertex();                                                                               
   }                                                                                               
-  EndPrimitive();                                                                                         
+  EndPrimitive();  
+  
+  if ( gpucast_enable_counting != 0) {
+    atomicCounterIncrement(triangle_counter);
+  }                                                                                       
 }       

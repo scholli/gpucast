@@ -20,19 +20,16 @@ flat out vec2 tcTessCoord[];
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////                                                             
 uniform samplerBuffer gpcuast_attribute_buffer;    
-    
-#define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
-#define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
-
-#include "./resources/glsl/common/obb_area.glsl"   
-#include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"                          
+                 
 #include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
 #include "./resources/glsl/common/camera_uniforms.glsl"   
-#include "./resources/glsl/common/conversion.glsl"   
             
 ///////////////////////////////////////////////////////////////////////////////
 // functions
-///////////////////////////////////////////////////////////////////////////////                        
+///////////////////////////////////////////////////////////////////////////////  
+#include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"  
+#include "./resources/glsl/common/conversion.glsl"        
+#include "./resources/glsl/common/obb_area.glsl"                   
 #include "./resources/glsl/math/horner_surface.glsl.frag"
 #include "./resources/glsl/math/to_screen_space.glsl"
 #include "./resources/glsl/trimmed_surface/edge_length.glsl"

@@ -30,9 +30,7 @@ layout (xfb_offset=24) out vec3 transform_final_tesselation;
 ///////////////////////////////////////////////////////////////////////////////
 uniform samplerBuffer gpucast_parametric_buffer;       
 
-#define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
-#define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
-
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
 #include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"                          
 #include "./resources/glsl/common/obb_area.glsl"  
 

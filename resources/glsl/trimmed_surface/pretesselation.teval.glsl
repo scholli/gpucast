@@ -24,14 +24,13 @@ out vec3 eval_final_tesselation;
 uniform samplerBuffer parameter_texture;    
 uniform samplerBuffer attribute_texture;              
 
-#define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
-
-#include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"                          
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl" 
 #include "./resources/glsl/common/camera_uniforms.glsl"
 
 ///////////////////////////////////////////////////////////////////////////////
 // functions
 ///////////////////////////////////////////////////////////////////////////////
+#include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"         
 #include "./resources/glsl/math/horner_surface.glsl.frag"  
 #include "./resources/glsl/common/conversion.glsl"
 

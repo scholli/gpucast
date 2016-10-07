@@ -29,17 +29,30 @@ uniform samplerBuffer gpucast_obb_buffer;
 
 #include "./resources/glsl/common/camera_uniforms.glsl"
 #include "./resources/glsl/trimming/trimming_uniforms.glsl"
-
-#define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
-#define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
-
-#include "./resources/glsl/common/obb_area.glsl"   
-#include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"
 #include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
+
+///////////////////////////////////////////////////////////////////////////////
+// shading and material
+///////////////////////////////////////////////////////////////////////////////
+uniform sampler2D   spheremap;
+uniform sampler2D   diffusemap;
+
+uniform int diffusemapping;
+uniform int spheremapping;
+
+uniform float shininess;
+uniform float opacity;
+uniform vec3 mat_ambient;
+uniform vec3 mat_diffuse;
+uniform vec3 mat_specular;
+
+#include "./resources/glsl/trimmed_surface/shade_phong_fresnel.glsl.frag"
 
 ///////////////////////////////////////////////////////////////////////////////
 // methods
 ///////////////////////////////////////////////////////////////////////////////    
+#include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"
+#include "./resources/glsl/common/obb_area.glsl"   
 #include "./resources/glsl/math/horner_curve.glsl"
 #include "./resources/glsl/math/horner_surface_derivatives.glsl.frag"
 #include "./resources/glsl/trimming/binary_search.glsl"
@@ -48,20 +61,6 @@ uniform samplerBuffer gpucast_obb_buffer;
 #include "./resources/glsl/trimming/trimming_contour_kd.glsl"
 #include "./resources/glsl/trimming/trimming_double_binary.glsl"
 #include "./resources/glsl/trimming/trimming_loop_lists.glsl"
-
-
-// normal is assumed to be normalized already
-vec3 force_front_facing_normal(vec3 normal) 
-{
-  vec4 C = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
-  vec3 V = normalize(C.xyz - geometry_world_position);
-  vec3 N = normal.xyz;
-
-  if (dot(V, N) < 0.0) {
-    return normal *= -1.0;
-  } 
-  return normal;
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -97,7 +96,7 @@ void main()
                                           trim_index, 
                                           trim_type, 
                                           tmp,
-                                          gpucast_trim_error_tolerance, 
+                                          gpucast_trimming_error_tolerance, 
                                           gpucast_trimming_max_bisections );
   }
   
@@ -112,7 +111,7 @@ void main()
                                                  trim_index,
                                                  trim_type, 
                                                  tmp,
-                                                 gpucast_trim_error_tolerance, 
+                                                 gpucast_trimming_error_tolerance, 
                                                  gpucast_trimming_max_bisections );
   }
 
@@ -127,7 +126,7 @@ void main()
                                      trim_index,
                                      trim_type,
                                      tmp,
-                                     gpucast_trim_error_tolerance, 
+                                     gpucast_trimming_error_tolerance, 
                                      gpucast_trimming_max_bisections);
   }
 
@@ -140,10 +139,22 @@ void main()
     discard;
   }
 
-  vec4 viewspace_normal = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
-  //out_color = vec4(force_front_facing_normal(normalize(viewspace_normal.xyz)), 1.0);
-  out_color = vec4(float(trim_index)/800);
-  out_color = vec4(uv_nurbs/100, 1.0, 1.0);
+  if ( !is_trimmed && gpucast_enable_counting != 0) {
+    atomicCounterIncrement(fragment_counter);
+  }
 
-  //gl_FragDepth = gl_FragCoord.z;
+  vec4 normal_world     = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
+  vec4 viewer           = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
+
+  out_color = shade_phong_fresnel(vec4(geometry_world_position, 1.0), 
+                                  normalize(normal_world.xyz), 
+                                  normalize(viewer.xyz),
+                                  vec4(0.0, 0.0, 10000.0, 1.0),
+                                  mat_ambient, mat_diffuse, mat_specular,
+                                  shininess,
+                                  opacity,
+                                  bool(spheremapping),
+                                  spheremap,
+                                  bool(diffusemapping),
+                                  diffusemap);
 }

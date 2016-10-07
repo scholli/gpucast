@@ -139,7 +139,11 @@ texture2d::load ( std::string const& in_image_path )
     default : BOOST_LOG_TRIVIAL(error) << "texture2d::load(): " << " unknown image format in file: " << in_image_path << std::endl; return false;
   }
  
-  teximage(0, image_internal_format, image_width, image_height, 0, image_format, image_value_type, static_cast<void*>(in_image->accessPixels()));
+  if (in_image->accessPixels()) {
+    teximage(0, image_internal_format, image_width, image_height, 0, image_format, image_value_type, static_cast<void*>(in_image->accessPixels()));
+  } else {
+    BOOST_LOG_TRIVIAL(error) << "texture2d::load(): " << " failed to access pixel data: " << in_image_path << std::endl;
+  }
 
   return true;
 }
@@ -199,7 +203,7 @@ texture2d::texsubimage( GLint    level,
 {
   assert ( xoffset + width <= _width && yoffset + height <= _height );
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-  glTextureSubImage2DEXT( _id, target(), level, xoffset, yoffset, width, height, format, type, pixels );
+  glTextureSubImage2D( _id, level, xoffset, yoffset, width, height, format, type, pixels );
 #else
   bind();
   glTexSubImage2D ( target(), level, xoffset, yoffset, width, height, format, type, pixels );
@@ -238,7 +242,7 @@ texture2d::bind ( GLint texunit )
 void                
 texture2d::bind_as_image ( GLuint imageunit, GLint level, GLboolean layered, GLint layer, GLenum access, GLint format )
 {
-  glBindImageTextureEXT(imageunit, _id, level, layered, layer, access, format);
+  glBindImageTexture(imageunit, _id, level, layered, layer, access, format);
 }
 
 
@@ -265,7 +269,7 @@ void
 texture2d::set_parameteri( GLenum pname, GLint value )
 {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-  glTextureParameteriEXT(_id, target(), pname, value);
+  glTextureParameteri(_id, pname, value);
 #else
   bind();
   glTexParameteri(target(), pname, value);
@@ -278,7 +282,7 @@ void
 texture2d::set_parameterf( GLenum pname, GLfloat value )
 {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-  glTextureParameterfEXT(_id, target(), pname, value);
+  glTextureParameterf(_id, pname, value);
 #else
   bind();
   glTexParameterf(target(), pname, value);
@@ -291,7 +295,7 @@ void
 texture2d::set_parameterfv ( GLenum pname, GLfloat const* value )
 {
 #if GPUCAST_GL_DIRECT_STATE_ACCESS
-  glTextureParameterfvEXT(_id, target(), pname, value);
+  glTextureParameterfv(_id, pname, value);
 #else
   bind();
   glTexParameterfv(target(), pname, value);

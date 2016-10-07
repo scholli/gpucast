@@ -1,5 +1,9 @@
-#ifndef GPUCAST_GLSL_RAYCASTING_PARAMETRIZATION
-#define GPUCAST_GLSL_RAYCASTING_PARAMETRIZATION
+//#ifndef GPUCAST_GLSL_RAYCASTING_PARAMETRIZATION
+//#define GPUCAST_GLSL_RAYCASTING_PARAMETRIZATION
+
+#define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
+#define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
+#define GPUCAST_ATOMIC_COUNTER_BINDING 3
 
 // tesselation
 uniform float gpucast_max_pre_tesselation;
@@ -22,7 +26,12 @@ uniform int   gpucast_raycasting_iterations;
 // 3 - contour kd partition
 // 4 - loop list partition
 uniform int   gpucast_trimming_method;
-uniform float gpucast_trim_error_tolerance;
+uniform float gpucast_trimming_error_tolerance;
 uniform int   gpucast_trimming_max_bisections;
 
-#endif
+uniform int   gpucast_enable_counting;
+
+layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 0) uniform atomic_uint triangle_counter;
+layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 4) uniform atomic_uint fragment_counter;
+
+//#endif

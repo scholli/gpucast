@@ -37,7 +37,16 @@ namespace gpucast { namespace gl {
 
 class GPUCAST_GL bezierobject 
 {
-public : 
+public:
+
+  struct GPUCAST_GL default_render_configuration {
+    static const unsigned raycasting_max_iterations = 6;
+    static const float    raycasting_error_tolerance;     // default set to 0.001f
+    static const unsigned trimming_max_bisections = 16;
+    static const float    trimming_error_tolerance;       // default set to 0.001f
+    static const float    tesselation_max_pixel_error;    // default set to 4.0 pixel
+    static const float    tesselation_max_pretesselation; // default set to 64.0f
+  };
 
   enum anti_aliasing_mode {
     no_anti_aliasing,
@@ -50,15 +59,16 @@ public :
 
   enum fill_mode
   {
-    FILL_SOLID = 0x00,
-    FILL_WIREFRAME,
-    FILL_POINT,
-    FILL_MODE_COUNT
+    solid = 0x00,
+    wireframe,
+    points
   }; 
 
   enum render_mode {
-    raycasting = 0x00,
-    tesselation
+    raycasting    = 0x00,
+    tesselation   = 0x01,
+    shadow        = 0x02,
+    shadow_lowres = 0x03
   };
 
   bezierobject (gpucast::beziersurfaceobject const&);
@@ -72,14 +82,23 @@ public :
   void                draw();
 
   // configuration
-  void                max_newton_iterations ( unsigned n );
-  unsigned            max_newton_iterations() const;
+  void                raycasting_max_iterations ( unsigned n );
+  unsigned            raycasting_max_iterations() const;
 
-  void                max_trimming_bisections(unsigned n);
-  unsigned            max_trimming_bisections() const;
+  void                trimming_max_bisections(unsigned n);
+  unsigned            trimming_max_bisections() const;
 
-  void                newton_epsilon ( float epsilon );
-  float               newton_epsilon() const;
+  void                raycasting_error_tolerance ( float epsilon );
+  float               raycasting_error_tolerance() const;
+
+  void                trimming_error_tolerance(float epsilon);
+  float               trimming_error_tolerance() const;
+
+  void                tesselation_max_pixel_error(float epsilon);
+  float               tesselation_max_pixel_error() const;
+
+  void                tesselation_max_pretesselation(float epsilon);
+  float               tesselation_max_pretesselation() const;
 
   void                culling ( bool enable );
   bool                culling () const;
@@ -115,11 +134,15 @@ private :
   void _upload_tesselation_buffers();
 
   // ray casting parameters
-  unsigned                              _iterations    = 6;
-  unsigned                              _max_trimming_bisections = 16;
-  float                                 _epsilon       = 0.001f;
-  bool                                  _culling       = true;
-  bool                                  _raycasting    = true;
+  unsigned                              _raycasting_max_iterations      = default_render_configuration::raycasting_max_iterations;
+  unsigned                              _trimming_max_bisections        = default_render_configuration::trimming_max_bisections;
+  float                                 _raycasting_error_tolerance     = default_render_configuration::raycasting_error_tolerance;
+  float                                 _trimming_error_tolerance       = default_render_configuration::trimming_error_tolerance;
+  float                                 _tesselation_max_pixel_error    = default_render_configuration::tesselation_max_pixel_error;
+  float                                 _tesselation_max_pretesselation = default_render_configuration::tesselation_max_pretesselation;
+
+  bool                                  _culling                 = false;
+  bool                                  _raycasting              = true;
 
   render_mode                           _rendermode    = tesselation;
   anti_aliasing_mode                    _antialiasing  = no_anti_aliasing;
@@ -147,7 +170,7 @@ private :
              
 
   // gpu ressources : adaptive tesselation 
-  fill_mode                             _fill_mode = FILL_SOLID;
+  fill_mode                             _fill_mode = solid;
   int                                   _tesselation_vertex_count;
 
   gpucast::gl::vertexarrayobject        _tesselation_vertex_array;
@@ -195,6 +218,7 @@ public: // enums, typedefs
   static const unsigned MAX_XFB_BUFFER_SIZE_IN_BYTES = 1024000000; // reserve GB transform feedback buffer
   static const unsigned GPUCAST_HULLVERTEXMAP_SSBO_BINDING = 1;
   static const unsigned GPUCAST_ATTRIBUTE_SSBO_BINDING = 2;
+  static const unsigned GPUCAST_ATOMIC_COUNTER_BINDING = 3;
 public: // c'tor / d'tor
 
   bezierobject_renderer();
@@ -227,6 +251,13 @@ public: // methods
   void           end_program(std::shared_ptr<program> const& p);             
   void           apply_uniforms(std::shared_ptr<program> const& p);
 
+  void           enable_counting(bool);
+  bool           enable_counting() const;
+
+  unsigned       get_fragment_count() const;
+  unsigned       get_triangle_count() const;
+  void           reset_count() const;
+
 private : // methods
 
   void _init_raycasting_program();
@@ -240,7 +271,8 @@ private: // attributes
 
   float                         _nearplane;
   float                         _farplane;
-                              
+  bool                          _enable_count = false;
+
   gpucast::math::vec2i          _resolution;
 
   gpucast::math::matrix4f       _modelmatrix;
@@ -270,6 +302,7 @@ private: // attributes
   std::shared_ptr<program>      _pretesselation_program;
   std::shared_ptr<program>      _tesselation_program;
 
+  std::shared_ptr<atomicbuffer> _counter;
   std::shared_ptr<texture2d>    _spheremap;
   std::shared_ptr<texture2d>    _diffusemap;
   std::shared_ptr<texture2d>    _prefilter_texture;
