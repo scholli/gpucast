@@ -96,7 +96,6 @@ void beziersurfaceobject::trim_approach(beziersurfaceobject::trim_approach_t app
   _init_adaptive_tesselation(approach);
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 void
 beziersurfaceobject::print(std::ostream& os) const
@@ -112,13 +111,16 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
                           unsigned subdivision_level_v, 
                           unsigned fast_trim_texture_resolution) 
 {
-  _subdivision_u = subdivision_level_u;
-  _subdivision_v = subdivision_level_v;
-
+  // clear old buffers
   _clearbuffer();
 
-  for (surface_ptr const& surface : _surfaces) 
-  {
+  // apply new parameters
+  _subdivision_u                = subdivision_level_u;
+  _subdivision_v                = subdivision_level_v;
+  _preclassification_resolution = fast_trim_texture_resolution;
+
+  // initialize
+  for (surface_ptr const& surface : _surfaces) {
     _add(surface, fast_trim_texture_resolution);
   }
 
@@ -379,6 +381,12 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   // preprocess surface if it was modified or not initialized
   surface->preprocess(_subdivision_u, _subdivision_v);
 
+  // discard if surface can be trimmed using the current pre-trimming resolution
+#if 1
+  if (surface->is_pretrimmable(fast_trim_texture_resolution)) 
+    return 0;
+#endif
+
   // add control point data into buffer
   std::size_t controlpointdata_index  = _add (surface->points());
   _surface_vertex_base_ids.insert({ surface, controlpointdata_index });
@@ -575,87 +583,88 @@ void beziersurfaceobject::_init_adaptive_tesselation(trim_approach_t trimtype)
   //  serialize patch data
   for (auto it = begin(); it != end(); ++it, ++patch_id)
   {
-    auto _p0 = (*it)->points().begin();
-    _tesselation_data.domain_buffer.push_back(math::vec4f((*_p0)[0], (*_p0)[1], (*_p0)[2], uint_to_float(patch_id)));
-    _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 0.0f));
+    // only add patches that cannot be trimmed
+      auto _p0 = (*it)->points().begin();
+      _tesselation_data.domain_buffer.push_back(math::vec4f((*_p0)[0], (*_p0)[1], (*_p0)[2], uint_to_float(patch_id)));
+      _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 0.0f));
 
-    auto _p1 = _p0 + (*it)->points().width() - 1;
-    _tesselation_data.domain_buffer.push_back(math::vec4f((*_p1)[0], (*_p1)[1], (*_p1)[2], uint_to_float(patch_id)));
-    _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 0.0f, 0.0f, 0.0f));
+      auto _p1 = _p0 + (*it)->points().width() - 1;
+      _tesselation_data.domain_buffer.push_back(math::vec4f((*_p1)[0], (*_p1)[1], (*_p1)[2], uint_to_float(patch_id)));
+      _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 0.0f, 0.0f, 0.0f));
 
-    auto _p2 = (*it)->points().end() - (*it)->points().width();
-    _tesselation_data.domain_buffer.push_back(math::vec4f((*_p2)[0], (*_p2)[1], (*_p2)[2], uint_to_float(patch_id)));
-    _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 1.0f, 0.0f, 0.0f));
+      auto _p2 = (*it)->points().end() - (*it)->points().width();
+      _tesselation_data.domain_buffer.push_back(math::vec4f((*_p2)[0], (*_p2)[1], (*_p2)[2], uint_to_float(patch_id)));
+      _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 1.0f, 0.0f, 0.0f));
 
-    auto _p3 = (*it)->points().end() - 1;
-    _tesselation_data.domain_buffer.push_back(math::vec4f((*_p3)[0], (*_p3)[1], (*_p3)[2], uint_to_float(patch_id)));
-    _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 1.0f, 0.0f, 0.0f));
+      auto _p3 = (*it)->points().end() - 1;
+      _tesselation_data.domain_buffer.push_back(math::vec4f((*_p3)[0], (*_p3)[1], (*_p3)[2], uint_to_float(patch_id)));
+      _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 1.0f, 0.0f, 0.0f));
 
-    auto _v01 = (_p1->as_euclidian()) - (_p0->as_euclidian());
-    auto _v13 = (_p3->as_euclidian()) - (_p1->as_euclidian());
-    auto _v23 = (_p3->as_euclidian()) - (_p2->as_euclidian());
-    auto _v02 = (_p2->as_euclidian()) - (_p0->as_euclidian());
+      auto _v01 = (_p1->as_euclidian()) - (_p0->as_euclidian());
+      auto _v13 = (_p3->as_euclidian()) - (_p1->as_euclidian());
+      auto _v23 = (_p3->as_euclidian()) - (_p2->as_euclidian());
+      auto _v02 = (_p2->as_euclidian()) - (_p0->as_euclidian());
 
-    math::vec4f edge_dist(0.0, 0.0, 0.0, 0.0);
+      math::vec4f edge_dist(0.0, 0.0, 0.0, 0.0);
 
-    _tesselation_data.index_buffer.push_back(patch_id * 4 + 0);
-    _tesselation_data.index_buffer.push_back(patch_id * 4 + 1);
-    _tesselation_data.index_buffer.push_back(patch_id * 4 + 3);
-    _tesselation_data.index_buffer.push_back(patch_id * 4 + 2);
+      _tesselation_data.index_buffer.push_back(patch_id * 4 + 0);
+      _tesselation_data.index_buffer.push_back(patch_id * 4 + 1);
+      _tesselation_data.index_buffer.push_back(patch_id * 4 + 3);
+      _tesselation_data.index_buffer.push_back(patch_id * 4 + 2);
 
-    // gather per patch data
-    patch_tesselation_data p;
-    p.surface_offset = _tesselation_data.control_point_buffer.size();
-    p.order_u = (*it)->order_u();
-    p.order_v = (*it)->order_v();
-    
-    p.trim_type = (*it)->trimtype();
+      // gather per patch data
+      patch_tesselation_data p;
+      p.surface_offset = _tesselation_data.control_point_buffer.size();
+      p.order_u = (*it)->order_u();
+      p.order_v = (*it)->order_v();
 
-    switch (trimtype) {
-      case no_trimming: 
-        p.trim_id = 0; 
+      p.trim_type = (*it)->trimtype();
+
+      switch (trimtype) {
+      case no_trimming:
+        p.trim_id = 0;
         break;
-      case curve_binary_partition: 
+      case curve_binary_partition:
         p.trim_id = _domain_index_map[(*it)->domain()].double_binary_index;
         break;
-      case contour_binary_partition : 
+      case contour_binary_partition:
         p.trim_id = _domain_index_map[(*it)->domain()].contour_binary_index;
         break;
-      case contour_kd_partition : 
+      case contour_kd_partition:
         p.trim_id = _domain_index_map[(*it)->domain()].contour_kd_index;
         break;
-      case contour_list : 
+      case contour_list:
         p.trim_id = _domain_index_map[(*it)->domain()].loop_list_index;
         break;
-    }
+      }
 
-    auto obb_id = serialized_obb_base_indices().find((*it));
-    if (obb_id != serialized_obb_base_indices().end()) {
-      p.obb_id = obb_id->second;
-    }
+      auto obb_id = serialized_obb_base_indices().find((*it));
+      if (obb_id != serialized_obb_base_indices().end()) {
+        p.obb_id = obb_id->second;
+      }
 
-    p.nurbs_domain = math::vec4f((*it)->bezierdomain().min[0],
-      (*it)->bezierdomain().min[1],
-      (*it)->bezierdomain().max[0],
-      (*it)->bezierdomain().max[1]);
-    p.bbox_min = math::vec4f((*it)->bbox().min[0],
-      (*it)->bbox().min[1],
-      (*it)->bbox().min[2],
-      (float) 0.0f);
-    p.bbox_max = math::vec4f((*it)->bbox().max[0],
-      (*it)->bbox().max[1],
-      (*it)->bbox().max[2],
-      (float) 0.0f);
-    p.distance = math::vec4f(std::fabs(edge_dist[0]), std::fabs(edge_dist[1]), std::fabs(edge_dist[2]), std::fabs(edge_dist[3]));
+      p.nurbs_domain = math::vec4f((*it)->bezierdomain().min[0],
+        (*it)->bezierdomain().min[1],
+        (*it)->bezierdomain().max[0],
+        (*it)->bezierdomain().max[1]);
+      p.bbox_min = math::vec4f((*it)->bbox().min[0],
+        (*it)->bbox().min[1],
+        (*it)->bbox().min[2],
+        (float) 0.0f);
+      p.bbox_max = math::vec4f((*it)->bbox().max[0],
+        (*it)->bbox().max[1],
+        (*it)->bbox().max[2],
+        (float) 0.0f);
+      p.distance = math::vec4f(std::fabs(edge_dist[0]), std::fabs(edge_dist[1]), std::fabs(edge_dist[2]), std::fabs(edge_dist[3]));
 
-    _tesselation_data.patch_data_buffer.push_back(p);
+      _tesselation_data.patch_data_buffer.push_back(p);
 
-    // copy patch control points
-    int current_size = _tesselation_data.control_point_buffer.size();
-    _tesselation_data.control_point_buffer.resize(current_size + (*it)->points().size());
+      // copy patch control points
+      int current_size = _tesselation_data.control_point_buffer.size();
+      _tesselation_data.control_point_buffer.resize(current_size + (*it)->points().size());
 
-    auto serialize_homogenous_points = [](gpucast::math::point3d const& p) { auto ph = p.as_homogenous(); return math::vec4f(ph[0], ph[1], ph[2], ph[3]); };
-    std::transform((*it)->points().begin(), (*it)->points().end(), _tesselation_data.control_point_buffer.begin() + current_size, serialize_homogenous_points);
+      auto serialize_homogenous_points = [](gpucast::math::point3d const& p) { auto ph = p.as_homogenous(); return math::vec4f(ph[0], ph[1], ph[2], ph[3]); };
+      std::transform((*it)->points().begin(), (*it)->points().end(), _tesselation_data.control_point_buffer.begin() + current_size, serialize_homogenous_points);
   }
 
 }

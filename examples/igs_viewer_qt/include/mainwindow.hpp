@@ -30,6 +30,21 @@
 #include <slidergroup.hpp>
 
 
+template <typename map_type>
+typename map_type::key_type find_by_second(map_type const& map,
+                                             typename map_type::mapped_type const& search_value,
+                                             typename map_type::key_type default_value)
+{
+  auto result = default_value;
+
+  for (auto m : map) {
+    if (m.second == search_value) {
+      result = m.first;
+    }
+  }
+  return result;
+}
+
 class mainwindow : public QMainWindow
 {
   Q_OBJECT
@@ -57,6 +72,7 @@ private slots: // slot events
   void fillmode();
   void trimming();
   void antialiasing();
+  void preclassification();
 
 private: // methods
 
@@ -74,6 +90,7 @@ private: // attributes
   std::map<gpucast::gl::bezierobject::fill_mode, std::string>          _fill_modes;
   std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string> _trimming_modes;
   std::map<glwidget::antialiasing_mode, std::string>                   _antialiasing_modes;
+  std::map<unsigned, std::string>                                      _preclassification_modes;
 
   // menubar and menubar actions
   QMenu*                _file_menu;
@@ -92,6 +109,7 @@ private: // attributes
   QCheckBox*            _checkbox_counting;
 
   QLabel*               _counting_result;
+  QLabel*               _fps_result;
 
   SlidersGroup*         _slider_trim_max_bisections;
   FloatSlidersGroup*    _slider_trim_error_tolerance;
@@ -103,6 +121,7 @@ private: // attributes
   QComboBox*            _combobox_fillmode;
   QComboBox*            _combobox_antialiasing;
   QComboBox*            _combobox_trimming;
+  QComboBox*            _combobox_preclassification;
 
   QPushButton*          _button_recompile;
   QPushButton*          _button_set_diffusemap;

@@ -59,6 +59,12 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::init(unsigned subdiv_u, unsigned subdiv_v, unsigned preclass_resolution)
+    {
+      _object.init(subdiv_u, subdiv_v, preclass_resolution);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     void bezierobject::draw()
     {
       switch (_rendermode) 

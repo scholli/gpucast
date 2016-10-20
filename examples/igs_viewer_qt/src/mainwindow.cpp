@@ -68,6 +68,16 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_list, "Contour loop-list"));
 
   /////////////////////////////////////
+  // preclassification modes
+  /////////////////////////////////////
+  _preclassification_modes.insert(std::make_pair(4, "Preclassification 4x4"));
+  _preclassification_modes.insert(std::make_pair(8, "Preclassification 8x8"));
+  _preclassification_modes.insert(std::make_pair(16, "Preclassification 16x16"));
+  _preclassification_modes.insert(std::make_pair(32, "Preclassification 32x32"));
+  _preclassification_modes.insert(std::make_pair(64, "Preclassification 64x64"));
+  _preclassification_modes.insert(std::make_pair(128, "Preclassification 128x128"));
+
+  /////////////////////////////////////
   // create GUI
   /////////////////////////////////////
   _create_widgets( argc, argv );
@@ -117,14 +127,16 @@ mainwindow::update_interface ( )
 void 
 mainwindow::show_fps ( double cputime, double gputime, double postprocess )
 {
-  QString message = "fps : ";
-  message.append(QString("%1").arg(_glwindow->width()));
+  QString message = "Fps=";
+  message.append(QString("%1").arg(1000.0f/gputime));
+  message.append(tr(" Hz"));
+  message.append(QString("\nSize : %1").arg(_glwindow->width()));
   message.append("x");
   message.append(QString("%1").arg(_glwindow->height()));
-  message.append(QString(" ||| CPU=%1 ms ").arg(cputime));
-  message.append(QString(" ||| Draw=%1 ms ").arg(gputime));
-  message.append(QString(" ||| Postprocess=%1 ms ").arg(postprocess));
-  statusBar()->showMessage(message);
+  message.append(QString("\nCPU=%1 ms ").arg(cputime));
+  message.append(QString("\nDraw=%1 ms ").arg(gputime));
+  message.append(QString("\nPostDraw=%1 ms ").arg(postprocess));
+  _fps_result->setText(message);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -164,60 +176,42 @@ mainwindow::addfile()
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::trimming()
 {
-  std::string str = _combobox_trimming->currentText().toStdString();
-  gpucast::beziersurfaceobject::trim_approach_t trimapproach = gpucast::beziersurfaceobject::no_trimming;
-
-  for (auto mode : _trimming_modes)
-  {
-    if (mode.second == str) 
-      trimapproach = mode.first;
-  }
-
-  _glwindow->trimming(trimapproach);
+  _glwindow->trimming(find_by_second(_trimming_modes,
+    _combobox_trimming->currentText().toStdString(),
+    gpucast::beziersurfaceobject::no_trimming));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::antialiasing()
 {
-  std::string str = _combobox_trimming->currentText().toStdString();
-  glwidget::antialiasing_mode aa_mode = glwidget::disabled;
-
-  for (auto mode : _antialiasing_modes)
-  {
-    if (mode.second == str)
-      aa_mode = mode.first;
-  }
-
-  _glwindow->antialiasing(aa_mode);
+  _glwindow->antialiasing(find_by_second(_antialiasing_modes,
+    _combobox_antialiasing->currentText().toStdString(), 
+    glwidget::disabled));
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::fillmode()
 {
-  std::string str = _combobox_fillmode->currentText().toStdString();
-  gpucast::gl::bezierobject::fill_mode mode = gpucast::gl::bezierobject::solid;
-
-  for (auto m : _fill_modes)
-  {
-    if (m.second == str)
-      mode = m.first;
-  }
-
-  _glwindow->fillmode(mode);
+  _glwindow->fillmode(find_by_second(_fill_modes,
+    _combobox_fillmode->currentText().toStdString(),
+    gpucast::gl::bezierobject::solid));
 }
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::preclassification()
+{
+  _glwindow->preclassification(find_by_second(_preclassification_modes,
+    _combobox_preclassification->currentText().toStdString(),
+    gpucast::beziersurfaceobject::trim_preclassification_default_resolution));
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::rendering()
 {
-  std::string str = _combobox_rendering->currentText().toStdString();
-  gpucast::gl::bezierobject::render_mode mode = gpucast::gl::bezierobject::raycasting;
-
-  for (auto m : _rendering_modes) {
-    if (m.second == str) {
-      mode = m.first;
-    }
-  }
-
-  _glwindow->rendermode(mode);
+  _glwindow->rendermode(find_by_second(_rendering_modes,
+    _combobox_rendering->currentText().toStdString(), 
+    gpucast::gl::bezierobject::raycasting));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -249,6 +243,7 @@ mainwindow::_create_actions()
   connect(_combobox_trimming,               SIGNAL(currentIndexChanged(int)), this, SLOT(trimming()));
   connect(_combobox_rendering,              SIGNAL(currentIndexChanged(int)), this, SLOT(rendering()));
   connect(_combobox_fillmode,               SIGNAL(currentIndexChanged(int)), this, SLOT(fillmode()));
+  connect(_combobox_preclassification,      SIGNAL(currentIndexChanged(int)), this, SLOT(preclassification()));
   
   connect(_slider_trim_max_bisections,          SIGNAL(valueChanged(int)),    _glwindow, SLOT(trim_max_bisections(int)));
   connect(_slider_trim_error_tolerance,         SIGNAL(valueChanged(float)),  _glwindow, SLOT(trim_error_tolerance(float)));
@@ -302,6 +297,7 @@ mainwindow::_create_menus()
   widget->setLayout(layout);
 
   _counting_result = new QLabel("", _menu);
+  _fps_result = new QLabel("", _menu);
 
   // init buttons
   _button_recompile      = new QPushButton("Recompile Shaders", _menu);
@@ -322,14 +318,17 @@ mainwindow::_create_menus()
   _combobox_antialiasing = new QComboBox;
   _combobox_trimming     = new QComboBox;
   _combobox_fillmode = new QComboBox;
+  _combobox_preclassification = new QComboBox;
 
   std::for_each(_rendering_modes.begin(), _rendering_modes.end(), [&](std::map<gpucast::gl::bezierobject::render_mode, std::string>::value_type const& p) { _combobox_rendering->addItem(p.second.c_str()); });
   std::for_each(_antialiasing_modes.begin(), _antialiasing_modes.end(), [&](std::map<glwidget::antialiasing_mode, std::string>::value_type const& p) { _combobox_antialiasing->addItem(p.second.c_str()); });
   std::for_each(_trimming_modes.begin(), _trimming_modes.end(), [&](std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string>::value_type const& p) { _combobox_trimming->addItem(p.second.c_str()); });
   std::for_each(_fill_modes.begin(), _fill_modes.end(), [&](std::map<gpucast::gl::bezierobject::fill_mode, std::string>::value_type const& p) { _combobox_fillmode->addItem(p.second.c_str()); });
+  std::for_each(_preclassification_modes.begin(), _preclassification_modes.end(), [&](std::map<unsigned, std::string>::value_type const& p) { _combobox_preclassification->addItem(p.second.c_str()); });
 
   _combobox_rendering->setCurrentText(tr(_rendering_modes[gpucast::gl::bezierobject::tesselation].c_str()));
   _combobox_trimming->setCurrentText(tr(_trimming_modes[gpucast::beziersurfaceobject::contour_kd_partition].c_str()));
+  _combobox_preclassification->setCurrentText(tr(_preclassification_modes[16].c_str()));
 
   _slider_trim_max_bisections = new SlidersGroup(Qt::Horizontal, tr("max. bisections"), 1, 32, this);
   _slider_trim_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. error tolerance"), 0.0001f, 0.1f,  this);
@@ -351,6 +350,7 @@ mainwindow::_create_menus()
   system_desc_layout->addWidget(_checkbox_vsync);
   system_desc_layout->addWidget(_checkbox_counting);
   system_desc_layout->addWidget(_counting_result);
+  system_desc_layout->addWidget(_fps_result);
   system_desc->setLayout(system_desc_layout);
   layout->addWidget(system_desc);
 
@@ -365,6 +365,7 @@ mainwindow::_create_menus()
   QGroupBox* trim_desc = new QGroupBox("Trimming", this);
   QVBoxLayout* trim_desc_layout = new QVBoxLayout;
   trim_desc_layout->addWidget(_combobox_trimming);
+  trim_desc_layout->addWidget(_combobox_preclassification);
   trim_desc_layout->addWidget(_slider_trim_max_bisections);
   trim_desc_layout->addWidget(_slider_trim_error_tolerance);
   trim_desc->setLayout(trim_desc_layout);
@@ -397,6 +398,7 @@ mainwindow::_create_menus()
 /* private */ void 
 mainwindow::_create_statusbar()
 {}
+
 
 
 

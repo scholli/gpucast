@@ -65,18 +65,11 @@ trimdomain_serializer::address_type  trimdomain_serializer::serialize(trimdomain
 {
   address_type classification_id = address_type(output_classification_field.size());
 
-  auto signed_distance_field = input_domain->signed_distance_field(texture_classification_resolution);
-  auto texel_diameter = input_domain->nurbsdomain().size() / texture_classification_resolution;
-  auto texel_radius = texel_diameter.abs() / 2;
+  // get pre-classified texture data
+  auto pre_classification = input_domain->signed_distance_pre_classification(texture_classification_resolution);
 
-  std::transform(signed_distance_field.begin(), signed_distance_field.end(), std::back_inserter(output_classification_field), [texel_radius](double v){
-    if (v < -texel_radius)
-      return trimdomain::trimmed; // classified outside
-    if (v > texel_radius)
-      return trimdomain::untrimmed; // classified inside
-    else
-      return trimdomain::unknown; // not classified
-  });
+  // copy to global field
+  std::copy(pre_classification.begin(), pre_classification.end(), std::back_inserter(output_classification_field));
   
   return classification_id;
 }

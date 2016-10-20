@@ -84,6 +84,7 @@ public Q_SLOTS :
   void                    fillmode                      (gpucast::gl::bezierobject::fill_mode mode);
   void                    antialiasing                  (antialiasing_mode);
   void                    trimming                      (gpucast::beziersurfaceobject::trim_approach_t);
+  void                    preclassification             (int);
   void                    enable_counter                (int);
 
   void                    trim_max_bisections           (int);

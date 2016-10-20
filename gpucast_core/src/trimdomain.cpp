@@ -144,54 +144,61 @@ namespace gpucast {
 
 
   /////////////////////////////////////////////////////////////////////////////
-  std::vector<trimdomain::value_type> trimdomain::signed_distance_field(unsigned resolution) const
+  grid<trimdomain::value_type> trimdomain::signed_distance_field(unsigned resolution) const
   {
-    std::size_t const worker_threads = 16;
+    if (_signed_distance_fields.count(resolution)) {
+      return _signed_distance_fields.at(resolution);
+    }
+    else {
 
-    unsigned res_u = resolution;
-    unsigned res_v = resolution;
+      std::size_t const worker_threads = 16;
 
-    auto offset_u = (_nurbsdomain.max[point_type::u] - _nurbsdomain.min[point_type::u]) / res_u;
-    auto offset_v = (_nurbsdomain.max[point_type::v] - _nurbsdomain.min[point_type::v]) / res_v;
+      unsigned res_u = resolution;
+      unsigned res_v = resolution;
 
-    auto min_u = _nurbsdomain.min[point_type::u];
-    auto min_v = _nurbsdomain.min[point_type::v];
+      auto offset_u = (_nurbsdomain.max[point_type::u] - _nurbsdomain.min[point_type::u]) / res_u;
+      auto offset_v = (_nurbsdomain.max[point_type::v] - _nurbsdomain.min[point_type::v]) / res_v;
 
-    std::vector<bbox_type> texels;
+      auto min_u = _nurbsdomain.min[point_type::u];
+      auto min_v = _nurbsdomain.min[point_type::v];
 
-    // create jobs
-    for (unsigned v = 0; v < res_v; ++v)
-    {
-      for (unsigned u = 0; u < res_u; ++u)
+      std::vector<bbox_type> texels;
+
+      // create jobs
+      for (unsigned v = 0; v < res_v; ++v)
       {
-        auto bbox_min = point_type(min_u + u*offset_u, min_v + v*offset_v);
-        auto bbox_max = point_type(min_u + (u + 1)*offset_u, min_v + (v + 1)*offset_v);
+        for (unsigned u = 0; u < res_u; ++u)
+        {
+          auto bbox_min = point_type(min_u + u*offset_u, min_v + v*offset_v);
+          auto bbox_max = point_type(min_u + (u + 1)*offset_u, min_v + (v + 1)*offset_v);
 
-        bbox_type texel(bbox_min, bbox_max);
-        texels.push_back(texel);
+          bbox_type texel(bbox_min, bbox_max);
+          texels.push_back(texel);
+        }
       }
-    }
 
-    std::vector<value_type> result(texels.size());
-    std::vector<std::thread> threads(worker_threads);
+      grid<value_type> result(resolution, resolution);
+      std::vector<std::thread> threads(worker_threads);
 
-    auto worker = [&result, &texels, worker_threads](trimdomain const* domain, std::size_t id) {
-      while (id < result.size()) {
-        result[id] = domain->signed_distance(texels[id].center());
-        id += worker_threads;
+      auto worker = [&result, &texels, worker_threads](trimdomain const* domain, std::size_t id) {
+        while (id < result.size()) {
+          result[id] = domain->signed_distance(texels[id].center());
+          id += worker_threads;
+        }
+      };
+
+      std::size_t thread_id = 0;
+      for (auto& t : threads) {
+        t = std::thread(std::bind(worker, this, thread_id++));
       }
-    };
 
-    std::size_t thread_id = 0;
-    for (auto& t : threads) {
-      t = std::thread(std::bind(worker, this, thread_id++));
-    }
-    
-    for (auto& t : threads) {
-      t.join();
-    }
+      for (auto& t : threads) {
+        t.join();
+      }
 
-    return result;
+      _signed_distance_fields.insert(std::make_pair(resolution, result));
+      return result;
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -216,6 +223,27 @@ namespace gpucast {
     else {
       return -minimal_distance;
     }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  grid<unsigned char> trimdomain::signed_distance_pre_classification(unsigned resolution) const
+  {
+    grid<unsigned char> result(resolution, resolution);
+
+    auto sdf = signed_distance_field(resolution);
+    auto texel_diameter = nurbsdomain().size() / resolution;
+    auto texel_radius = texel_diameter.abs() / 2;
+
+    std::transform(sdf.begin(), sdf.end(), result.begin(), [texel_radius](double v) {
+      if (v < -texel_radius)
+        return trimmed; // classified outside
+      if (v > texel_radius)
+        return untrimmed; // classified inside
+      else
+        return unknown; // not classified
+    });
+
+    return result;
   }
 
 

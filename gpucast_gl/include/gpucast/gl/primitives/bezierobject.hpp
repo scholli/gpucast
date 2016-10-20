@@ -77,6 +77,7 @@ public:
   bezierobject& operator=(gpucast::beziersurfaceobject const&) = delete;
 
   gpucast::beziersurfaceobject const& object() const;
+  void                init(unsigned subdiv_u, unsigned subdiv_v, unsigned preclass_resolution);
 
   // draw methods
   void                draw();

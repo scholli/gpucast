@@ -34,6 +34,24 @@
 
 namespace gpucast {
 
+template <typename T>
+class grid : public std::vector<T> {
+public :
+  grid(unsigned w, unsigned h) : std::vector<T>(w*h, T()), _width(w), _height(h) {}
+
+  T operator()(unsigned x, unsigned y) {
+    return (*this)[x + y*_width];
+  }
+
+  unsigned width() const { return _width; }
+  unsigned height() const { return _height; }
+
+private: 
+  unsigned _width;
+  unsigned _height;
+};
+
+
 class GPUCAST_CORE trimdomain
 {
   public : // enums/typedefs
@@ -88,17 +106,19 @@ class GPUCAST_CORE trimdomain
 
     trimloop_container const& loops         () const;
     
-    std::vector<value_type>   signed_distance_field(unsigned resolution) const;
+    grid<value_type>          signed_distance_field(unsigned resolution) const;
     value_type                signed_distance(point_type const& point) const;
+    grid<unsigned char>       signed_distance_pre_classification(unsigned resolution) const;
 
     void                      print         ( std::ostream& os ) const;
 
   private : // member
 
     // curves and type(inner outer trim)
-    trimloop_container   _trimloops;
-    bool                 _type;
-    bbox_type            _nurbsdomain;  // [umin, umax, vmin, vmax]
+    mutable std::map<unsigned, grid<value_type>> _signed_distance_fields;
+    trimloop_container                          _trimloops;
+    bool                                        _type;
+    bbox_type                                   _nurbsdomain;  // [umin, umax, vmin, vmax]
   };
 
 typedef std::shared_ptr<trimdomain> trimdomain_ptr;

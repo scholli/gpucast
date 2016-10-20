@@ -226,7 +226,7 @@ glwidget::paintGL()
   gpucast::math::matrix4f model    = gpucast::math::make_translation(_trackball->shiftx(), _trackball->shifty(), _trackball->distance()) *_trackball->rotation() * 
                                      gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
 
-  gpucast::math::matrix4f proj = gpucast::math::perspective(70.0f, float(_width) / _height, nearplane, farplane); 
+  gpucast::math::matrix4f proj = gpucast::math::perspective(50.0f, float(_width) / _height, nearplane, farplane); 
 
   // apply camera setup to renderer
   auto renderer = gpucast::gl::bezierobject_renderer::instance();
@@ -251,16 +251,8 @@ glwidget::paintGL()
     }
   }
 
-#if FBO
-
-  gpucast::math::matrix4f mvp = proj * view * model;
-  gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
-
-  _fbo->unbind();
-
-  ++_frames;
-
   // pass fps to window
+  ++_frames;
   _gputimer->end();
 
   _cputimer->stop();
@@ -270,6 +262,12 @@ glwidget::paintGL()
   _cputime += cputime_seconds;
   _gputime += _gputimer->time_in_ms();
 
+#if FBO
+
+  gpucast::math::matrix4f mvp = proj * view * model;
+  gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
+
+  _fbo->unbind();
 
   _cputimer->start();
 
@@ -301,9 +299,10 @@ glwidget::paintGL()
   _quad->draw();
   
   _fbo_program->end();
-#endif
 
   _gputimer->end();
+#endif
+
   double postprocess = _gputimer->time_in_ms();
 
   // show message and reset counter if more than 1s passed
@@ -528,6 +527,14 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   {
     for (auto o : _objects) {
       o->trimming(t);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::preclassification(int i)
+  {
+    for (auto o : _objects) {
+      o->init(0,0,i);
     }
   }
 

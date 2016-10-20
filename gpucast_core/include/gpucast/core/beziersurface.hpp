@@ -65,9 +65,11 @@ public : // methods
                                                  beziersurface& tr ) const;
 
   void                          trimtype       ( bool type );
+  bool                          is_pretrimmable(unsigned preclass_resolution) const;
 
   /// set the parameter range of the nurbs surface the bezier surface belongs to (there might be trimming curves that effect this surface)
   void                          nurbsdomain    ( trimdomain::bbox_type const& );
+  trimdomain::bbox_type const&  nurbsdomain    () const;
 
   /// set parameter range of this patch (u,v in [0.0,1.0])
   void                          bezierdomain   ( trimdomain::bbox_type const& );

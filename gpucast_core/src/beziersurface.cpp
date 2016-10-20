@@ -76,6 +76,37 @@ namespace gpucast {
     _trimdomain->type(t);
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  bool beziersurface::is_pretrimmable(unsigned preclass_resolution) const
+  {
+    // compute total knot range in nurbs domain space
+    double du = nurbsdomain().max[trimdomain::point_type::u] - nurbsdomain().min[trimdomain::point_type::u];
+    double dv = nurbsdomain().max[trimdomain::point_type::v] - nurbsdomain().min[trimdomain::point_type::v];
+
+    // compute relevant texels for this bezier patch
+    unsigned ui_min = std::min(preclass_resolution, unsigned(preclass_resolution * ((bezierdomain().min[trimdomain::point_type::u] - nurbsdomain().min[trimdomain::point_type::u]) / du)));
+    unsigned ui_max = std::min(preclass_resolution, 1 + unsigned(preclass_resolution * ((bezierdomain().max[trimdomain::point_type::u] - nurbsdomain().min[trimdomain::point_type::u]) / du)));
+
+    unsigned vi_min = std::min(preclass_resolution, unsigned(preclass_resolution * ((bezierdomain().min[trimdomain::point_type::v] - nurbsdomain().min[trimdomain::point_type::v]) / dv)));
+    unsigned vi_max = std::min(preclass_resolution, 1 + unsigned(preclass_resolution * ((bezierdomain().max[trimdomain::point_type::v] - nurbsdomain().min[trimdomain::point_type::v]) / dv)));
+
+    // get pre-classification grid
+    auto preclass = domain()->signed_distance_pre_classification(preclass_resolution);
+
+    // iterate all texels in preclassification grid that correspond to this bezier surface -> if all trimmed, discard patch
+    bool surface_is_trimmed = true;
+    for (auto v = vi_min; v != vi_max; ++v) {
+      for (auto u = ui_min; u != ui_max; ++u) {
+        bool is_trimmed = preclass(u, v) == trimdomain::trimmed;
+        surface_is_trimmed &= is_trimmed;
+        if (!surface_is_trimmed) break;
+      }
+      if (!surface_is_trimmed) break;
+    }
+
+    return surface_is_trimmed;
+  }
+
 
   //////////////////////////////////////////////////////////////////////////////
   void
@@ -84,6 +115,11 @@ namespace gpucast {
     _trimdomain->nurbsdomain(n);
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  trimdomain::bbox_type const& beziersurface::nurbsdomain() const
+  {
+    return _trimdomain->nurbsdomain();
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   void

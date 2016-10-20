@@ -38,6 +38,9 @@ public : // friends
 
   friend class surface_renderer_gl;
 
+  static const unsigned trim_preclassification_default_resolution = 16;
+  static const unsigned default_initial_subdivision = 0;
+
 public : // enums, typedefs
 
   enum trim_approach_t {
@@ -103,9 +106,9 @@ public : // methods
 
   void                    print           ( std::ostream& os ) const;
 
-  void                    init            ( unsigned subdivision_level_u = 0,
-                                            unsigned subdivision_level_v = 0,
-                                            unsigned fast_trim_texture_resolution = 0 );
+  void                    init            ( unsigned subdivision_level_u = default_initial_subdivision,
+                                            unsigned subdivision_level_v = default_initial_subdivision,
+                                            unsigned fast_trim_texture_resolution = trim_preclassification_default_resolution);
 
   bool                    initialized     () const;
 
@@ -143,7 +146,7 @@ private : // auxilliary methods
 
   std::size_t             _add            ( convex_hull const& chull );
 
-  void                    _init_adaptive_tesselation (trim_approach_t trimtype);
+  void                    _init_adaptive_tesselation(trim_approach_t trimtype);
 
 private : // data members
 
@@ -153,9 +156,10 @@ private : // data members
   surface_container                  _surfaces;
   bool                               _is_initialized = false;
   trim_approach_t                    _trim_approach = contour_kd_partition;
-                                     
-  std::size_t                        _subdivision_u;
-  std::size_t                        _subdivision_v;
+
+  unsigned                           _preclassification_resolution;
+  unsigned                           _subdivision_u;
+  unsigned                           _subdivision_v;
                                      
   /////////////////////////////////////////////////////////////////////////////
   // client side render information
@@ -165,7 +169,7 @@ private : // data members
   std::unordered_map<surface_ptr, unsigned>          _surface_trim_ids;
 
   // data for arraybuffer
-  struct {
+  struct ray_casting_data {
     std::vector<gpucast::math::vec3f>                  attribute_buffer_0;       // vertices of convex hulls
     std::vector<gpucast::math::vec4f>                  attribute_buffer_1;       // [start_u, start_v, 0, 0]
     std::vector<gpucast::math::vec4f>                  attribute_buffer_2;       // [trimid, dataid, orderu, orderv]
@@ -183,7 +187,9 @@ private : // data members
     //                                     LBF, RBF, RTF, LTF, 
     //                                     LBB, RBB, RTB, LTB ]
     std::vector<gpucast::math::vec4f>                  obbs;                                                                            
-  } _ray_casting_data;
+  };
+
+  ray_casting_data _ray_casting_data;
 
   // data for trimming
   std::shared_ptr<trim_double_binary_serialization>  _trimdata_double_binary_serialization;
@@ -192,12 +198,14 @@ private : // data members
   std::shared_ptr<trim_loop_list_serialization>      _trimdata_loop_list_serialization;
 
   // cpu ressources for adaptive tesselation
-  struct {
+  struct tesselation_data {
     std::vector<math::vec4f>                         domain_buffer;         // domain corners
     std::vector<unsigned>                            index_buffer;          // index data
     std::vector<math::vec4f>                         control_point_buffer;  // control points of all patchs
     std::vector<patch_tesselation_data>              patch_data_buffer;     // per patch attributes
-  } _tesselation_data;
+  };
+
+  tesselation_data _tesselation_data;
 
   // data to change trimming method
   struct multi_trim_index {
