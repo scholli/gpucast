@@ -41,7 +41,6 @@ beziersurfaceobject::remove ( surface_ptr const& surface )
 
   _surface_vertex_base_ids.erase(surface);
   _surface_obb_base_ids.erase(surface);
-  _surface_trim_ids.erase(surface);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,47 +52,34 @@ beziersurfaceobject::trim_approach_t beziersurfaceobject::trim_approach() const
 ////////////////////////////////////////////////////////////////////////////////
 void beziersurfaceobject::trim_approach(beziersurfaceobject::trim_approach_t approach)
 {
-  _trim_approach = approach;
-  trimdomain_serializer serializer; 
-
-  // overwrite indices with according trimindex information
-  for (auto const& surface : _surface_index_map) 
-  {
-    auto const& domain = surface.first->domain();
-    auto indices = _domain_index_map[domain];
-
-    unsigned trim_index = 0;
-   
-    switch (_trim_approach) {
-      case no_trimming:
-        trim_index = 0; break;
-      case curve_binary_partition:
-        trim_index = explicit_type_conversion<std::size_t, unsigned>(indices.double_binary_index); break;
-      case contour_binary_partition:
-        trim_index = explicit_type_conversion<std::size_t, unsigned>(indices.contour_binary_index); break;
-      case contour_kd_partition:
-        trim_index = explicit_type_conversion<std::size_t, unsigned>(indices.contour_kd_index); break;
-      case contour_list:
-        trim_index = explicit_type_conversion<std::size_t, unsigned>(indices.loop_list_index); break;
-      default:
-        trim_index = 0;
-    };
-
-    unsigned trim_type_and_approach = uint2x16ToUInt(unsigned short(surface.second.trim_type), unsigned short(_trim_approach));
-    float index_as_float = serializer.unsigned_bits_as_float(trim_index);
-
-    for (std::size_t i = surface.second.base_index; i != surface.second.base_index + surface.second.count; ++i) {
-      _ray_casting_data.attribute_buffer_2[i] = math::vec4f(index_as_float,
-                                                              _ray_casting_data.attribute_buffer_2[i][1],
-                                                              bit_cast<unsigned, float>(trim_type_and_approach), 
-                                                              _ray_casting_data.attribute_buffer_2[i][3]);
-    }
-
-    _surface_trim_ids[surface.first] = trim_index;
+  if (_trim_approach == approach) {
+    return;
   }
+  else {
+    _trim_approach = approach;
 
-  // apply also for adaptive tesselation
-  _init_adaptive_tesselation(approach);
+    // overwrite indices with according trimindex information
+    for (auto const& surface : _surface_index_map)
+    {
+      auto const& domain = surface.first->domain();
+      auto trim_index = _domain_index_map[domain][_trim_approach];
+
+      // prepare data to update raycasting buffers
+      unsigned trim_type_and_approach = uint2x16ToUInt(unsigned short(surface.second.trim_type), unsigned short(_trim_approach));
+      float index_as_float = trimdomain_serializer::unsigned_bits_as_float(trim_index);
+
+      for (auto i = surface.second.raycasting_base_index; i != surface.second.raycasting_base_index + surface.second.raycasting_vertex_count; ++i)
+      {
+        _ray_casting_data.attribute_buffer_2[i] = math::vec4f(index_as_float,
+          _ray_casting_data.attribute_buffer_2[i][1],
+          bit_cast<unsigned, float>(trim_type_and_approach),
+          _ray_casting_data.attribute_buffer_2[i][3]);
+      }
+
+      // update tesselation data buffers
+      _tesselation_data.patch_data_buffer[surface.second.tesselation_base_index].trim_id = trim_index;
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -120,11 +106,22 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
   _preclassification_resolution = fast_trim_texture_resolution;
 
   // initialize
-  for (surface_ptr const& surface : _surfaces) {
-    _add(surface, fast_trim_texture_resolution);
-  }
+  for (surface_ptr const& surface : _surfaces) 
+  {
+    if (!surface->is_pretrimmable(_preclassification_resolution)) {
+      // general preprocessing
+      surface->preprocess(_subdivision_u, _subdivision_v);
 
-  _init_adaptive_tesselation(_trim_approach);
+      // serialize trimming data buffers
+      _serialize_trimming_data(surface->domain());
+
+      // serialize raycasting buffers
+      _serialize_raycasting_data(surface);
+
+      // serialize tesselation data buffers
+      _serialize_adaptive_tesselation_data(surface);
+    }
+  }
 
   _is_initialized = true;
 }
@@ -144,11 +141,6 @@ std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurf
 ////////////////////////////////////////////////////////////////////////////////
 std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_obb_base_indices() const{
   return _surface_obb_base_ids;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<beziersurfaceobject::surface_ptr, unsigned> const& beziersurfaceobject::serialized_trim_base_indices() const {
-  return _surface_trim_ids;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -197,11 +189,6 @@ std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycast
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_raycasting_data_obbs() const{
-  return _ray_casting_data.obbs;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 std::vector<unsigned> const& beziersurfaceobject::serialized_raycasting_data_indices() const{
   return _ray_casting_data.index_buffer;
 }
@@ -224,6 +211,11 @@ std::vector<math::vec4f> const& beziersurfaceobject::serialized_tesselation_cont
 ////////////////////////////////////////////////////////////////////////////////
 std::vector<beziersurfaceobject::patch_tesselation_data> const& beziersurfaceobject::serialized_tesselation_attribute_data() const {
   return _tesselation_data.patch_data_buffer;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+std::vector<gpucast::math::vec4f> const& beziersurfaceobject::serialized_tesselation_obbs() const {
+  return _tesselation_data.obb_buffer;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -265,11 +257,9 @@ beziersurfaceobject::_clearbuffer()
 
   _surface_vertex_base_ids.clear();
   _surface_obb_base_ids.clear();
-  _surface_trim_ids.clear();
 
   // texture buffer need to be at least one element!
   _ray_casting_data.controlpoints.resize(1);
-  _ray_casting_data.obbs.resize(1);
 
   // clear trimming data serializations
   _trimdata_double_binary_serialization = std::make_shared<trim_double_binary_serialization>();
@@ -286,6 +276,7 @@ beziersurfaceobject::_clearbuffer()
   _tesselation_data.index_buffer.clear();
   _tesselation_data.control_point_buffer.clear();
   _tesselation_data.patch_data_buffer.clear();
+  _tesselation_data.obb_buffer.resize(1);
 }
 
 
@@ -375,47 +366,12 @@ beziersurfaceobject::end () const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::size_t
-beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolution)
+void
+beziersurfaceobject::_serialize_raycasting_data(surface_ptr const& surface)
 {
-  // preprocess surface if it was modified or not initialized
-  surface->preprocess(_subdivision_u, _subdivision_v);
-
-  // discard if surface can be trimmed using the current pre-trimming resolution
-#if 1
-  if (surface->is_pretrimmable(fast_trim_texture_resolution)) 
-    return 0;
-#endif
-
   // add control point data into buffer
-  std::size_t controlpointdata_index  = _add (surface->points());
+  std::size_t controlpointdata_index = _add(surface->points());
   _surface_vertex_base_ids.insert({ surface, controlpointdata_index });
-
-  // add trimming information
-  trimdomain_serializer_contour_map_binary cmb_serializer;
-  std::size_t cmb_index = cmb_serializer.serialize ( surface->domain(), 
-                                                     *_trimdata_contour_binary_serialization,
-                                                     fast_trim_texture_resolution != 0,
-                                                     fast_trim_texture_resolution);
-
-  trimdomain_serializer_double_binary db_serializer;
-  std::size_t db_index = db_serializer.serialize ( surface->domain(), 
-                                                   *_trimdata_double_binary_serialization,
-                                                   fast_trim_texture_resolution != 0,
-                                                   fast_trim_texture_resolution);
-
-  trimdomain_serializer_contour_map_kd kd_serializer;
-  std::size_t kd_index = kd_serializer.serialize(surface->domain(),
-                                                 kd_split_strategy::sah,
-                                                 *_trimdata_kd_serialization,
-                                                 fast_trim_texture_resolution != 0,
-                                                 fast_trim_texture_resolution);
-
-  trimdomain_serializer_loop_contour_list loop_serializer;
-  std::size_t loop_index = loop_serializer.serialize(surface->domain(),
-                                                     *_trimdata_loop_list_serialization,
-                                                     fast_trim_texture_resolution != 0,
-                                                     fast_trim_texture_resolution);
 
   // add convex hull to vbo
   std::size_t chull_index = _add(surface->convexhull());
@@ -424,84 +380,16 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   std::size_t points_in_chull = surface->convexhull().size();
 
   // store attributes to change trimming
-  _surface_index_map[surface] = { _ray_casting_data.attribute_buffer_2.size(), points_in_chull, unsigned(surface->trimtype()) };
-  _domain_index_map[surface->domain()] = { db_index, cmb_index, kd_index, loop_index };
-
+  _surface_index_map[surface].raycasting_base_index = _ray_casting_data.attribute_buffer_2.size();
+  _surface_index_map[surface].raycasting_vertex_count = points_in_chull;
+  _surface_index_map[surface].trim_type = unsigned(surface->trimtype());
+  
   // serialize obb
-  std::size_t obb_index = _ray_casting_data.obbs.size();
+  std::size_t obb_index = _tesselation_data.obb_buffer.size();
   _surface_obb_base_ids.insert({ surface, obb_index });
 
-  auto const& obb = surface->obb();
-
-  auto pcenter = math::vec4f(obb.center()[0], obb.center()[1], obb.center()[2], 1.0);
-  auto phigh   = math::vec4f(obb.high()[0], obb.high()[1], obb.high()[2], 0.0f);
-  auto plow    = math::vec4f(obb.low()[0], obb.low()[1], obb.low()[2], 0.0f);
-
-  _ray_casting_data.obbs.push_back(pcenter);
-  _ray_casting_data.obbs.push_back(phigh);
-  _ray_casting_data.obbs.push_back(plow);
-
-  auto orientation = surface->obb().orientation();
-  auto inv_orientation = compute_inverse(orientation);
-
-  _ray_casting_data.obbs.push_back(math::vec4f(orientation[0][0], orientation[1][0], orientation[2][0], 0.0));
-  _ray_casting_data.obbs.push_back(math::vec4f(orientation[0][1], orientation[1][1], orientation[2][1], 0.0));
-  _ray_casting_data.obbs.push_back(math::vec4f(orientation[0][2], orientation[1][2], orientation[2][2], 0.0));
-  _ray_casting_data.obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
-
-  _ray_casting_data.obbs.push_back(math::vec4f(inv_orientation[0][0], inv_orientation[1][0], inv_orientation[2][0], 0.0));
-  _ray_casting_data.obbs.push_back(math::vec4f(inv_orientation[0][1], inv_orientation[1][1], inv_orientation[2][1], 0.0));
-  _ray_casting_data.obbs.push_back(math::vec4f(inv_orientation[0][2], inv_orientation[1][2], inv_orientation[2][2], 0.0));
-  _ray_casting_data.obbs.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
-
-  auto lbf = math::point3d(plow[0], plow[1], plow[2]);  // left, bottom, front
-  auto rbf = math::point3d(phigh[0], plow[1], plow[2]);  // right, bottom, front
-  auto rtf = math::point3d(phigh[0], phigh[1], plow[2]);  // right, top, front
-  auto ltf = math::point3d(plow[0], phigh[1], plow[2]);  // left, top, front
-
-  auto lbb = math::point3d(plow[0], plow[1], phigh[2]); // left, bottom, back  
-  auto rbb = math::point3d(phigh[0], plow[1], phigh[2]); // right, bottom, back  
-  auto rtb = math::point3d(phigh[0], phigh[1], phigh[2]); // right, top, back  
-  auto ltb = math::point3d(plow[0], phigh[1], phigh[2]); // left, top, back  
-
-  lbf.weight(1.0);
-  rbf.weight(1.0);
-  rtf.weight(1.0);
-  ltf.weight(1.0);
-
-  lbb.weight(1.0);
-  rbb.weight(1.0);
-  rtb.weight(1.0);
-  ltb.weight(1.0);
-
-  _ray_casting_data.obbs.push_back(lbf);
-  _ray_casting_data.obbs.push_back(rbf);
-  _ray_casting_data.obbs.push_back(rtf);
-  _ray_casting_data.obbs.push_back(ltf);
-
-  _ray_casting_data.obbs.push_back(lbb);
-  _ray_casting_data.obbs.push_back(rbb);
-  _ray_casting_data.obbs.push_back(rtb);
-  _ray_casting_data.obbs.push_back(ltb);
-
   // fill header with index information
-  unsigned trim_index = 0;
-  switch (_trim_approach) 
-  {
-    case no_trimming :    
-      trim_index = 0; break;
-    case curve_binary_partition:
-      trim_index = db_index; break;
-    case contour_binary_partition:
-      trim_index = cmb_index; break;
-    case contour_kd_partition:
-      trim_index = kd_index; break;
-    case contour_list:
-      trim_index = loop_index; break;
-    default: 
-      trim_index = 0;
-  };
-
+  unsigned trim_index = _domain_index_map[surface->domain()][_trim_approach];
   unsigned trim_type_and_approach = uint2x16ToUInt(unsigned short(surface->trimtype()), unsigned short(_trim_approach));
 
   gpucast::math::vec4f additional_attrib2(bit_cast<unsigned, float>(explicit_type_conversion<std::size_t, unsigned>(trim_index)),
@@ -518,8 +406,6 @@ beziersurfaceobject::_add(surface_ptr surface, unsigned fast_trim_texture_resolu
   // blow attribute arrays to fill them with additional attributes
   std::fill_n(std::back_inserter(_ray_casting_data.attribute_buffer_2), points_in_chull, additional_attrib2);
   std::fill_n(std::back_inserter(_ray_casting_data.attribute_buffer_3), points_in_chull, additional_attrib3);
-
-  return chull_index;
 }
 
 
@@ -567,106 +453,176 @@ beziersurfaceobject::_add ( convex_hull const& chull )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void beziersurfaceobject::_init_adaptive_tesselation(trim_approach_t trimtype)
+void beziersurfaceobject::_serialize_obb_data(surface_ptr const& surface)
 {
-  // make sure to clear old buffers
-  _tesselation_data.domain_buffer.clear();
-  _tesselation_data.index_buffer.clear();
-  _tesselation_data.control_point_buffer.clear();
-  _tesselation_data.patch_data_buffer.clear();
+  auto const& obb = surface->obb();
 
+  auto pcenter = math::vec4f(obb.center()[0], obb.center()[1], obb.center()[2], 1.0);
+  auto phigh = math::vec4f(obb.high()[0], obb.high()[1], obb.high()[2], 0.0f);
+  auto plow = math::vec4f(obb.low()[0], obb.low()[1], obb.low()[2], 0.0f);
+
+  _tesselation_data.obb_buffer.push_back(pcenter);
+  _tesselation_data.obb_buffer.push_back(phigh);
+  _tesselation_data.obb_buffer.push_back(plow);
+
+  auto orientation = obb.orientation();
+  auto inv_orientation = compute_inverse(orientation);
+
+  _tesselation_data.obb_buffer.push_back(math::vec4f(orientation[0][0], orientation[1][0], orientation[2][0], 0.0));
+  _tesselation_data.obb_buffer.push_back(math::vec4f(orientation[0][1], orientation[1][1], orientation[2][1], 0.0));
+  _tesselation_data.obb_buffer.push_back(math::vec4f(orientation[0][2], orientation[1][2], orientation[2][2], 0.0));
+  _tesselation_data.obb_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+
+  _tesselation_data.obb_buffer.push_back(math::vec4f(inv_orientation[0][0], inv_orientation[1][0], inv_orientation[2][0], 0.0));
+  _tesselation_data.obb_buffer.push_back(math::vec4f(inv_orientation[0][1], inv_orientation[1][1], inv_orientation[2][1], 0.0));
+  _tesselation_data.obb_buffer.push_back(math::vec4f(inv_orientation[0][2], inv_orientation[1][2], inv_orientation[2][2], 0.0));
+  _tesselation_data.obb_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+
+  auto lbf = math::point3d(plow[0], plow[1], plow[2]);  // left, bottom, front
+  auto rbf = math::point3d(phigh[0], plow[1], plow[2]);  // right, bottom, front
+  auto rtf = math::point3d(phigh[0], phigh[1], plow[2]);  // right, top, front
+  auto ltf = math::point3d(plow[0], phigh[1], plow[2]);  // left, top, front
+
+  auto lbb = math::point3d(plow[0], plow[1], phigh[2]); // left, bottom, back  
+  auto rbb = math::point3d(phigh[0], plow[1], phigh[2]); // right, bottom, back  
+  auto rtb = math::point3d(phigh[0], phigh[1], phigh[2]); // right, top, back  
+  auto ltb = math::point3d(plow[0], phigh[1], phigh[2]); // left, top, back  
+
+  lbf.weight(1.0);
+  rbf.weight(1.0);
+  rtf.weight(1.0);
+  ltf.weight(1.0);
+
+  lbb.weight(1.0);
+  rbb.weight(1.0);
+  rtb.weight(1.0);
+  ltb.weight(1.0);
+
+  _tesselation_data.obb_buffer.push_back(lbf);
+  _tesselation_data.obb_buffer.push_back(rbf);
+  _tesselation_data.obb_buffer.push_back(rtf);
+  _tesselation_data.obb_buffer.push_back(ltf);
+
+  _tesselation_data.obb_buffer.push_back(lbb);
+  _tesselation_data.obb_buffer.push_back(rbb);
+  _tesselation_data.obb_buffer.push_back(rtb);
+  _tesselation_data.obb_buffer.push_back(ltb);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void beziersurfaceobject::_serialize_trimming_data(trimdomain_ptr const& domain)
+{
+  // add trimming information
+  trimdomain_serializer_contour_map_binary cmb_serializer;
+
+  std::size_t cmb_index = cmb_serializer.serialize(domain,
+    *_trimdata_contour_binary_serialization,
+    _preclassification_resolution != 0,
+    _preclassification_resolution);
+
+  trimdomain_serializer_double_binary db_serializer;
+  std::size_t db_index = db_serializer.serialize(domain,
+    *_trimdata_double_binary_serialization,
+    _preclassification_resolution != 0,
+    _preclassification_resolution);
+
+  trimdomain_serializer_contour_map_kd kd_serializer;
+  std::size_t kd_index = kd_serializer.serialize(domain,
+    kd_split_strategy::sah,
+    *_trimdata_kd_serialization,
+    _preclassification_resolution != 0,
+    _preclassification_resolution);
+
+  trimdomain_serializer_loop_contour_list loop_serializer;
+  std::size_t loop_index = loop_serializer.serialize(domain,
+    *_trimdata_loop_list_serialization,
+    _preclassification_resolution != 0,
+    _preclassification_resolution);
+
+  // store base indices for domain
+  _domain_index_map[domain][no_trimming] = 0;
+  _domain_index_map[domain][curve_binary_partition] = db_index;
+  _domain_index_map[domain][contour_binary_partition] = cmb_index;
+  _domain_index_map[domain][contour_kd_partition] = kd_index;
+  _domain_index_map[domain][contour_list] = loop_index;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void beziersurfaceobject::_serialize_adaptive_tesselation_data(surface_ptr const& surface)
+{
+  // serialize obb first
+  _serialize_obb_data(surface);
+
+  // than serialize rest
   unsigned int patch_id = unsigned int(_tesselation_data.patch_data_buffer.size());
+  _surface_index_map[surface].tesselation_base_index = patch_id;
 
-  auto uint_to_float = [](unsigned const & i) { return *((float*)(&i)); }
-  ;
+  auto uint_to_float = [](unsigned const & i) { return *((float*)(&i)); };
 
-  //  serialize patch data
-  for (auto it = begin(); it != end(); ++it, ++patch_id)
-  {
-    // only add patches that cannot be trimmed
-      auto _p0 = (*it)->points().begin();
-      _tesselation_data.domain_buffer.push_back(math::vec4f((*_p0)[0], (*_p0)[1], (*_p0)[2], uint_to_float(patch_id)));
-      _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 0.0f));
+  auto _p0 = surface->points().begin();
+  _tesselation_data.domain_buffer.push_back(math::vec4f((*_p0)[0], (*_p0)[1], (*_p0)[2], uint_to_float(patch_id)));
+  _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 0.0f));
 
-      auto _p1 = _p0 + (*it)->points().width() - 1;
-      _tesselation_data.domain_buffer.push_back(math::vec4f((*_p1)[0], (*_p1)[1], (*_p1)[2], uint_to_float(patch_id)));
-      _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 0.0f, 0.0f, 0.0f));
+  auto _p1 = _p0 + surface->points().width() - 1;
+  _tesselation_data.domain_buffer.push_back(math::vec4f((*_p1)[0], (*_p1)[1], (*_p1)[2], uint_to_float(patch_id)));
+  _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 0.0f, 0.0f, 0.0f));
 
-      auto _p2 = (*it)->points().end() - (*it)->points().width();
-      _tesselation_data.domain_buffer.push_back(math::vec4f((*_p2)[0], (*_p2)[1], (*_p2)[2], uint_to_float(patch_id)));
-      _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 1.0f, 0.0f, 0.0f));
+  auto _p2 = surface->points().end() - surface->points().width();
+  _tesselation_data.domain_buffer.push_back(math::vec4f((*_p2)[0], (*_p2)[1], (*_p2)[2], uint_to_float(patch_id)));
+  _tesselation_data.domain_buffer.push_back(math::vec4f(0.0f, 1.0f, 0.0f, 0.0f));
 
-      auto _p3 = (*it)->points().end() - 1;
-      _tesselation_data.domain_buffer.push_back(math::vec4f((*_p3)[0], (*_p3)[1], (*_p3)[2], uint_to_float(patch_id)));
-      _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 1.0f, 0.0f, 0.0f));
+  auto _p3 = surface->points().end() - 1;
+  _tesselation_data.domain_buffer.push_back(math::vec4f((*_p3)[0], (*_p3)[1], (*_p3)[2], uint_to_float(patch_id)));
+  _tesselation_data.domain_buffer.push_back(math::vec4f(1.0f, 1.0f, 0.0f, 0.0f));
 
-      auto _v01 = (_p1->as_euclidian()) - (_p0->as_euclidian());
-      auto _v13 = (_p3->as_euclidian()) - (_p1->as_euclidian());
-      auto _v23 = (_p3->as_euclidian()) - (_p2->as_euclidian());
-      auto _v02 = (_p2->as_euclidian()) - (_p0->as_euclidian());
+  auto _v01 = (_p1->as_euclidian()) - (_p0->as_euclidian());
+  auto _v13 = (_p3->as_euclidian()) - (_p1->as_euclidian());
+  auto _v23 = (_p3->as_euclidian()) - (_p2->as_euclidian());
+  auto _v02 = (_p2->as_euclidian()) - (_p0->as_euclidian());
 
-      math::vec4f edge_dist(0.0, 0.0, 0.0, 0.0);
+  math::vec4f edge_dist(0.0, 0.0, 0.0, 0.0);
 
-      _tesselation_data.index_buffer.push_back(patch_id * 4 + 0);
-      _tesselation_data.index_buffer.push_back(patch_id * 4 + 1);
-      _tesselation_data.index_buffer.push_back(patch_id * 4 + 3);
-      _tesselation_data.index_buffer.push_back(patch_id * 4 + 2);
+  _tesselation_data.index_buffer.push_back(patch_id * 4 + 0);
+  _tesselation_data.index_buffer.push_back(patch_id * 4 + 1);
+  _tesselation_data.index_buffer.push_back(patch_id * 4 + 3);
+  _tesselation_data.index_buffer.push_back(patch_id * 4 + 2);
 
-      // gather per patch data
-      patch_tesselation_data p;
-      p.surface_offset = _tesselation_data.control_point_buffer.size();
-      p.order_u = (*it)->order_u();
-      p.order_v = (*it)->order_v();
+  // gather per patch data
+  patch_tesselation_data p;
+  p.surface_offset = _tesselation_data.control_point_buffer.size();
+  p.order_u = surface->order_u();
+  p.order_v = surface->order_v();
 
-      p.trim_type = (*it)->trimtype();
+  p.trim_type = surface->trimtype();
+  p.trim_id = _domain_index_map[surface->domain()][_trim_approach];
 
-      switch (trimtype) {
-      case no_trimming:
-        p.trim_id = 0;
-        break;
-      case curve_binary_partition:
-        p.trim_id = _domain_index_map[(*it)->domain()].double_binary_index;
-        break;
-      case contour_binary_partition:
-        p.trim_id = _domain_index_map[(*it)->domain()].contour_binary_index;
-        break;
-      case contour_kd_partition:
-        p.trim_id = _domain_index_map[(*it)->domain()].contour_kd_index;
-        break;
-      case contour_list:
-        p.trim_id = _domain_index_map[(*it)->domain()].loop_list_index;
-        break;
-      }
-
-      auto obb_id = serialized_obb_base_indices().find((*it));
-      if (obb_id != serialized_obb_base_indices().end()) {
-        p.obb_id = obb_id->second;
-      }
-
-      p.nurbs_domain = math::vec4f((*it)->bezierdomain().min[0],
-        (*it)->bezierdomain().min[1],
-        (*it)->bezierdomain().max[0],
-        (*it)->bezierdomain().max[1]);
-      p.bbox_min = math::vec4f((*it)->bbox().min[0],
-        (*it)->bbox().min[1],
-        (*it)->bbox().min[2],
-        (float) 0.0f);
-      p.bbox_max = math::vec4f((*it)->bbox().max[0],
-        (*it)->bbox().max[1],
-        (*it)->bbox().max[2],
-        (float) 0.0f);
-      p.distance = math::vec4f(std::fabs(edge_dist[0]), std::fabs(edge_dist[1]), std::fabs(edge_dist[2]), std::fabs(edge_dist[3]));
-
-      _tesselation_data.patch_data_buffer.push_back(p);
-
-      // copy patch control points
-      int current_size = _tesselation_data.control_point_buffer.size();
-      _tesselation_data.control_point_buffer.resize(current_size + (*it)->points().size());
-
-      auto serialize_homogenous_points = [](gpucast::math::point3d const& p) { auto ph = p.as_homogenous(); return math::vec4f(ph[0], ph[1], ph[2], ph[3]); };
-      std::transform((*it)->points().begin(), (*it)->points().end(), _tesselation_data.control_point_buffer.begin() + current_size, serialize_homogenous_points);
+  auto obb_id = serialized_obb_base_indices().find(surface);
+  if (obb_id != serialized_obb_base_indices().end()) {
+    p.obb_id = obb_id->second;
   }
 
+  p.nurbs_domain = math::vec4f(surface->bezierdomain().min[0],
+    surface->bezierdomain().min[1],
+    surface->bezierdomain().max[0],
+    surface->bezierdomain().max[1]);
+  p.bbox_min = math::vec4f(surface->bbox().min[0],
+    surface->bbox().min[1],
+    surface->bbox().min[2],
+    (float) 0.0f);
+  p.bbox_max = math::vec4f(surface->bbox().max[0],
+    surface->bbox().max[1],
+    surface->bbox().max[2],
+    (float) 0.0f);
+  p.distance = math::vec4f(std::fabs(edge_dist[0]), std::fabs(edge_dist[1]), std::fabs(edge_dist[2]), std::fabs(edge_dist[3]));
+
+  _tesselation_data.patch_data_buffer.push_back(p);
+
+  // copy patch control points
+  int current_size = _tesselation_data.control_point_buffer.size();
+  _tesselation_data.control_point_buffer.resize(current_size + surface->points().size());
+
+  auto serialize_homogenous_points = [](gpucast::math::point3d const& p) { auto ph = p.as_homogenous(); return math::vec4f(ph[0], ph[1], ph[2], ph[3]); };
+  std::transform(surface->points().begin(), surface->points().end(), _tesselation_data.control_point_buffer.begin() + current_size, serialize_homogenous_points);
 }
 
 } // namespace gpucast

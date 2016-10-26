@@ -70,6 +70,7 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   /////////////////////////////////////
   // preclassification modes
   /////////////////////////////////////
+  _preclassification_modes.insert(std::make_pair(0, "No Preclassification"));
   _preclassification_modes.insert(std::make_pair(4, "Preclassification 4x4"));
   _preclassification_modes.insert(std::make_pair(8, "Preclassification 8x8"));
   _preclassification_modes.insert(std::make_pair(16, "Preclassification 16x16"));

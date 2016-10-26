@@ -32,6 +32,7 @@
 #include <gpucast/gl/util/vsync.hpp>
 #include <gpucast/gl/util/resource_factory.hpp>
 #include <gpucast/gl/error.hpp>
+#include <gpucast/gl/primitives/bezierobject_renderer.hpp>
 
 #include <gpucast/math/parametric/point.hpp>
 #include <gpucast/math/parametric/beziercurve.hpp>

@@ -68,7 +68,7 @@ public :
   void init_shader()
   {
     std::string vertexshader_code = R"(
-    "#version 430 core
+     #version 430 core
      #extension GL_ARB_separate_shader_objects : enable 
       
       layout (location = 0) in vec4 vertex;   
@@ -92,13 +92,14 @@ public :
       })";
 
     std::string fragmentshader_code = R"(
-     "#version 430 core
+      #version 430 core
+      #extension GL_NV_shadow_samplers_cube : enable
       #extension GL_ARB_separate_shader_objects : enable 
       
       in vec4 fragnormal;   
       in vec4 fragtexcoord; 
       in vec4 fragposition; 
-      uniform samplerCube cubemap; \n\
+      uniform samplerCube cubemap;
       
       layout (location = 0) out vec4 color; 
       

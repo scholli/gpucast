@@ -77,7 +77,7 @@ trimdomain_serializer::address_type  trimdomain_serializer::serialize(trimdomain
 
 /////////////////////////////////////////////////////////////////////////////
 trimdomain_serializer::float_type     
-trimdomain_serializer::unsigned_bits_as_float ( address_type i ) const
+trimdomain_serializer::unsigned_bits_as_float ( address_type i )
 {
   assert ( sizeof ( float_type ) == sizeof ( address_type ) );
 
@@ -88,7 +88,7 @@ trimdomain_serializer::unsigned_bits_as_float ( address_type i ) const
 
 /////////////////////////////////////////////////////////////////////////////
 trimdomain_serializer::address_type  
-trimdomain_serializer::float_bits_as_unsigned ( float_type f ) const
+trimdomain_serializer::float_bits_as_unsigned ( float_type f )
 {
   assert ( sizeof ( float_type ) == sizeof ( address_type ) );
 
@@ -98,7 +98,7 @@ trimdomain_serializer::float_bits_as_unsigned ( float_type f ) const
 
 /////////////////////////////////////////////////////////////////////////////
 trimdomain_serializer::address_type 
-trimdomain_serializer::uint4ToUInt(unsigned char a, unsigned char b, unsigned char c, unsigned char d) const
+trimdomain_serializer::uint4ToUInt(unsigned char a, unsigned char b, unsigned char c, unsigned char d)
 {
   assert(sizeof(address_type) == 4);
 
@@ -113,7 +113,7 @@ trimdomain_serializer::uint4ToUInt(unsigned char a, unsigned char b, unsigned ch
 
 /////////////////////////////////////////////////////////////////////////////
 trimdomain_serializer::address_type 
-trimdomain_serializer::uint8_24ToUInt(unsigned char a, unsigned int b) const
+trimdomain_serializer::uint8_24ToUInt(unsigned char a, unsigned int b)
 {
   assert(sizeof(address_type) == 4);
 
@@ -128,7 +128,7 @@ trimdomain_serializer::uint8_24ToUInt(unsigned char a, unsigned int b) const
 void 
 trimdomain_serializer::intToUint8_24(trimdomain_serializer::address_type input,
   unsigned char& a,
-  unsigned int& b) const
+  unsigned int& b)
 {
   b = (input & 0xFFFFFF00) >> 8U;
   a = (input & 0x000000FF);
@@ -136,7 +136,7 @@ trimdomain_serializer::intToUint8_24(trimdomain_serializer::address_type input,
 
 /////////////////////////////////////////////////////////////////////////////
 trimdomain_serializer::address_type 
-trimdomain_serializer::float2_to_unsigned(float a, float b) const
+trimdomain_serializer::float2_to_unsigned(float a, float b)
 {
   gpucast::math::halffloat_t ah = gpucast::math::floatToHalf(a);
   gpucast::math::halffloat_t bh = gpucast::math::floatToHalf(b);

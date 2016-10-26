@@ -128,25 +128,26 @@ public : // getter for serialized data
   std::vector<gpucast::math::vec4f> const&           serialized_raycasting_data_attrib2() const;
   std::vector<gpucast::math::vec4f> const&           serialized_raycasting_data_attrib3() const;
   std::vector<gpucast::math::vec4f> const&           serialized_raycasting_data_controlpoints() const;
-  std::vector<gpucast::math::vec4f> const&           serialized_raycasting_data_obbs() const;
   std::vector<unsigned> const&                       serialized_raycasting_data_indices() const;
   
   std::vector<math::vec4f> const&                    serialized_tesselation_domain_buffer() const;
   std::vector<unsigned> const&                       serialized_tesselation_index_buffer() const;
   std::vector<math::vec4f> const&                    serialized_tesselation_control_point_buffer() const;
   std::vector<patch_tesselation_data> const&         serialized_tesselation_attribute_data() const;
+  std::vector<gpucast::math::vec4f> const&           serialized_tesselation_obbs() const;
 
 private : // auxilliary methods
 
   void                    _clearbuffer    ();
 
-  std::size_t             _add            ( surface_ptr surface, unsigned fast_trim_texture_resolution );
-
   std::size_t             _add            ( gpucast::math::pointmesh2d<gpucast::math::point3d> const& points );
 
   std::size_t             _add            ( convex_hull const& chull );
 
-  void                    _init_adaptive_tesselation(trim_approach_t trimtype);
+  void                    _serialize_obb_data                  (surface_ptr const& surface);
+  void                    _serialize_trimming_data             (trimdomain_ptr const& surface);
+  void                    _serialize_raycasting_data           (surface_ptr const& surface);
+  void                    _serialize_adaptive_tesselation_data (surface_ptr const& surface);
 
 private : // data members
 
@@ -157,16 +158,28 @@ private : // data members
   bool                               _is_initialized = false;
   trim_approach_t                    _trim_approach = contour_kd_partition;
 
-  unsigned                           _preclassification_resolution;
-  unsigned                           _subdivision_u;
-  unsigned                           _subdivision_v;
+  unsigned                           _preclassification_resolution = trim_preclassification_default_resolution;
+  unsigned                           _subdivision_u = default_initial_subdivision;
+  unsigned                           _subdivision_v = default_initial_subdivision;
                                      
   /////////////////////////////////////////////////////////////////////////////
   // client side render information
   /////////////////////////////////////////////////////////////////////////////
   std::unordered_map<surface_ptr, unsigned>          _surface_vertex_base_ids;
   std::unordered_map<surface_ptr, unsigned>          _surface_obb_base_ids; 
-  std::unordered_map<surface_ptr, unsigned>          _surface_trim_ids;
+
+  // data to change trimming method
+  typedef std::map<trim_approach_t, unsigned> multi_trim_index_map;
+
+  struct multi_trim_attrib_desc {
+    std::size_t raycasting_base_index;
+    std::size_t raycasting_vertex_count;
+    std::size_t tesselation_base_index;
+    unsigned trim_type;
+  };
+
+  std::map<trimdomain_ptr, multi_trim_index_map>   _domain_index_map;
+  std::map<surface_ptr, multi_trim_attrib_desc>    _surface_index_map;
 
   // data for arraybuffer
   struct ray_casting_data {
@@ -179,14 +192,7 @@ private : // data members
     std::vector<unsigned>                              index_buffer;       // indices of convex hulls
 
     // data for texturebuffer                          
-    std::vector<gpucast::math::vec4f>                  controlpoints; // "vertexdata" -> control point data for texturebuffer
-
-    // "obbdata" -> object-oriented bbox [ center, low, high, 
-    //                                     mat0, mat1, mat2, mat3, 
-    //                                     invmat0, invmat1, invmat2, invmat3,
-    //                                     LBF, RBF, RTF, LTF, 
-    //                                     LBB, RBB, RTB, LTB ]
-    std::vector<gpucast::math::vec4f>                  obbs;                                                                            
+    std::vector<gpucast::math::vec4f>                  controlpoints; // "vertexdata" -> control point data for texturebuffer                                                                         
   };
 
   ray_casting_data _ray_casting_data;
@@ -203,26 +209,18 @@ private : // data members
     std::vector<unsigned>                            index_buffer;          // index data
     std::vector<math::vec4f>                         control_point_buffer;  // control points of all patchs
     std::vector<patch_tesselation_data>              patch_data_buffer;     // per patch attributes
+
+    // "obbdata" -> object-oriented bbox [ center, low, high, 
+    //                                     mat0, mat1, mat2, mat3, 
+    //                                     invmat0, invmat1, invmat2, invmat3,
+    //                                     LBF, RBF, RTF, LTF, 
+    //                                     LBB, RBB, RTB, LTB ]
+    std::vector<gpucast::math::vec4f>                obb_buffer;
   };
 
   tesselation_data _tesselation_data;
 
-  // data to change trimming method
-  struct multi_trim_index {
-    std::size_t double_binary_index;
-    std::size_t contour_binary_index;
-    std::size_t contour_kd_index;
-    std::size_t loop_list_index;
-  };
 
-  struct multi_trim_attrib_desc {
-    std::size_t base_index;
-    std::size_t count;
-    unsigned trim_type;
-  };
-
-  std::map<trimdomain_ptr, multi_trim_index>       _domain_index_map;
-  std::map<surface_ptr, multi_trim_attrib_desc>    _surface_index_map;
 };
 
 } // namespace gpucast

@@ -26,6 +26,7 @@
 #include <gpucast/gl/error.hpp>
 #include <gpucast/math/matrix4x4.hpp>
 #include <gpucast/gl/primitives/bezierobject.hpp>
+#include <gpucast/gl/primitives/bezierobject_renderer.hpp>
 
 #include <gpucast/core/import/igs.hpp>
 #include <gpucast/core/surface_converter.hpp>
@@ -136,12 +137,11 @@ public:
       gpucast::math::make_translation(-translation[0], -translation[1], -translation[2]);
 
     gpucast::math::matrix4f proj = gpucast::math::perspective(60.0f, 1.0f, near_clip, far_clip);
-    gpucast::math::matrix4f mv = view * model;
-    gpucast::math::matrix4f mvp = proj * mv;
-    gpucast::math::matrix4f nm = mv.normalmatrix();
 
-    renderer->projectionmatrix(proj);
-    renderer->modelviewmatrix(mv);
+    renderer->current_projectionmatrix(proj);
+    renderer->current_modelmatrix(model);
+    renderer->current_viewmatrix(view);
+    
 
     for (auto const& o : _objects)
     {
@@ -181,12 +181,12 @@ public:
         std::cout << "Backface culling set to " << o->culling() << std::endl;
         break;
       case 'i':
-        o->max_newton_iterations(std::max(1U, o->max_newton_iterations() - 1));
-        std::cout << "Newton iterations set to " << o->max_newton_iterations() << std::endl;
+        o->raycasting_max_iterations(std::max(1U, o->raycasting_max_iterations() - 1));
+        std::cout << "Newton iterations set to " << o->raycasting_max_iterations() << std::endl;
         break;
       case 'I':
-        o->max_newton_iterations(o->max_newton_iterations() + 1);
-        std::cout << "Newton iterations set to " << o->max_newton_iterations() << std::endl;
+        o->raycasting_max_iterations(o->raycasting_max_iterations() + 1);
+        std::cout << "Newton iterations set to " << o->raycasting_max_iterations() << std::endl;
         break;
       case 'r':
         o->enable_raycasting(!o->enable_raycasting());

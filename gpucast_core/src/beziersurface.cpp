@@ -97,7 +97,7 @@ namespace gpucast {
     bool surface_is_trimmed = true;
     for (auto v = vi_min; v != vi_max; ++v) {
       for (auto u = ui_min; u != ui_max; ++u) {
-        bool is_trimmed = preclass(u, v) == trimdomain::trimmed;
+        bool is_trimmed = (preclass(u, v) == trimdomain::trimmed);
         surface_is_trimmed &= is_trimmed;
         if (!surface_is_trimmed) break;
       }

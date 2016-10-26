@@ -30,6 +30,7 @@
 #include <gpucast/math/oriented_boundingbox_partial_derivative_policy.hpp> 
 
 #include <gpucast/gl/primitives/bezierobject.hpp>
+#include <gpucast/gl/primitives/bezierobject_renderer.hpp>
 #include <gpucast/gl/primitives/cube.hpp>
 
 #include <gpucast/core/import/igs.hpp>

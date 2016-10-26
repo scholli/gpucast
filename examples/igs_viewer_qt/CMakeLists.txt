@@ -82,5 +82,5 @@ ENDIF (MSVC)
 ###############################################################################
 # copy runtime libraries as a post-build process
 ###############################################################################
-copy_external_runtime_libraries()
+copy_external_runtime_libraries(qt5 glew freeimage)
 apply_debug_working_directory()

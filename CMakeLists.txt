@@ -83,8 +83,8 @@ ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})
 ################################################################
 # Write Configuration
 ################################################################
-FILE(GLOB_RECURSE _RUNTIME_LIBRARIES ${GLOBAL_EXT_DIR} ${GLOBAL_EXT_DIR}/*.dll)
-SET(GPUCAST_RUNTIME_LIBRARIES ${_RUNTIME_LIBRARIES} CACHE INTERNAL "Runtime libraries.")
+#FILE(GLOB_RECURSE _RUNTIME_LIBRARIES ${GLOBAL_EXT_DIR} ${GLOBAL_EXT_DIR}/*.dll)
+#SET(GPUCAST_RUNTIME_LIBRARIES ${_RUNTIME_LIBRARIES} CACHE INTERNAL "Runtime libraries.")
 
 ################################################################
 # Write Configuration

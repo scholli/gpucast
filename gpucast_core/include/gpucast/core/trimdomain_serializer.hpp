@@ -52,14 +52,14 @@ class GPUCAST_CORE trimdomain_serializer
                               std::vector<unsigned char>& output_classification_field, 
                               unsigned texture_classification_resolution) const;
     
-    float_type      unsigned_bits_as_float  ( address_type i ) const;
+    static float_type      unsigned_bits_as_float  ( address_type i );
 
-    address_type    float_bits_as_unsigned  ( float_type f ) const;
+    static address_type    float_bits_as_unsigned  ( float_type f );
 
-    address_type    uint4ToUInt (unsigned char a, unsigned char b, unsigned char c, unsigned char d) const;
-    address_type    uint8_24ToUInt (unsigned char a, unsigned int b) const;
-    void            intToUint8_24 (address_type input, unsigned char& a, unsigned int& b) const;
-    address_type    float2_to_unsigned (float a, float b) const;
+    static address_type    uint4ToUInt (unsigned char a, unsigned char b, unsigned char c, unsigned char d);
+    static address_type    uint8_24ToUInt (unsigned char a, unsigned int b);
+    static void            intToUint8_24 (address_type input, unsigned char& a, unsigned int& b);
+    static address_type    float2_to_unsigned (float a, float b);
 
   private : // member
 
