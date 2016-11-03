@@ -99,7 +99,7 @@ glwidget::open ( std::list<std::string> const& files )
                                                                                 _boundingbox.merge(bbox); // extend bounding box
                                                                               }
                                                                             } );
-  //_openfile ( file, _boundingbox );
+  _update_memory_usage();
 }
 
 
@@ -116,6 +116,7 @@ glwidget::add ( std::list<std::string> const& files )
                                                     _openfile ( file, bbox );
                                                     _boundingbox.merge ( bbox );
                                                   } );
+  _update_memory_usage();
 }
 
 
@@ -869,4 +870,19 @@ glwidget::_parse_background(std::istringstream& sstr, gpucast::math::vec3f& bg) 
   float r, g, b;
   sstr >> r >> g >> b;
   bg = gpucast::math::vec3f(r, g, b);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+glwidget::_update_memory_usage() 
+{
+  gpucast::beziersurfaceobject::memory_usage usage;
+
+  for (auto const& i : _objects) {
+    usage += i->object().get_memory_usage();
+  }
+  mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
+  if (mainwin) {
+    mainwin->show_memory_usage(usage);
+  }
 }

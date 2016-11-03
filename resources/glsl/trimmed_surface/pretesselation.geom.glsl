@@ -28,7 +28,7 @@ layout (xfb_offset=24) out vec3 transform_final_tesselation;
 ///////////////////////////////////////////////////////////////////////////////
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////
-uniform samplerBuffer gpucast_parametric_buffer;       
+uniform samplerBuffer gpucast_control_point_buffer;       
 
 #include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
 #include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"                          
@@ -90,7 +90,7 @@ void main()
     int surface_order_v = 0;
     retrieve_patch_data(int(eval_index[0]), surface_index, surface_order_u, surface_order_v);
                                                                                            
-    evaluateSurface ( gpucast_parametric_buffer,                                             
+    evaluateSurface ( gpucast_control_point_buffer,                                             
                       int(surface_index),                                            
                       int(surface_order_u),                                          
                       int(surface_order_v),                                          

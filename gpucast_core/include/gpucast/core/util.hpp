@@ -159,6 +159,16 @@ private:
   std::size_t index_;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// input : container
+// function : returns size in bytes of container for elementary types
+////////////////////////////////////////////////////////////////////////////////
+template <typename T>
+std::size_t size_in_bytes(T const& t) {
+  typename T::value_type value_t;
+  return t.size() * sizeof(value_t);
+}
+
 } // namespace gpucast
 
 #endif // LIBNURBS_UTIL_HPP

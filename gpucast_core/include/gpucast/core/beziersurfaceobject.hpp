@@ -20,6 +20,7 @@
 // header, project
 #include <gpucast/core/gpucast.hpp>
 
+#include <gpucast/core/util.hpp>
 #include <gpucast/core/beziersurface.hpp>
 #include <gpucast/core/surface_renderer.hpp>
 #include <gpucast/core/trimdomain_serializer.hpp>
@@ -38,7 +39,7 @@ public : // friends
 
   friend class surface_renderer_gl;
 
-  static const unsigned trim_preclassification_default_resolution = 16;
+  static const unsigned trim_preclassification_default_resolution = 8;
   static const unsigned default_initial_subdivision = 0;
 
 public : // enums, typedefs
@@ -65,6 +66,24 @@ public : // enums, typedefs
     math::vec4f bbox_min;
     math::vec4f bbox_max;
     math::vec4f distance;
+  };
+
+  struct GPUCAST_CORE memory_usage {
+    // unavoidable data
+    std::size_t surface_control_point_data = 0;
+    std::size_t trimcurve_control_point_data = 0;
+
+    // renderable data
+    std::size_t vertex_array_raycasting = 0;
+    std::size_t vertex_array_tesselation = 0;
+
+    // trim domain partition summed up per approach
+    std::size_t domain_partition_kd_tree = 0;
+    std::size_t domain_partition_contour_binary = 0;
+    std::size_t domain_partition_double_binary = 0;
+    std::size_t domain_partition_loops = 0;
+
+    memory_usage& operator+=(memory_usage const& rhs);
   };
 
   typedef beziersurface::value_type         value_type;
@@ -95,6 +114,7 @@ public : // methods
   void                    clear           ();
   void                    merge           ( beziersurfaceobject const& );
 
+  memory_usage            get_memory_usage() const;
   std::map<int, unsigned> order_surfaces  () const;
   std::map<int, unsigned> order_trimcurves() const;
 
@@ -123,16 +143,16 @@ public : // getter for serialized data
   std::shared_ptr<trim_kd_serialization>             serialized_trimdata_as_contour_kd() const;
   std::shared_ptr<trim_loop_list_serialization>      serialized_trimdata_as_contour_loop_list() const;
 
+  std::vector<gpucast::math::vec4f> const&           serialized_controlpoints() const;
+
   std::vector<gpucast::math::vec3f> const&           serialized_raycasting_data_attrib0() const;
   std::vector<gpucast::math::vec4f> const&           serialized_raycasting_data_attrib1() const;
   std::vector<gpucast::math::vec4f> const&           serialized_raycasting_data_attrib2() const;
   std::vector<gpucast::math::vec4f> const&           serialized_raycasting_data_attrib3() const;
-  std::vector<gpucast::math::vec4f> const&           serialized_raycasting_data_controlpoints() const;
   std::vector<unsigned> const&                       serialized_raycasting_data_indices() const;
   
   std::vector<math::vec4f> const&                    serialized_tesselation_domain_buffer() const;
   std::vector<unsigned> const&                       serialized_tesselation_index_buffer() const;
-  std::vector<math::vec4f> const&                    serialized_tesselation_control_point_buffer() const;
   std::vector<patch_tesselation_data> const&         serialized_tesselation_attribute_data() const;
   std::vector<gpucast::math::vec4f> const&           serialized_tesselation_obbs() const;
 
@@ -140,9 +160,9 @@ private : // auxilliary methods
 
   void                    _clearbuffer    ();
 
-  std::size_t             _add            ( gpucast::math::pointmesh2d<gpucast::math::point3d> const& points );
+  std::size_t             _serialize_control_points           ( gpucast::math::pointmesh2d<gpucast::math::point3d> const& points );
 
-  std::size_t             _add            ( convex_hull const& chull );
+  std::size_t             _serialize_convex_hull               ( convex_hull const& chull );
 
   void                    _serialize_obb_data                  (surface_ptr const& surface);
   void                    _serialize_trimming_data             (trimdomain_ptr const& surface);
@@ -178,8 +198,17 @@ private : // data members
     unsigned trim_type;
   };
 
-  std::map<trimdomain_ptr, multi_trim_index_map>   _domain_index_map;
-  std::map<surface_ptr, multi_trim_attrib_desc>    _surface_index_map;
+  std::map<trimdomain_ptr, multi_trim_index_map>     _domain_index_map;
+  std::map<surface_ptr, multi_trim_attrib_desc>      _surface_index_map;
+                                                     
+  // storage for surface control points              
+  std::vector<gpucast::math::vec4f>                  _control_points;
+
+  // data for trimming
+  std::shared_ptr<trim_double_binary_serialization>  _trimdata_double_binary_serialization;
+  std::shared_ptr<trim_contour_binary_serialization> _trimdata_contour_binary_serialization;
+  std::shared_ptr<trim_kd_serialization>             _trimdata_kd_serialization;
+  std::shared_ptr<trim_loop_list_serialization>      _trimdata_loop_list_serialization;
 
   // data for arraybuffer
   struct ray_casting_data {
@@ -190,24 +219,14 @@ private : // data members
                                                                      
     // data for element array buffer                                   
     std::vector<unsigned>                              index_buffer;       // indices of convex hulls
-
-    // data for texturebuffer                          
-    std::vector<gpucast::math::vec4f>                  controlpoints; // "vertexdata" -> control point data for texturebuffer                                                                         
   };
 
-  ray_casting_data _ray_casting_data;
-
-  // data for trimming
-  std::shared_ptr<trim_double_binary_serialization>  _trimdata_double_binary_serialization;
-  std::shared_ptr<trim_contour_binary_serialization> _trimdata_contour_binary_serialization;
-  std::shared_ptr<trim_kd_serialization>             _trimdata_kd_serialization;
-  std::shared_ptr<trim_loop_list_serialization>      _trimdata_loop_list_serialization;
+  ray_casting_data                                    _ray_casting_data;
 
   // cpu ressources for adaptive tesselation
   struct tesselation_data {
     std::vector<math::vec4f>                         domain_buffer;         // domain corners
     std::vector<unsigned>                            index_buffer;          // index data
-    std::vector<math::vec4f>                         control_point_buffer;  // control points of all patchs
     std::vector<patch_tesselation_data>              patch_data_buffer;     // per patch attributes
 
     // "obbdata" -> object-oriented bbox [ center, low, high, 
@@ -218,8 +237,7 @@ private : // data members
     std::vector<gpucast::math::vec4f>                obb_buffer;
   };
 
-  tesselation_data _tesselation_data;
-
+  tesselation_data                                    _tesselation_data;
 
 };
 

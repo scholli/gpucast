@@ -50,6 +50,7 @@ void main()
   tcTessCoord[gl_InvocationID] = vertex_tessCoord[gl_InvocationID];                                                                                       
   float final_tess_level       = vertex_final_tesselation[0].x;
 
+  // quad-based tesselation, just clamp tesselation to max edgelength / max_error
 #if 1
   // todo : double check! maybe there is something not 100% accurate?
   vec2 final_tess_edges = vertex_final_tesselation[0].yz;
@@ -65,13 +66,37 @@ void main()
   float tess_edge = max(tess_umax, tess_vmax);
 
   final_tess_level = max(tess_edge, final_tess_level);
-#endif 
 
   gl_TessLevelInner[0] = clamp(final_tess_level, 1.0, 64.0);
-  gl_TessLevelOuter[1] = clamp(final_tess_level, 1.0, 64.0);
-  gl_TessLevelOuter[3] = clamp(final_tess_level, 1.0, 64.0);
   gl_TessLevelInner[1] = clamp(final_tess_level, 1.0, 64.0);
+
   gl_TessLevelOuter[0] = clamp(final_tess_level, 1.0, 64.0);
+  gl_TessLevelOuter[1] = clamp(final_tess_level, 1.0, 64.0);
   gl_TessLevelOuter[2] = clamp(final_tess_level, 1.0, 64.0);                                                                                                                
+  gl_TessLevelOuter[3] = clamp(final_tess_level, 1.0, 64.0);
+#endif 
+
+  // triangular tesselation 
+#if 0
+  vec2 final_tess_edges = vertex_final_tesselation[0].yz;
+
+  uvec2 u_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[0].y)); 
+  uvec2 v_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[0].z));
+
+  float umin = u_edge_lengths.x / gpucast_tesselation_max_error;
+  float umax = u_edge_lengths.y / gpucast_tesselation_max_error;
+  float vmin = v_edge_lengths.x / gpucast_tesselation_max_error;
+  float vmax = v_edge_lengths.y / gpucast_tesselation_max_error;
+
+  final_tess_level = max(max(max(max(umin,umax), vmin), vmax),final_tess_level);
+
+  gl_TessLevelInner[0] = clamp(final_tess_level, 1.0, 64.0);
+  gl_TessLevelInner[1] = clamp(final_tess_level, 1.0, 64.0);
+
+  gl_TessLevelOuter[0] = clamp(umin, 1.0, 64.0); // vmin
+  gl_TessLevelOuter[1] = clamp(umin, 1.0, 64.0); // umin
+  gl_TessLevelOuter[2] = clamp(vmax, 1.0, 64.0); // vmax
+  gl_TessLevelOuter[3] = clamp(umax, 1.0, 64.0); // umax
+#endif 
 
 }           

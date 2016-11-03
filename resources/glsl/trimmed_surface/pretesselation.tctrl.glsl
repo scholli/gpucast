@@ -20,7 +20,7 @@ out vec3 control_final_tesselation[];
 ///////////////////////////////////////////////////////////////////////////////
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////                                                            
-uniform samplerBuffer gpucast_parametric_buffer;  
+uniform samplerBuffer gpucast_control_point_buffer;  
 uniform samplerBuffer gpcuast_attribute_buffer;              
 uniform samplerBuffer gpucast_obb_buffer;
 
@@ -33,6 +33,34 @@ uniform samplerBuffer gpucast_obb_buffer;
 #include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"                          
 #include "./resources/glsl/common/obb_area.glsl"        
 #include "./resources/glsl/common/conversion.glsl"       
+       
+       
+///////////////////////////////////////////////////////////////////////////////
+float estimate_control_edge (in samplerBuffer points,
+                             in int first_point_index, 
+                             in int second_point_index, 
+                             in int stride, 
+                             in int limit)
+{
+  int i = first_point_index;
+  int j = second_point_index;
+
+  float edge_length = 0;
+
+  for (; j < limit; i += stride, j+= stride) {
+    // get point in hyperspace coordinates (wx, wy, wz, w)
+    vec4 p0 = texelFetchBuffer(points, i);
+    vec4 p1 = texelFetchBuffer(points, j);
+
+    // normalize to euclidian
+    p0 /= p0.w;
+    p1 /= p1.w;
+
+    vec3 edge = p0.xyz - p1.xyz;
+    edge_length += length(edge);
+  }
+  return edge_length;
+}
           
           
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,18 +98,18 @@ float estimate_control_edge_in_pixel(in samplerBuffer points,
 
     vec2 edge = p0_device.xy - p1_device.xy;
     edge = clamp(edge, vec2(0), resolution);
-    edge_length = length(edge);
+    edge_length += length(edge);
   }
   return edge_length;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-vec4 estimate_edge_lengths(in int base_id, 
-                           in samplerBuffer points, 
-                           in int order_u, 
-                           in int order_v,
-                           in mat4 mvp,
-                           in vec2 resolution) 
+vec4 estimate_edge_lengths_in_pixel(in int base_id, 
+                                    in samplerBuffer points, 
+                                    in int order_u, 
+                                    in int order_v,
+                                    in mat4 mvp,
+                                    in vec2 resolution) 
 {
   float edge_length_umin = estimate_control_edge_in_pixel(points, 
                                                  base_id, 
@@ -165,12 +193,12 @@ void main()
   int surface_order_v = 0;
   retrieve_patch_data(int(vertex_index[gl_InvocationID]), surface_index, surface_order_u, surface_order_v);
 
-  vec4 edge_lengths = estimate_edge_lengths(surface_index, 
-                                            gpucast_parametric_buffer, 
-                                            surface_order_u, 
-                                            surface_order_v,
-                                            gpucast_model_view_projection_matrix,
-                                            vec2(gpucast_resolution));
+  vec4 edge_lengths = estimate_edge_lengths_in_pixel(surface_index, 
+                                                     gpucast_control_point_buffer, 
+                                                     surface_order_u, 
+                                                     surface_order_v,
+                                                     gpucast_model_view_projection_matrix,
+                                                     vec2(gpucast_resolution));
   edge_lengths /= pre_tess_level;
 
   control_final_tesselation[gl_InvocationID] = vec3(final_tess_level,

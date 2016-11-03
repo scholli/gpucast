@@ -8,6 +8,7 @@
 // tesselation
 uniform float gpucast_max_pre_tesselation;
 uniform float gpucast_tesselation_max_error;
+uniform float gpucast_max_geometric_error;
 
 // gpucast_shadow_mode = 0 // no shadow 
 // gpucast_shadow_mode = 1 // coarse shadow mode 1/16th of full tesselation

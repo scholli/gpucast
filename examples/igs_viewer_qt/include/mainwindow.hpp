@@ -56,6 +56,7 @@ public: // c'tor / d'tor
 
   void update_interface               ();
   void show_fps                       ( double cputime, double gputime, double postprocess );
+  void show_memory_usage              ( gpucast::beziersurfaceobject::memory_usage const& usage );
   void update_count(unsigned tri_count, unsigned frag_count);
 
 protected:
@@ -110,6 +111,7 @@ private: // attributes
 
   QLabel*               _counting_result;
   QLabel*               _fps_result;
+  QLabel*               _memory_usage;
 
   SlidersGroup*         _slider_trim_max_bisections;
   FloatSlidersGroup*    _slider_trim_error_tolerance;

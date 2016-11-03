@@ -46,6 +46,7 @@ public:
     static const float    trimming_error_tolerance;       // default set to 0.001f
     static const float    tesselation_max_pixel_error;    // default set to 4.0 pixel
     static const float    tesselation_max_pretesselation; // default set to 64.0f
+    static const float    tesselation_max_geometric_error; // default set to 0.1f mm
   };
 
   enum anti_aliasing_mode {
@@ -131,6 +132,7 @@ private :
 
   void _upload();
   void _upload_trimming_buffers();
+  void _upload_controlpoint_buffer();
   void _upload_raycasting_buffers();
   void _upload_tesselation_buffers();
 
@@ -141,6 +143,7 @@ private :
   float                                 _trimming_error_tolerance       = default_render_configuration::trimming_error_tolerance;
   float                                 _tesselation_max_pixel_error    = default_render_configuration::tesselation_max_pixel_error;
   float                                 _tesselation_max_pretesselation = default_render_configuration::tesselation_max_pretesselation;
+  float                                 _tesselation_max_geometric_error = default_render_configuration::tesselation_max_geometric_error;
 
   bool                                  _culling                 = false;
   bool                                  _raycasting              = true;
@@ -180,8 +183,6 @@ private :
   gpucast::gl::elementarraybuffer       _tesselation_index_buffer;
   gpucast::gl::arraybuffer              _tesselation_hullvertexmap;
   gpucast::gl::shaderstoragebuffer      _tesselation_attribute_buffer;
-
-  gpucast::gl::texturebuffer            _tesselation_parametric_texture_buffer;
 
   // gpu ressources trimming
   gpucast::gl::texturebuffer            _cmb_partition;

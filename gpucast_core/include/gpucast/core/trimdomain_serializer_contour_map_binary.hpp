@@ -73,6 +73,7 @@ class GPUCAST_CORE trimdomain_serializer_contour_map_binary : public trimdomain_
 
     address_type     serialize_contour_segment  ( contour_segment_ptr const&         contour_segment,
                                                   trim_contour_binary_serialization& serialization ) const;
+
   private : // member
 
 };

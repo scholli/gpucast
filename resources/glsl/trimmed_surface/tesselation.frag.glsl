@@ -23,7 +23,7 @@ layout (location = 0) out vec4  out_color;
 ///////////////////////////////////////////////////////////////////////////////
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////  
-uniform samplerBuffer gpucast_parametric_buffer;   
+uniform samplerBuffer gpucast_control_point_buffer;   
 uniform samplerBuffer gpcuast_attribute_buffer;      
 uniform samplerBuffer gpucast_obb_buffer;       
 

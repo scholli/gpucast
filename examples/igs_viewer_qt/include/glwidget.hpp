@@ -121,6 +121,8 @@ private : // helper methods
   bool                    _parse_float                  ( std::istringstream& sstr, float& result) const;
   void                    _parse_background             ( std::istringstream& sstr, gpucast::math::vec3f&) const;
 
+  void                    _update_memory_usage();
+
 private : // attributes                     
 
   int                                                                         _argc;

@@ -35,16 +35,17 @@
 namespace gpucast {
   namespace gl {
 
-    const float bezierobject::default_render_configuration::raycasting_error_tolerance     = 0.001f;
-    const float bezierobject::default_render_configuration::trimming_error_tolerance       = 0.001f;
-    const float bezierobject::default_render_configuration::tesselation_max_pixel_error    = 4.0f;
+    const float bezierobject::default_render_configuration::raycasting_error_tolerance = 0.001f;
+    const float bezierobject::default_render_configuration::trimming_error_tolerance = 0.001f;
+    const float bezierobject::default_render_configuration::tesselation_max_pixel_error = 4.0f;
     const float bezierobject::default_render_configuration::tesselation_max_pretesselation = 64.0f;
+    const float bezierobject::default_render_configuration::tesselation_max_geometric_error = 0.1f;
 
     /////////////////////////////////////////////////////////////////////////////
     bezierobject::bezierobject(gpucast::beziersurfaceobject const& b)
       : _object(b),
-        _trimming(b.trim_approach()),
-        _rendermode(tesselation)
+      _trimming(b.trim_approach()),
+      _rendermode(tesselation)
     {
       _material.randomize();
 
@@ -68,16 +69,16 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject::draw()
     {
-      switch (_rendermode) 
+      switch (_rendermode)
       {
-        case raycasting:
-          _draw_by_raycasting();
-          break;
-        case tesselation:
-        case shadow:
-        case shadow_lowres:
-          _draw_by_tesselation();
-          break;
+      case raycasting:
+        _draw_by_raycasting();
+        break;
+      case tesselation:
+      case shadow:
+      case shadow_lowres:
+        _draw_by_tesselation();
+        break;
       }
     }
 
@@ -280,7 +281,7 @@ namespace gpucast {
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject::_draw_by_tesselation()
-    {     
+    {
       auto renderer = bezierobject_renderer::instance();
       auto const& pretesselation_program = renderer->get_pretesselation_program();
       auto const& tesselation_program = renderer->get_tesselation_program();
@@ -298,13 +299,13 @@ namespace gpucast {
       glPatchParameteri(GL_PATCH_VERTICES, 4);
 
       switch (_fill_mode) {
-      case points : 
+      case points:
         glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
         break;
-      case solid :
+      case solid:
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         break;
-      case wireframe :
+      case wireframe:
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         break;
       }
@@ -313,7 +314,7 @@ namespace gpucast {
       {
         // bind VAO and draw
         _tesselation_vertex_array.bind();
-        _tesselation_index_buffer.bind();   
+        _tesselation_index_buffer.bind();
 
         // apply uniforms 
         _apply_uniforms(*pretesselation_program, tesselation);
@@ -345,7 +346,7 @@ namespace gpucast {
       std::cout << "Query ready: " << std::endl;
       int nprimitives = 0;
       glGetQueryObjectiv(primitive_query, GL_QUERY_RESULT, &nprimitives);
-      
+
       BOOST_LOG_TRIVIAL(info) << "Primitives written : " << nprimitives << std::endl;
       glDeleteQueries(1, &primitive_query);
 #endif
@@ -372,11 +373,12 @@ namespace gpucast {
       p.set_uniform1f("gpucast_raycasting_error_tolerance", _raycasting_error_tolerance);
       p.set_uniform1f("gpucast_tesselation_max_error", _tesselation_max_pixel_error);
       p.set_uniform1f("gpucast_max_pre_tesselation", _tesselation_max_pretesselation);
+      p.set_uniform1f("gpucast_max_geometric_error", _tesselation_max_geometric_error);
       p.set_uniform1i("gpucast_shadow_mode", _rendermode);
 
       p.set_uniform1i("gpucast_trimming_max_bisections", _trimming_max_bisections);
       p.set_uniform1f("gpucast_trimmig_error_tolerance", _trimming_error_tolerance);
-      p.set_uniform1i("gpucast_trimming_method", int(_trimming) );
+      p.set_uniform1i("gpucast_trimming_method", int(_trimming));
 
       // material properties
       p.set_uniform3f("mat_ambient", _material.ambient[0], _material.ambient[1], _material.ambient[2]);
@@ -389,19 +391,18 @@ namespace gpucast {
       auto renderer = bezierobject_renderer::instance();
       switch (mode)
       {
-      case raycasting :
+      case raycasting:
         p.set_texturebuffer("gpucast_control_point_buffer", _controlpoints, renderer->next_texunit());
         p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer->next_texunit());
         break;
-      case tesselation : 
-        
-        p.set_texturebuffer("gpucast_parametric_buffer", _tesselation_parametric_texture_buffer, renderer->next_texunit());
+      case tesselation:
+        p.set_texturebuffer("gpucast_control_point_buffer", _controlpoints, renderer->next_texunit());
         p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer->next_texunit());
         p.set_shaderstoragebuffer("gpucast_attribute_ssbo", _tesselation_attribute_buffer, bezierobject_renderer::GPUCAST_ATTRIBUTE_SSBO_BINDING);
         break;
       }
 
-      switch (_trimming) 
+      switch (_trimming)
       {
       case beziersurfaceobject::curve_binary_partition:
         p.set_texturebuffer("gpucast_bp_trimdata", _db_partition, renderer->next_texunit());
@@ -442,6 +443,7 @@ namespace gpucast {
     void bezierobject::_upload()
     {
       _upload_trimming_buffers();
+      _upload_controlpoint_buffer();
       _upload_raycasting_buffers();
       _upload_tesselation_buffers();
     }
@@ -507,6 +509,14 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::_upload_controlpoint_buffer()
+    {
+      // update texturebuffers
+      _controlpoints.update(_object.serialized_controlpoints().begin(), _object.serialized_controlpoints().end());
+      _controlpoints.format(GL_RGBA32F);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     void bezierobject::_upload_raycasting_buffers()
     {
       // update attribute buffers
@@ -518,10 +528,6 @@ namespace gpucast {
       // update index array buffer
       _chull_indexarray.update(_object.serialized_raycasting_data_indices().begin(), _object.serialized_raycasting_data_indices().end());
       _size = _object.serialized_raycasting_data_indices().size();
-
-      // update texturebuffers
-      _controlpoints.update(_object.serialized_raycasting_data_controlpoints().begin(), _object.serialized_raycasting_data_controlpoints().end());
-      _controlpoints.format(GL_RGBA32F);
 
       _obbs.update(_object.serialized_tesselation_obbs().begin(), _object.serialized_tesselation_obbs().end());
       _obbs.format(GL_RGBA32F);
@@ -548,9 +554,6 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject::_upload_tesselation_buffers()
     {
-      _tesselation_parametric_texture_buffer.update(_object.serialized_tesselation_control_point_buffer().begin(), _object.serialized_tesselation_control_point_buffer().end());
-      _tesselation_parametric_texture_buffer.format(GL_RGBA32F);
-
       // tesselation vertex setup
       _tesselation_vertex_buffer.update(_object.serialized_tesselation_domain_buffer().begin(), _object.serialized_tesselation_domain_buffer().end());
       _tesselation_index_buffer.update(_object.serialized_tesselation_index_buffer().begin(), _object.serialized_tesselation_index_buffer().end());

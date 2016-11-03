@@ -22,7 +22,7 @@ flat out vec4   tePosition;
 #include "./resources/glsl/common/camera_uniforms.glsl"                
 #include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
                                                             
-uniform samplerBuffer gpucast_parametric_buffer;   
+uniform samplerBuffer gpucast_control_point_buffer;   
 uniform samplerBuffer gpcuast_attribute_buffer;      
 uniform samplerBuffer gpucast_obb_buffer;         
 
@@ -54,7 +54,7 @@ void main()
                                                                                
   uv = clamp(mix(p1, p2, gl_TessCoord.y), 0.0, 1.0);                   
                                                                                
-  evaluateSurface(gpucast_parametric_buffer,                                   
+  evaluateSurface(gpucast_control_point_buffer,                                   
                   surface_index,                                  
                   surface_order_u,                                
                   surface_order_v,                                
