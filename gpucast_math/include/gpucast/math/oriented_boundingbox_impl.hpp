@@ -45,7 +45,7 @@ namespace gpucast { namespace math {
       _low    ( (aabb.max - aabb.min) / value_type(-2) ),
       _high   ( (aabb.max - aabb.min) / value_type( 2) )
   {
-
+    assert(valid());
   }
 
 
@@ -59,7 +59,9 @@ namespace gpucast { namespace math {
       _base   (orientation),
       _low    (low),
       _high   (high)
-  {}
+  {
+    assert(valid());
+  }
 
 
   //////////////////////////////////////////////////////////////////////////////
@@ -279,6 +281,9 @@ namespace gpucast { namespace math {
   bool
   oriented_boundingbox<point_t>::valid () const
   {
+    for (auto i = 0; i != point_t::coordinates; ++i ) {
+      _low[i] < _high[i];
+    }
     return _base.valid() && _low.valid() && _high.valid() && _center.valid();
   }
 
@@ -344,6 +349,72 @@ namespace gpucast { namespace math {
   {
     a.print(os);
     return os;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
+  template <typename value_t>
+  std::vector<math::vec4<value_t>> oriented_boundingbox<point_t>::serialize() const
+  {
+    std::vector<math::vec4<value_t>> result;
+
+    auto pcenter = math::vec4<value_t>(center()[0], center()[1], center()[2], 1.0);
+    auto phigh = math::vec4<value_t>(high()[0], high()[1], high()[2], 0.0f);
+    auto plow = math::vec4<value_t>(low()[0], low()[1], low()[2], 0.0f);
+
+    result.push_back(pcenter);
+    result.push_back(phigh);
+    result.push_back(plow);
+
+    auto orientation_mat = orientation();
+    auto inv_orientation_mat = compute_inverse(orientation_mat);
+
+    result.push_back(math::vec4<value_t>(orientation_mat[0][0], orientation_mat[1][0], orientation_mat[2][0], 0.0));
+    result.push_back(math::vec4<value_t>(orientation_mat[0][1], orientation_mat[1][1], orientation_mat[2][1], 0.0));
+    result.push_back(math::vec4<value_t>(orientation_mat[0][2], orientation_mat[1][2], orientation_mat[2][2], 0.0));
+    result.push_back(math::vec4<value_t>(0.0, 0.0, 0.0, 1.0));
+
+    result.push_back(math::vec4<value_t>(inv_orientation_mat[0][0], inv_orientation_mat[1][0], inv_orientation_mat[2][0], 0.0));
+    result.push_back(math::vec4<value_t>(inv_orientation_mat[0][1], inv_orientation_mat[1][1], inv_orientation_mat[2][1], 0.0));
+    result.push_back(math::vec4<value_t>(inv_orientation_mat[0][2], inv_orientation_mat[1][2], inv_orientation_mat[2][2], 0.0));
+    result.push_back(math::vec4<value_t>(0.0, 0.0, 0.0, 1.0));
+
+    auto lbf = point_type(plow[0], plow[1], plow[2], 1.0);  // left, bottom, front
+    auto rbf = point_type(phigh[0], plow[1], plow[2], 1.0);  // right, bottom, front
+    auto rtf = point_type(phigh[0], phigh[1], plow[2], 1.0);  // right, top, front
+    auto ltf = point_type(plow[0], phigh[1], plow[2], 1.0);  // left, top, front
+
+    auto lbb = point_type(plow[0], plow[1], phigh[2], 1.0); // left, bottom, back  
+    auto rbb = point_type(phigh[0], plow[1], phigh[2], 1.0); // right, bottom, back  
+    auto rtb = point_type(phigh[0], phigh[1], phigh[2], 1.0); // right, top, back  
+    auto ltb = point_type(plow[0], phigh[1], phigh[2], 1.0); // left, top, back  
+
+    //lbf = orientation_mat * lbf;
+    //rbf = orientation_mat * rbf;
+    //rtf = orientation_mat * rtf;
+    //ltf = orientation_mat * ltf;
+    //                           
+    //lbb = orientation_mat * lbb;
+    //rbb = orientation_mat * rbb;
+    //rtb = orientation_mat * rtb;
+    //ltb = orientation_mat * ltb;
+
+    lbf.weight(1.0);
+    rbf.weight(1.0);
+    rtf.weight(1.0);
+    ltf.weight(1.0);
+
+    result.push_back(math::vec4<value_t>(lbf));
+    result.push_back(math::vec4<value_t>(rbf));
+    result.push_back(math::vec4<value_t>(rtf));
+    result.push_back(math::vec4<value_t>(ltf));
+
+    result.push_back(math::vec4<value_t>(lbb));
+    result.push_back(math::vec4<value_t>(rbb));
+    result.push_back(math::vec4<value_t>(rtb));
+    result.push_back(math::vec4<value_t>(ltb));
+
+    return result;
   }
 
 #if 1

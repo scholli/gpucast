@@ -497,58 +497,9 @@ beziersurfaceobject::_serialize_convex_hull( convex_hull const& chull )
 ////////////////////////////////////////////////////////////////////////////////
 void beziersurfaceobject::_serialize_obb_data(surface_ptr const& surface)
 {
-  auto const& obb = surface->obb();
-
-  auto pcenter = math::vec4f(obb.center()[0], obb.center()[1], obb.center()[2], 1.0);
-  auto phigh = math::vec4f(obb.high()[0], obb.high()[1], obb.high()[2], 0.0f);
-  auto plow = math::vec4f(obb.low()[0], obb.low()[1], obb.low()[2], 0.0f);
-
-  _tesselation_data.obb_buffer.push_back(pcenter);
-  _tesselation_data.obb_buffer.push_back(phigh);
-  _tesselation_data.obb_buffer.push_back(plow);
-
-  auto orientation = obb.orientation();
-  auto inv_orientation = compute_inverse(orientation);
-
-  _tesselation_data.obb_buffer.push_back(math::vec4f(orientation[0][0], orientation[1][0], orientation[2][0], 0.0));
-  _tesselation_data.obb_buffer.push_back(math::vec4f(orientation[0][1], orientation[1][1], orientation[2][1], 0.0));
-  _tesselation_data.obb_buffer.push_back(math::vec4f(orientation[0][2], orientation[1][2], orientation[2][2], 0.0));
-  _tesselation_data.obb_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
-
-  _tesselation_data.obb_buffer.push_back(math::vec4f(inv_orientation[0][0], inv_orientation[1][0], inv_orientation[2][0], 0.0));
-  _tesselation_data.obb_buffer.push_back(math::vec4f(inv_orientation[0][1], inv_orientation[1][1], inv_orientation[2][1], 0.0));
-  _tesselation_data.obb_buffer.push_back(math::vec4f(inv_orientation[0][2], inv_orientation[1][2], inv_orientation[2][2], 0.0));
-  _tesselation_data.obb_buffer.push_back(math::vec4f(0.0f, 0.0f, 0.0f, 1.0f));
-
-  auto lbf = math::point3d(plow[0], plow[1], plow[2]);  // left, bottom, front
-  auto rbf = math::point3d(phigh[0], plow[1], plow[2]);  // right, bottom, front
-  auto rtf = math::point3d(phigh[0], phigh[1], plow[2]);  // right, top, front
-  auto ltf = math::point3d(plow[0], phigh[1], plow[2]);  // left, top, front
-
-  auto lbb = math::point3d(plow[0], plow[1], phigh[2]); // left, bottom, back  
-  auto rbb = math::point3d(phigh[0], plow[1], phigh[2]); // right, bottom, back  
-  auto rtb = math::point3d(phigh[0], phigh[1], phigh[2]); // right, top, back  
-  auto ltb = math::point3d(plow[0], phigh[1], phigh[2]); // left, top, back  
-
-  lbf.weight(1.0);
-  rbf.weight(1.0);
-  rtf.weight(1.0);
-  ltf.weight(1.0);
-
-  lbb.weight(1.0);
-  rbb.weight(1.0);
-  rtb.weight(1.0);
-  ltb.weight(1.0);
-
-  _tesselation_data.obb_buffer.push_back(lbf);
-  _tesselation_data.obb_buffer.push_back(rbf);
-  _tesselation_data.obb_buffer.push_back(rtf);
-  _tesselation_data.obb_buffer.push_back(ltf);
-
-  _tesselation_data.obb_buffer.push_back(lbb);
-  _tesselation_data.obb_buffer.push_back(rbb);
-  _tesselation_data.obb_buffer.push_back(rtb);
-  _tesselation_data.obb_buffer.push_back(ltb);
+  auto const& obb = surface->obb(); 
+  auto obbdata = obb.serialize<float>();
+  std::copy(obbdata.begin(), obbdata.end(), std::back_inserter(_tesselation_data.obb_buffer));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -160,7 +160,7 @@ void main()
      
   // project oriented boudning box to screen and estimate area          
   int obb_index     = retrieve_obb_index(int(vertex_index[gl_InvocationID]));
-  float area        = calculate_obb_area(gpucast_model_view_projection_matrix, gpucast_model_view_inverse_matrix, gpucast_obb_buffer, obb_index);
+  float area        = calculate_obb_area(gpucast_model_view_projection_matrix, gpucast_model_view_inverse_matrix, gpucast_obb_buffer, obb_index, false);
   float area_pixels = float(gpucast_resolution.x * gpucast_resolution.y) * area;
 
   //// derive desired tesselation based on projected area estimate

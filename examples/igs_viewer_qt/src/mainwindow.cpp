@@ -144,16 +144,17 @@ mainwindow::show_fps ( double cputime, double gputime, double postprocess )
 void mainwindow::show_memory_usage(gpucast::beziersurfaceobject::memory_usage const& usage)
 {
   QString message = "";
-  message.append(QString("control point data         : %1 kb\n").arg(usage.surface_control_point_data / 1024));
-  message.append(QString("trim point data            : %1 kb\n").arg(usage.trimcurve_control_point_data / 1024));
+  message.append(QString("Control point data         : %1 kb\n").arg(usage.surface_control_point_data / 1024));
+  message.append(QString("Trim point data            : %1 kb\n").arg(usage.trimcurve_control_point_data / 1024));
 
-  message.append(QString("proxy geometry raycasting  : %1 kb\n").arg(usage.vertex_array_raycasting / 1024));
-  message.append(QString("proxy geometry tesselation : %1 kb\n").arg(usage.vertex_array_tesselation / 1024));
+  message.append(QString("Proxy geometry raycasting  : %1 kb\n").arg(usage.vertex_array_raycasting / 1024));
+  message.append(QString("Proxy geometry tesselation : %1 kb\n").arg(usage.vertex_array_tesselation / 1024));
 
-  message.append(QString("domain partition kd tree   : %1 kb\n").arg(usage.domain_partition_kd_tree / 1024));
-  message.append(QString("domain partition contour   : %1 kb\n").arg(usage.domain_partition_contour_binary / 1024));
-  message.append(QString("domain partition binary    : %1 kb\n").arg(usage.domain_partition_double_binary / 1024));
-  message.append(QString("domain partition lists     : %1 kb\n").arg(usage.domain_partition_loops / 1024));
+  message.append(QString("Domain partition :\n"));
+  message.append(QString(" - contour kd-tree         : %1 kb\n").arg(usage.domain_partition_kd_tree / 1024));
+  message.append(QString(" - contour binary          : %1 kb\n").arg(usage.domain_partition_contour_binary / 1024));
+  message.append(QString(" - double binary           : %1 kb\n").arg(usage.domain_partition_double_binary / 1024));
+  message.append(QString(" - loop lists              : %1 kb\n").arg(usage.domain_partition_loops / 1024));
   _memory_usage->setText(message);
 }
 

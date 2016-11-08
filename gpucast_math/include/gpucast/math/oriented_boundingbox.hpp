@@ -16,6 +16,7 @@
 #include <vector>
 
 // header, project
+#include <gpucast/math/vec4.hpp>
 #include <gpucast/math/parametric/point.hpp>
 #include <gpucast/math/parametric/pointmesh2d.hpp>
 #include <gpucast/math/parametric/pointmesh3d.hpp>
@@ -35,7 +36,7 @@ namespace gpucast { namespace math {
     static unsigned const N = point_t::coordinates;
 
     typedef oriented_boundingbox<point_t> type;
-    typedef std::shared_ptr<type>       pointer_type;
+    typedef std::shared_ptr<type>         pointer_type;
 
     typedef typename point_t::value_type  value_type;
     typedef point_t                       point_type;
@@ -96,6 +97,9 @@ namespace gpucast { namespace math {
     virtual void          print             ( std::ostream& os ) const;
     virtual void          write             ( std::ostream& os ) const;
     virtual void          read              ( std::istream& is );
+
+    template <typename value_t>
+    std::vector<math::vec4<value_t>> serialize() const;
 
   protected : // attributes
 

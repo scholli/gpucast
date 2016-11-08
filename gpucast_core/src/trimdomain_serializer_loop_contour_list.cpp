@@ -21,7 +21,7 @@ namespace gpucast {
 
   /////////////////////////////////////////////////////////////////////////////
   trimdomain_serializer::address_type
-    trimdomain_serializer_loop_contour_list::serialize(trimdomain_ptr const&                                    input_domain,
+    trimdomain_serializer_loop_contour_list::serialize(trimdomain_ptr const& input_domain,
     trim_loop_list_serialization&  result,
     bool pre_classification_enabled,
     unsigned pre_classification_resolution) const

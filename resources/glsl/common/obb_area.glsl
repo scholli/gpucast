@@ -43,10 +43,11 @@ void fetch_obb_data(in samplerBuffer obb_data, in int base_id, out vec4 obb_cent
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-float calculate_obb_area(mat4           modelview_projection,
-                         mat4           modelview_inverse,
-                         samplerBuffer  obb_data,
-                         int            obb_base_index )
+float calculate_obb_area(in mat4           modelview_projection,
+                         in mat4           modelview_inverse,
+                         in samplerBuffer  obb_data,
+                         in int            obb_base_index,
+                         in bool           clamp_to_screen )
 {
   vec4 obb_center;
   mat4 obb_orientation;
@@ -78,9 +79,16 @@ float calculate_obb_area(mat4           modelview_projection,
   // project all obb vertices to screen coordinates
   vec2 dst[6];
   for (int i = 0; i != n_visible_vertices; ++i) {
-    vec4 corner_screenspace = modelview_projection * (obb_orientation * bbox[i] + vec4(obb_center.xyz, 0.0));
+    uint index = gpucast_hvm[pos].vertices[i];
+    vec4 corner_screenspace = modelview_projection * (obb_orientation * bbox[index] + vec4(obb_center.xyz, 0.0));
     corner_screenspace /= corner_screenspace.w;
-    dst[i] = clamp(corner_screenspace.xy, vec2(-1.0), vec2(1.0));
+
+    // if clamped parts at the border appear to coarsly tesselated
+    if (clamp_to_screen) {
+      dst[i] = clamp(corner_screenspace.xy, vec2(-1.0), vec2(1.0));
+    } else {
+      dst[i] = corner_screenspace.xy;
+    }
   }
 
   // accumulate area of visible vertices' polygon
@@ -89,7 +97,7 @@ float calculate_obb_area(mat4           modelview_projection,
   }
 
   // return area
-  return abs(sum) / 4.0; // this differs from original, but testet with extra application
+  return abs(sum) / 8.0; // this differs from original, but testet with extra application
 }
 
 #endif
