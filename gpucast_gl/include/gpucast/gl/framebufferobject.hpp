@@ -54,6 +54,7 @@ namespace gpucast {
 
       static GLuint     max_color_attachments();
       static GLenum     target();
+      GLuint            id() const;
 
     private:
 

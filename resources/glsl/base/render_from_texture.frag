@@ -9,7 +9,6 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_NV_gpu_shader5 : enable
 
 /********************************************************************************
@@ -71,19 +70,19 @@ void main(void)
   switch (fxaa_mode)
   {
   case 0:  // SSAA 3.11
-    out_color = FxaaPixelShader(frag_texcoord,
+    out_color = vec4(FxaaPixelShader(frag_texcoord.xy,
                                 colorbuffer,
                                 inverse_resolution,
                                 fxaa_quality_subpix,
                                 fxaa_edge_threshold,
-                                fxaa_threshold_min).rgb;
+                                fxaa_threshold_min).rgb, 1.0);
     break;
   case 1:  // Simple FXAA
-    out_color = fxaa_simple(colorbuffer, gl_FragCoord.xy).rgb;
+    out_color = fxaa_simple(colorbuffer, gl_FragCoord.xy, vec2(width, height));
     break;
 
   default:  // No FXAA
-    out_color = texture2D(colorbuffer, frag_texcoord);
+    out_color = texture2D(colorbuffer, frag_texcoord.xy);
   }
 
 }

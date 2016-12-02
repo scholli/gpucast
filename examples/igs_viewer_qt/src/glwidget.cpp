@@ -128,9 +128,15 @@ glwidget::recompile ( )
   gpucast::gl::bezierobject_renderer::instance()->recompile();
 
   gpucast::gl::resource_factory program_factory;
-  _fbo_program = program_factory.create_program({
-    {gpucast::gl::vertex_stage,   "resources/glsl/base/render_from_texture_sao.vert"},
-    {gpucast::gl::fragment_stage, "resources/glsl/base/render_from_texture_sao.frag"}
+
+  _fxaa_program = program_factory.create_program({
+    {gpucast::gl::vertex_stage,   "resources/glsl/base/render_from_texture.vert"},
+    {gpucast::gl::fragment_stage, "resources/glsl/base/render_from_texture.frag"}
+  });
+
+  _ssao_program = program_factory.create_program({
+    { gpucast::gl::vertex_stage,   "resources/glsl/base/render_from_texture_sao.vert" },
+    { gpucast::gl::fragment_stage, "resources/glsl/base/render_from_texture_sao.frag" }
   });
 }
 
@@ -149,30 +155,54 @@ glwidget::resizeGL(int width, int height)
   _width  = width;
   _height = height;
 
-  if (!_initialized) 
+  if (!_initialized) {
     return;
+  }
   
   glViewport(0, 0, GLsizei(_width), GLsizei(_height));
 
-  // if renderer already initialized -> resize
-  if (_antialiasing == gpucast::gl::bezierobject::msaa) {
-    _colorattachment.reset(new gpucast::gl::texture2d);
-    _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
-  } else{
-    _colorattachment.reset(new gpucast::gl::texture2d);
-    _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
-  }
+  // create texture for FBO
+  _colorattachment_read.reset(new gpucast::gl::texture2d);
+  _colorattachment_read->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
+  _colorattachment_write.reset(new gpucast::gl::texture2d);
+  _colorattachment_write->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
+  _colorattachment_multisample.reset(new gpucast::gl::renderbuffer);
+  _colorattachment_multisample->set(8, GL_RGBA8, GLsizei(_width), GLsizei(_height));
 
-  _depthattachment.reset(new gpucast::gl::texture2d);
-  _depthattachment->teximage(0, GL_DEPTH32F_STENCIL8 , GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+  // create also texture for depth as necessary for FXAA
+  _depthattachment_read.reset(new gpucast::gl::texture2d);
+  _depthattachment_read->teximage(0, GL_DEPTH32F_STENCIL8 , GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+  _depthattachment_write.reset(new gpucast::gl::texture2d);
+  _depthattachment_write->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+  _depthattachment_multisample.reset(new gpucast::gl::renderbuffer);
+  _depthattachment_multisample->set(8, GL_DEPTH32F_STENCIL8, GLsizei(_width), GLsizei(_height));
 
-  _fbo.reset(new gpucast::gl::framebufferobject);
-  _fbo->attach_texture (*_colorattachment, GL_COLOR_ATTACHMENT0_EXT);
-  _fbo->attach_texture (*_depthattachment, GL_DEPTH_STENCIL_ATTACHMENT);
+  // create FBOs 
+  _fbo_read.reset(new gpucast::gl::framebufferobject);
+  _fbo_read->attach_texture(*_colorattachment_read, GL_COLOR_ATTACHMENT0_EXT);
+  _fbo_read->attach_texture(*_depthattachment_read, GL_DEPTH_STENCIL_ATTACHMENT);
 
-  _fbo->bind();
-  _fbo->status();
-  _fbo->unbind();
+  _fbo_write.reset(new gpucast::gl::framebufferobject);
+  _fbo_write->attach_texture(*_colorattachment_write, GL_COLOR_ATTACHMENT0_EXT);
+  _fbo_write->attach_texture(*_depthattachment_write, GL_DEPTH_STENCIL_ATTACHMENT);
+
+  _fbo_multisample.reset(new gpucast::gl::framebufferobject);
+  _fbo_multisample->attach_renderbuffer(*_colorattachment_multisample, GL_COLOR_ATTACHMENT0_EXT);
+  _fbo_multisample->attach_renderbuffer(*_depthattachment_multisample, GL_DEPTH_STENCIL_ATTACHMENT);
+
+  // check FBOs
+  _fbo_read->bind();
+  _fbo_read->status();
+  _fbo_read->unbind();
+
+  _fbo_write->bind();
+  _fbo_write->status();
+  _fbo_write->unbind();
+
+  _fbo_multisample->bind();
+  _fbo_multisample->status();
+  _fbo_multisample->unbind();
+
   _generate_random_texture();
 }
 
@@ -183,9 +213,9 @@ glwidget::resizeGL(int width, int height)
 void 
 glwidget::paintGL()
 {
-#define FBO 1
-
-  // draw pre-evaluated stuff... 
+  //////////////////////////////////////////////
+  // lazy ressource initialization
+  //////////////////////////////////////////////
   if (!_initialized)
   {
     // init data, buffers and shader
@@ -205,11 +235,24 @@ glwidget::paintGL()
   if (!_cputimer) _cputimer = std::make_shared<gpucast::gl::timer>();
 
   _gputimer->begin();
+#if 1
+  //////////////////////////////////////////////
+  // bind FBO
+  //////////////////////////////////////////////
+  if (!_fbo_multisample || !_fbo_read || !_fbo_write) {
+    resizeGL(_width, _height);
+  }
 
-#if FBO
-  _fbo->bind();
+  if (_antialiasing == gpucast::gl::bezierobject::msaa) {
+    _fbo_multisample->bind();
+  }
+  else {
+    _fbo_write->bind();
+  }
 #endif
-
+  //////////////////////////////////////////////
+  // GL state setup
+  //////////////////////////////////////////////
   glEnable(GL_DEPTH_TEST);
   //glEnable(GL_CULL_FACE);
 
@@ -218,7 +261,9 @@ glwidget::paintGL()
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  // compute render parameters
+  //////////////////////////////////////////////
+  // compute render parameters and view setup
+  //////////////////////////////////////////////
   float nearplane = 0.01f * _boundingbox.size().abs();
   float farplane  = 5.0f  * _boundingbox.size().abs();
 
@@ -233,7 +278,9 @@ glwidget::paintGL()
 
   gpucast::math::matrix4f proj = gpucast::math::perspective(50.0f, float(_width) / _height, nearplane, farplane); 
 
+  //////////////////////////////////////////////
   // apply camera setup to renderer
+  //////////////////////////////////////////////
   auto renderer = gpucast::gl::bezierobject_renderer::instance();
 
   renderer->set_nearfar(nearplane, farplane);
@@ -247,6 +294,20 @@ glwidget::paintGL()
     o->draw();
   }
 
+#if 1
+  //////////////////////////////////////////////
+  // unbind FBO
+  //////////////////////////////////////////////
+  if (_antialiasing == gpucast::gl::bezierobject::msaa) {
+    _fbo_multisample->unbind();
+  }
+  else {
+    _fbo_write->unbind();
+  }
+#endif
+  //////////////////////////////////////////////
+  // readback debug info if enabled
+  //////////////////////////////////////////////
   if (gpucast::gl::bezierobject_renderer::instance()->enable_counting()) {
     auto debug_info = gpucast::gl::bezierobject_renderer::instance()->get_debug_count();
 
@@ -258,7 +319,9 @@ glwidget::paintGL()
     }
   }
 
-  // pass fps to window
+  //////////////////////////////////////////////
+  // pass fps to GUI window
+  //////////////////////////////////////////////
   ++_frames;
   _gputimer->end();
 
@@ -268,44 +331,45 @@ glwidget::paintGL()
   double cputime_seconds = cpu_elapsed.fractional_seconds + cpu_elapsed.seconds; // discard minutes
   _cputime += cputime_seconds;
   _gputime += _gputimer->time_in_ms();
-
-#if FBO
+#if 1
+  //////////////////////////////////////////////
+  // blit FBO 
+  //////////////////////////////////////////////
+  if (_antialiasing == gpucast::gl::bezierobject::msaa)
+  {
+    glBlitNamedFramebuffer(_fbo_multisample->id(), _fbo_write->id(),
+      0, 0, _width, _height, 0, 0, _width, _height,
+      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+  }
+  
+  std::swap(_fbo_read, _fbo_write);
 
   gpucast::math::matrix4f mvp = proj * view * model;
   gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
 
-  _fbo->unbind();
-
   _cputimer->start();
-
   _gputimer->begin();
 
   // render into drawbuffer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-  _fbo_program->begin();
-  
-  _fbo_program->set_uniform_matrix4fv ( "modelviewprojectioninverse", 1, false, &mvpi[0]);
-  _fbo_program->set_uniform_matrix4fv ( "modelviewprojection", 1,       false, &mvp[0]);
+  _fxaa_program->begin();
 
-  _fbo_program->set_texture2d         ( "colorbuffer",       *_colorattachment,   1);
-  _fbo_program->set_texture2d         ( "depthbuffer",       *_depthattachment,   2);
-  _fbo_program->set_texture2d         ( "random_texture",    *_aorandom_texture,  3);
-  _fbo_program->set_texturebuffer     ( "ao_sample_offsets", *_aosample_offsets,  4);  
+  _fxaa_program->set_uniform_matrix4fv("modelviewprojectioninverse", 1, false, &mvpi[0]);
+  _fxaa_program->set_uniform_matrix4fv("modelviewprojection", 1, false, &mvp[0]);
+
+  _fxaa_program->set_texture2d("colorbuffer", *_colorattachment_write, 1);
+  _fxaa_program->set_texture2d("depthbuffer", *_depthattachment_write, 2);
 
   _sample_linear->bind(1);
   _sample_linear->bind(2);
-  _sample_nearest->bind(3);
 
-  _fbo_program->set_uniform1i         ( "ao_enable",         int(_ambient_occlusion) );
-  _fbo_program->set_uniform1i         ( "ao_samples",        _aosamples );
-  _fbo_program->set_uniform1f         ( "ao_radius",         _aoradius );
-  _fbo_program->set_uniform1i         ( "fxaa",              int(_fxaa) );
-  
-  _fbo_program->set_uniform1i         ( "width",             GLsizei(_width));
-  _fbo_program->set_uniform1i         ( "height",            GLsizei(_height));
+  _fxaa_program->set_uniform1i("fxaa", int(_fxaa));
+
+  _fxaa_program->set_uniform1i("width", GLsizei(_width));
+  _fxaa_program->set_uniform1i("height", GLsizei(_height));
   _quad->draw();
-  
-  _fbo_program->end();
+
+  _fxaa_program->end();
 
   _gputimer->end();
 #endif
@@ -618,9 +682,8 @@ glwidget::_init()
 
   _trackball.reset       ( new gpucast::gl::trackball );
 
-  _fbo.reset             ( new gpucast::gl::framebufferobject );
-  _depthattachment.reset ( new gpucast::gl::texture2d );
-  _colorattachment.reset ( new gpucast::gl::texture2d );
+  resize(1, 1);
+
   _aorandom_texture.reset( new gpucast::gl::texture2d );
   _aosample_offsets.reset( new gpucast::gl::texturebuffer );
   _quad.reset            ( new gpucast::gl::plane(0, -1, 1) );
@@ -639,8 +702,6 @@ glwidget::_init()
 
   _generate_random_texture();
   _generate_ao_sampletexture();
-
-  _fbo_program.reset ( new gpucast::gl::program );
 
   recompile();
 }

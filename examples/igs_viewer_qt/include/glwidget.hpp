@@ -143,10 +143,22 @@ private : // attributes
   double                                                                      _postprocess = 0.0;
 
   gpucast::gl::bezierobject::anti_aliasing_mode                               _antialiasing = gpucast::gl::bezierobject::disabled;
-  std::shared_ptr<gpucast::gl::program>                                       _fbo_program;
-  std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo;
-  std::shared_ptr<gpucast::gl::texture2d>                                     _depthattachment;
-  std::shared_ptr<gpucast::gl::texture2d>                                     _colorattachment;
+
+  std::shared_ptr<gpucast::gl::program>                                       _fxaa_program;
+  std::shared_ptr<gpucast::gl::program>                                       _ssao_program;
+
+  std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo_read;
+  std::shared_ptr<gpucast::gl::texture2d>                                     _depthattachment_read;
+  std::shared_ptr<gpucast::gl::texture2d>                                     _colorattachment_read;
+
+  std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo_write;
+  std::shared_ptr<gpucast::gl::texture2d>                                     _depthattachment_write;
+  std::shared_ptr<gpucast::gl::texture2d>                                     _colorattachment_write;
+
+  std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo_multisample;
+  std::shared_ptr<gpucast::gl::renderbuffer>                                  _colorattachment_multisample;
+  std::shared_ptr<gpucast::gl::renderbuffer>                                  _depthattachment_multisample;
+
   std::shared_ptr<gpucast::gl::sampler>                                       _sample_linear;
 
   float                                                                       _aoradius;
@@ -162,3 +174,4 @@ private : // attributes
 
 
 #endif // NURBSVIEW_GLWIDGET_HPP
+

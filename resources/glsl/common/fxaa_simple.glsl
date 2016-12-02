@@ -4,9 +4,9 @@
 #define SSAA_REDUCE_MUL (1.0/8.0)
 #define SSAA_SPAN_MAX 8.0
 
-vec4 fxaa_simple (sampler2D color_tex, vec2 fragpos)
+vec4 fxaa_simple (sampler2D color_tex, vec2 fragpos, vec2 resolution)
 {
-  vec2 inverse_resolution = vec2(1.0 / float(gua_resolution.x), 1.0 / float(gua_resolution.y));
+  vec2 inverse_resolution = vec2(1.0 / float(resolution.x), 1.0 / float(resolution.y));
   vec3 rgbM = texture2D(color_tex, fragpos * inverse_resolution).xyz;
 
   vec3 rgbNW = texture2D(color_tex, (fragpos + vec2(-1.0, -1.0)) * inverse_resolution).xyz;

@@ -23,9 +23,6 @@ int main(int argc, char *argv[])
 {
   try 
   {
-    glewExperimental = true;
-    glewInit();
-
     QApplication app(argc, argv);
     mainwindow win(argc, argv, 2560, 1600);
     win.show();
