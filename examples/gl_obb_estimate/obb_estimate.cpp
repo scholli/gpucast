@@ -29,7 +29,7 @@
 #include <gpucast/gl/texturebuffer.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>
 
-#include <gpucast/gl/primitives/cube.hpp>
+#include <gpucast/gl/primitives/obb.hpp>
 #include <gpucast/gl/util/trackball.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/hullvertexmap.hpp>

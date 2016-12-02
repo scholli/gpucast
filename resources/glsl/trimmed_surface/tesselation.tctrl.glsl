@@ -1,5 +1,7 @@
 #extension GL_NV_gpu_shader5 : enable
 
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
+
 ///////////////////////////////////////////////////////////////////////////////
 // input
 ///////////////////////////////////////////////////////////////////////////////                                                            
@@ -10,8 +12,12 @@ flat in vec3  vertex_final_tesselation[];
 
 ///////////////////////////////////////////////////////////////////////////////
 // output
-///////////////////////////////////////////////////////////////////////////////                                                               
-layout(vertices = 4) out;               
+///////////////////////////////////////////////////////////////////////////////         
+#if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION
+  layout(vertices = 3) out;      
+#else                                                      
+  layout(vertices = 4) out;               
+#endif
 
 flat out uint tcIndex[];                          
 flat out vec2 tcTessCoord[];   
@@ -20,9 +26,7 @@ flat out vec2 tcTessCoord[];
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////                                                             
 uniform samplerBuffer gpucast_control_point_buffer; 
-uniform samplerBuffer gpcuast_attribute_buffer;    
-                 
-#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
+           
 #include "./resources/glsl/common/camera_uniforms.glsl"   
             
 ///////////////////////////////////////////////////////////////////////////////
@@ -50,8 +54,8 @@ void adjust_tesselation_by_edge_length_estimate(in float final_tesselation_estim
   float umax = float(max(edge_length_u.x, edge_length_u.y));
   float vmax = float(max(edge_length_v.x, edge_length_v.y));
 
-  float tess_umax = umax / gpucast_tesselation_max_error;
-  float tess_vmax = vmax / gpucast_tesselation_max_error;
+  float tess_umax = umax / gpucast_tesselation_max_pixel_error;
+  float tess_vmax = vmax / gpucast_tesselation_max_pixel_error;
   float tess_edge = max(tess_umax, tess_vmax);
 
   final_tesselation_estimate = max(tess_edge, final_tesselation_estimate);
@@ -122,29 +126,28 @@ void adjust_tesselation_by_edge_lengths(in float final_tesselation_estimate,
   umax_vmin /= umin_vmin.w;
   umax_vmax /= umin_vmin.w;
 
-  //       (0,1)   OL3   (1,1)        
-  //        +--------------+     
-  //        |              |     
-  //        |  +--------+  |     
-  //        |  |   IL0  |  |     
-  //     OL0|  |IL1     |  |OL2  
-  //        |  |        |  |     
-  //        |  +--------+  |     
-  //        |              |     
-  //        +--------------+     
-  //       (0,0)   OL1   (1,0)
+  //     (0,1)   OL3   (1,1)          (0,1,0)         (0,1)          (1,1)
+  //      +--------------+              +             ^  +  <no edge>   +  
+  //      |              |             / \            |                
+  //      |  +--------+  |            /   \           |  +--------------+  
+  //      |  |   IL0  |  |       OL0 /  +  \ OL2      |                  
+  //   OL0|  |IL1     |  |OL2       /  / \  \         |  +--------------+  
+  //      |  |        |  |         /  /IL0\  \       OL0                  
+  //      |  +--------+  |        /  +-----+  \       |  +--------------+  
+  //      |              |       /             \      |                 
+  //      +--------------+      +---------------+     v  +--------------+  
+  //     (0,0)   OL1   (1,0) (0,0,1)   OL1   (1,0,0)   (0,0)   OL1   (1,0)
 
   inner_tessel_level[0] = final_tesselation_estimate;
   inner_tessel_level[1] = final_tesselation_estimate;
 
-  outer_tessel_level[0] = final_tesselation_estimate;
-  outer_tessel_level[1] = final_tesselation_estimate;
-  outer_tessel_level[2] = final_tesselation_estimate;
-  outer_tessel_level[3] = final_tesselation_estimate;
+  outer_tessel_level[0] = clamp(length(vec2(gpucast_resolution) * umin_vmin.xy)/gpucast_tesselation_max_pixel_error, 1.0, 64.0);
+  outer_tessel_level[1] = clamp(length(vec2(gpucast_resolution) * umin_vmax.xy)/gpucast_tesselation_max_pixel_error, 1.0, 64.0);
+  outer_tessel_level[2] = clamp(length(vec2(gpucast_resolution) * umax_vmin.xy)/gpucast_tesselation_max_pixel_error, 1.0, 64.0);
+  outer_tessel_level[3] = clamp(length(vec2(gpucast_resolution) * umax_vmax.xy)/gpucast_tesselation_max_pixel_error, 1.0, 64.0);
 
 }
  #endif          
-
 
 
 
@@ -165,11 +168,18 @@ void main()
   uvec2 u_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[gl_InvocationID].y)); 
   uvec2 v_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[gl_InvocationID].z));
   
-  vec2 inner_tessel_level = vec2(0);
-  vec4 outer_tessel_level = vec4(0);
+  vec2 inner_tessel_level = vec2(final_tess_level);
+  vec4 outer_tessel_level = vec4(final_tess_level);
 
-  adjust_tesselation_by_edge_length_estimate(final_tess_level, u_edge_lengths, v_edge_lengths, inner_tessel_level, outer_tessel_level);
+  //adjust_tesselation_by_edge_length_estimate(final_tess_level, u_edge_lengths, v_edge_lengths, inner_tessel_level, outer_tessel_level);
+  adjust_tesselation_by_edge_lengths(final_tess_level, inner_tessel_level, outer_tessel_level);
 
+#if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION
+  gl_TessLevelInner[0] = inner_tessel_level[0];
+  gl_TessLevelOuter[0] = outer_tessel_level[0];
+  gl_TessLevelOuter[1] = outer_tessel_level[1];
+  gl_TessLevelOuter[2] = outer_tessel_level[2]; 
+#else
   // apply tesselation
   gl_TessLevelInner[0] = inner_tessel_level[0];
   gl_TessLevelInner[1] = inner_tessel_level[1];
@@ -178,4 +188,5 @@ void main()
   gl_TessLevelOuter[1] = outer_tessel_level[1];
   gl_TessLevelOuter[2] = outer_tessel_level[2];                                                                                                                
   gl_TessLevelOuter[3] = outer_tessel_level[3];
+#endif
 }           

@@ -3,6 +3,7 @@
 
 // fast pre-classification texture
 uniform usamplerBuffer gpucast_preclassification;
+uniform sampler2D      gpucast_prefilter;
 
 /*******************************************************************************
  *  Trimming for parameter pair [u,v] : DATA STRUCTURE :

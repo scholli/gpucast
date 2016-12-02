@@ -74,7 +74,12 @@ void main()
 
   // transform Bezier uv-coordinates to nurbs knot span
   vec2 domain_size  = vec2(nurbs_domain.z - nurbs_domain.x, nurbs_domain.w - nurbs_domain.y);
+
+#if GPUCAST_ANTI_ALIASING_MODE == 0
   vec2 uv_nurbs     = geometry_texcoords.xy * domain_size + nurbs_domain.xy;
+
+  vec2 duv_dx       = dFdx(geometry_texcoords.xy);
+  vec2 duv_dy       = dFdy(geometry_texcoords.xy);
   
   bool is_trimmed = false;
   int trim_type = retrieve_trim_type(int(gIndex));
@@ -139,10 +144,6 @@ void main()
     discard;
   }
 
-  if ( !is_trimmed && gpucast_enable_counting != 0) {
-    atomicCounterIncrement(fragment_counter);
-  }
-
   vec4 normal_world     = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
   vec4 viewer           = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
 
@@ -150,11 +151,137 @@ void main()
                                   normalize(normal_world.xyz), 
                                   normalize(viewer.xyz),
                                   vec4(0.0, 0.0, 10000.0, 1.0),
-                                  mat_ambient, mat_diffuse, mat_specular,
+                                  mat_ambient, 
+                                  mat_diffuse, mat_specular,
                                   shininess,
                                   opacity,
                                   bool(spheremapping),
                                   spheremap,
                                   bool(diffusemapping),
                                   diffusemap);
+#endif
+
+#if GPUCAST_ANTI_ALIASING_MODE
+
+  vec2 uv_nurbs     = geometry_texcoords.xy * domain_size + nurbs_domain.xy;
+
+  vec2 duv_dx       = dFdx(geometry_texcoords.xy);
+  vec2 duv_dy       = dFdy(geometry_texcoords.xy);
+  
+  duv_dx           *= domain_size;
+  duv_dy           *= domain_size;
+
+  bool is_trimmed = false;
+  int trim_type = retrieve_trim_type(int(gIndex));
+  int tmp = 0;
+
+  float coverage = 1.0;
+
+  if (gpucast_trimming_method == 0)
+  {
+    coverage = 1.0;
+  }
+
+  if (gpucast_trimming_method == 1)
+  {
+    coverage = trimming_double_binary_coverage ( gpucast_bp_trimdata, 
+                                        gpucast_bp_celldata, 
+                                        gpucast_bp_curvelist, 
+                                        gpucast_bp_curvedata, 
+                                        gpucast_preclassification,
+                                        gpucast_prefilter,
+                                        uv_nurbs, 
+                                        duv_dx,
+                                        duv_dy,
+                                        trim_index, 
+                                        trim_type, 
+                                        tmp,
+                                        gpucast_trimming_error_tolerance, 
+                                        gpucast_trimming_max_bisections,
+                                        GPUCAST_TRIMMING_COVERAGE_ESTIMATION);
+  }
+
+  if (gpucast_trimming_method == 2)
+  {
+    coverage= trimming_contour_double_binary_coverage ( gpucast_cmb_partition, 
+                                                gpucast_cmb_contourlist,
+                                                gpucast_cmb_curvelist,
+                                                gpucast_cmb_curvedata,
+                                                gpucast_cmb_pointdata,
+                                                gpucast_preclassification,
+                                                gpucast_prefilter,
+                                                uv_nurbs, 
+                                                duv_dx,
+                                                duv_dy,
+                                                trim_index,
+                                                trim_type, 
+                                                tmp,
+                                                gpucast_trimming_error_tolerance, 
+                                                gpucast_trimming_max_bisections,
+                                                GPUCAST_TRIMMING_COVERAGE_ESTIMATION);
+  }
+
+  if (gpucast_trimming_method == 3) 
+  {
+    coverage = trimming_contour_kd_coverage(gpucast_kd_partition,
+                                            gpucast_kd_contourlist,
+                                            gpucast_kd_curvelist,
+                                            gpucast_kd_curvedata,
+                                            gpucast_kd_pointdata,
+                                            gpucast_preclassification,
+                                            gpucast_prefilter,
+                                            uv_nurbs,
+                                            duv_dx,
+                                            duv_dy,
+                                            trim_index,
+                                            trim_type,
+                                            tmp,
+                                            gpucast_trimming_error_tolerance, 
+                                            gpucast_trimming_max_bisections,
+                                            GPUCAST_TRIMMING_COVERAGE_ESTIMATION);
+  }
+
+  
+  if (gpucast_trimming_method == 4) {
+    coverage = trimming_loop_list_coverage(uv_nurbs, duv_dx, duv_dy, gpucast_preclassification, gpucast_prefilter, trim_index, GPUCAST_TRIMMING_COVERAGE_ESTIMATION);
+  }
+
+  if ( coverage <= 0.0 )
+  {
+    discard;
+  }
+
+  if (gpucast_trimming_method == 0)
+  {
+    is_trimmed = false;
+  }
+
+  vec4 normal_world     = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
+  vec4 viewer           = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
+
+  out_color = shade_phong_fresnel(vec4(geometry_world_position, 1.0), 
+                                 normalize(normal_world.xyz), 
+                                 normalize(viewer.xyz),
+                                 vec4(0.0, 0.0, 10000.0, 1.0),
+                                 mat_ambient, 
+                                 mat_diffuse, mat_specular,
+                                 shininess,
+                                 opacity,
+                                 bool(spheremapping),
+                                 spheremap,
+                                 bool(diffusemapping),
+                                 diffusemap);
+  out_color *= coverage;
+
+#endif
+
+#if GPUCAST_WRITE_DEBUG_COUNTER
+  if ( !is_trimmed ) {
+    atomicCounterIncrement(fragment_counter);
+  } else {
+    atomicCounterIncrement(trimmed_fragments_counter);
+  }
+#endif
+
+
 }

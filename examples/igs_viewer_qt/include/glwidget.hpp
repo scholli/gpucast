@@ -38,7 +38,8 @@
 
 #include <gpucast/gl/primitives/plane.hpp>
 #include <gpucast/gl/primitives/bezierobject.hpp>
-    
+#include <gpucast/gl/primitives/bezierobject_renderer.hpp>
+
 #include <gpucast/math/matrix4x4.hpp>
 #include <gpucast/math/vec3.hpp>
 
@@ -46,21 +47,12 @@
 #include <gpucast/core/beziersurfaceobject.hpp>
 
 
-
+ 
 class glwidget : public QGLWidget
 {
    Q_OBJECT        // must include this if you use Qt signals/slots
 
 public : 
-
-  enum antialiasing_mode {
-    disabled = 0,
-    prefiltered_edge_estimation = 1,
-    supersampling2x2 = 2,
-    supersampling3x3 = 3,
-    supersampling4x4 = 4,
-    supersampling8x8 = 5
-  };
 
   glwidget                                              ( int argc, char** argv, QGLFormat const& format, QWidget *parent = 0 );
   ~glwidget                                             ();
@@ -82,7 +74,7 @@ public Q_SLOTS :
   void                    backface_culling              (int);
   void                    rendermode                    (gpucast::gl::bezierobject::render_mode mode);
   void                    fillmode                      (gpucast::gl::bezierobject::fill_mode mode);
-  void                    antialiasing                  (antialiasing_mode);
+  void                    antialiasing                  (gpucast::gl::bezierobject::anti_aliasing_mode);
   void                    trimming                      (gpucast::beziersurfaceobject::trim_approach_t);
   void                    preclassification             (int);
   void                    enable_counter                (int);
@@ -90,9 +82,10 @@ public Q_SLOTS :
   void                    trim_max_bisections           (int);
   void                    trim_error_tolerance          (float);
   void                    tesselation_max_pixel_error   (float);
+  void                    tesselation_max_geometric_error(float);
   void                    raycasting_max_iterations     (int);
   void                    raycasting_error_tolerance    (float);
-  
+  void                    enable_triangular_tesselation (int);
 protected:
 
   /* virtual */ void      initializeGL                  ();
@@ -149,6 +142,7 @@ private : // attributes
   double                                                                      _gputime = 0.0;
   double                                                                      _postprocess = 0.0;
 
+  gpucast::gl::bezierobject::anti_aliasing_mode                               _antialiasing = gpucast::gl::bezierobject::disabled;
   std::shared_ptr<gpucast::gl::program>                                       _fbo_program;
   std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo;
   std::shared_ptr<gpucast::gl::texture2d>                                     _depthattachment;

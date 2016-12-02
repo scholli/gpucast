@@ -65,19 +65,25 @@ matrix4x4<value_t>::matrix4x4()
 ///////////////////////////////////////////////////////////////////////////////
 template<typename value_t>
 matrix4x4<value_t>::matrix4x4(matrix4x4 const& rhs)
-
 {
   std::copy(rhs.data_, rhs.data_+16, data_);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+template <typename value_t> 
+template <typename value_ptr>
+matrix4x4<value_t>::matrix4x4(value_ptr const v)
+{
+  std::copy(v, v + 16, data_);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 template<typename value_t>
-matrix4x4<value_t>::matrix4x4(value_t const a[16])
+matrix4x4<value_t>::matrix4x4(matrix<value_t, 4, 4> const& m)
 {
-  std::copy(a, a+16, data_);
+  std::copy(m.get(), m.get() + 16, data_);
+  transpose();
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 template<typename value_t>

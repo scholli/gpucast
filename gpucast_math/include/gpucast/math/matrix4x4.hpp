@@ -16,6 +16,7 @@
 #include <iosfwd> // fwd. decl: std::ostream
 
 // includes, project
+#include <gpucast/math/matrix.hpp>
 
 namespace gpucast { namespace math {
 
@@ -30,7 +31,11 @@ public :
 
   matrix4x4                   ( );
   matrix4x4                   ( matrix4x4 const& );
-  explicit matrix4x4          ( value_t const [16]);
+  matrix4x4                   ( matrix<value_t, 4, 4> const& m );
+
+  template <typename value_ptr> 
+  matrix4x4 (value_ptr const v);
+
 
   ~matrix4x4                  ( );
 

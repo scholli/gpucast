@@ -18,7 +18,11 @@ in vec3  eval_final_tesselation[3];
 ///////////////////////////////////////////////////////////////////////////////
 // output
 ///////////////////////////////////////////////////////////////////////////////
-layout(xfb_buffer = 0, points, max_vertices = 4) out;      
+#if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION
+  layout(xfb_buffer = 0, points, max_vertices = 3) out;      
+#else
+  layout(xfb_buffer = 0, points, max_vertices = 4) out;      
+#endif
 
 layout (xfb_offset=0)  out vec3 transform_position;    
 layout (xfb_offset=12) out uint transform_index;       
@@ -47,7 +51,19 @@ uniform samplerBuffer gpucast_control_point_buffer;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void main()                                                                          
-{                                                                          
+{            
+#if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION     
+    for ( int i = 0; i != 3; ++i )                                                   
+    {                                                                                                                                  
+        transform_position 	        = eval_position[i];            
+        transform_index 	          = eval_index[0];                                                  
+        transform_tesscoord         = eval_tesscoord[i];      
+        transform_final_tesselation = eval_final_tesselation[0];                        
+        EmitVertex();                                                                
+    }                                                                                
+    EndPrimitive(); 
+#else // quad shaped domains
+                                        
     vec2 maxmax_tesscoord = max(max(eval_tesscoord[0], eval_tesscoord[1]), eval_tesscoord[2]);
     vec2 minmin_tesscoord = min(min(eval_tesscoord[0], eval_tesscoord[1]), eval_tesscoord[2]);
                                                                                              
@@ -75,11 +91,12 @@ void main()
         order[index] = i;                                                            
     }                                                                                
                                                                                              
-    // discard triangles                                                             
+    // discard some triangles                                                             
     if ( order[3] == -1 || order[2] == -1 ) {                                        
         return;                                                                      
     }                                                                                
-                                                                                             
+            
+    // compute fourth point                                                                           
     vec2 new_tesscoord = (order[0] == -1) ?  minmin_tesscoord : maxmin_tesscoord;    
                                                                                              
     vec4 new_puv;                                                                    
@@ -96,7 +113,7 @@ void main()
                       int(surface_order_v),                                          
                       new_tesscoord,                                                 
                       new_puv );                                                     
-                                                                        
+                                                             
     for ( int i = 0; i != 4; ++i )                                                   
     {                                                                                
         index                       = order[i];                                                    
@@ -107,4 +124,6 @@ void main()
         EmitVertex();                                                                
     }                                                                                
     EndPrimitive(); 
+
+#endif
   }          

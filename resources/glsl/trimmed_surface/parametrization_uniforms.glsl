@@ -4,10 +4,17 @@
 #define GPUCAST_HULLVERTEXMAP_SSBO_BINDING 1
 #define GPUCAST_ATTRIBUTE_SSBO_BINDING 2
 #define GPUCAST_ATOMIC_COUNTER_BINDING 3
+#define GPUCAST_FEEDBACK_BUFFER_BINDING 4
+
+#define GPUCAST_MAX_FEEDBACK_BUFFER_INDICES       @GPUCAST_MAX_FEEDBACK_BUFFER_INDICES_INPUT@
+#define GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION  @GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION_INPUT@
+#define GPUCAST_WRITE_DEBUG_COUNTER               @GPUCAST_WRITE_DEBUG_COUNTER_INPUT@
+#define GPUCAST_ANTI_ALIASING_MODE                @GPUCAST_ANTI_ALIASING_MODE_INPUT@
+#define GPUCAST_TRIMMING_COVERAGE_ESTIMATION      3
 
 // tesselation
 uniform float gpucast_max_pre_tesselation;
-uniform float gpucast_tesselation_max_error;
+uniform float gpucast_tesselation_max_pixel_error;
 uniform float gpucast_max_geometric_error;
 
 // gpucast_shadow_mode = 0 // no shadow 
@@ -30,9 +37,10 @@ uniform int   gpucast_trimming_method;
 uniform float gpucast_trimming_error_tolerance;
 uniform int   gpucast_trimming_max_bisections;
 
-uniform int   gpucast_enable_counting;
+layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 0) uniform atomic_uint  triangle_counter;
+layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 4) uniform atomic_uint  fragment_counter;
+layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 8) uniform atomic_uint  culled_triangles_counter;
+layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 12) uniform atomic_uint trimmed_fragments_counter;
 
-layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 0) uniform atomic_uint triangle_counter;
-layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 4) uniform atomic_uint fragment_counter;
 
 //#endif

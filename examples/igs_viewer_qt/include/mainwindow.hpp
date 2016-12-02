@@ -57,7 +57,7 @@ public: // c'tor / d'tor
   void update_interface               ();
   void show_fps                       ( double cputime, double gputime, double postprocess );
   void show_memory_usage              ( gpucast::beziersurfaceobject::memory_usage const& usage );
-  void update_count(unsigned tri_count, unsigned frag_count);
+  void update_count                   ( unsigned triangles, unsigned fragments, unsigned culled_triangles, unsigned trimmed_fragments, unsigned estimate);
 
 protected:
 
@@ -90,7 +90,7 @@ private: // attributes
   std::map<gpucast::gl::bezierobject::render_mode, std::string>        _rendering_modes;
   std::map<gpucast::gl::bezierobject::fill_mode, std::string>          _fill_modes;
   std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string> _trimming_modes;
-  std::map<glwidget::antialiasing_mode, std::string>                   _antialiasing_modes;
+  std::map<gpucast::gl::bezierobject::anti_aliasing_mode, std::string> _antialiasing_modes;
   std::map<unsigned, std::string>                                      _preclassification_modes;
 
   // menubar and menubar actions
@@ -108,6 +108,7 @@ private: // attributes
   QCheckBox*            _checkbox_spheremap;
   QCheckBox*            _checkbox_culling;
   QCheckBox*            _checkbox_counting;
+  QCheckBox*            _checkbox_tritesselation;
 
   QLabel*               _counting_result;
   QLabel*               _fps_result;
@@ -116,6 +117,7 @@ private: // attributes
   SlidersGroup*         _slider_trim_max_bisections;
   FloatSlidersGroup*    _slider_trim_error_tolerance;
   FloatSlidersGroup*    _slider_tesselation_max_pixel_error;
+  FloatSlidersGroup*    _slider_tesselation_max_object_error;
   SlidersGroup*         _slider_raycasting_max_iterations;
   FloatSlidersGroup*    _slider_raycasting_error_tolerance;
 

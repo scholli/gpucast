@@ -27,6 +27,10 @@ uniform samplerBuffer gpucast_obb_buffer;
 #include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"                                                                            
 #include "./resources/glsl/common/camera_uniforms.glsl"       
 
+layout(std430, binding = GPUCAST_FEEDBACK_BUFFER_BINDING) buffer gpucast_feedback_buffer {
+  uint gpucast_feedback[];
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // methods
 ///////////////////////////////////////////////////////////////////////////////    
@@ -146,7 +150,7 @@ vec4 estimate_edge_lengths_in_pixel(in int base_id,
 
 }          
           
-          
+         
                                                                                                  
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -160,12 +164,25 @@ void main()
      
   // project oriented boudning box to screen and estimate area          
   int obb_index     = retrieve_obb_index(int(vertex_index[gl_InvocationID]));
+
   float area        = calculate_obb_area(gpucast_model_view_projection_matrix, gpucast_model_view_inverse_matrix, gpucast_obb_buffer, obb_index, false);
   float area_pixels = float(gpucast_resolution.x * gpucast_resolution.y) * area;
 
-  //// derive desired tesselation based on projected area estimate
-  float total_tess_level = sqrt(area_pixels) / gpucast_tesselation_max_error;
-  float pre_tess_level = clamp(total_tess_level, 0.0, gpucast_max_pre_tesselation);
+#if GPUCAST_WRITE_DEBUG_COUNTER
+  if ( vertex_index[gl_InvocationID] < GPUCAST_MAX_FEEDBACK_BUFFER_INDICES) {
+    int index = int(vertex_index[gl_InvocationID]);
+    atomicMax(gpucast_feedback[index], uint(area_pixels));
+  }
+#endif
+
+  // derive desired tesselation based on projected area estimate
+  float total_tess_level = sqrt(area_pixels) / gpucast_tesselation_max_pixel_error;
+
+  // assume final tesselation performs 64 subdivisions
+  float pre_tess_level = total_tess_level / 64.0; 
+
+  // clamp remaining pretesselations to max
+  pre_tess_level = clamp(pre_tess_level, 1.0, gpucast_max_pre_tesselation);
   float final_tess_level = total_tess_level / pre_tess_level;
 
   // in low-quality shadow mode - don't bother with much tesselation

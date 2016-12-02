@@ -261,6 +261,29 @@ public:
 
     for (auto const& o : _objects) {
       o->draw();
+
+      if (renderer->enable_counting()) {
+        auto triangles_fragments = renderer->get_debug_count();
+        auto estimate = renderer->get_fragment_estimate();
+
+        std::cout << "Triangles         : " << triangles_fragments.triangles << std::endl;
+        std::cout << "Fragments         : " << triangles_fragments.fragments << std::endl;
+        std::cout << "Culled triangles  : " << triangles_fragments.culled_triangles << std::endl;
+        std::cout << "Trimmed fragments : " << triangles_fragments.trimmed_fragments << std::endl;
+
+        std::multiset<unsigned> non_zero_estimates;
+
+        for (unsigned i = 0; i != estimate.size(); ++i) {
+          if (estimate[i] != 0) {
+            non_zero_estimates.insert(estimate[i]);
+          }
+        }
+        if ( o->rendermode() == gpucast::gl::bezierobject::tesselation) {
+          for (auto i : non_zero_estimates) {
+            std::cout << i << std::endl;
+          }
+        }
+      }
     }
 
     _query.end();
@@ -282,6 +305,7 @@ public:
       _program->end();
     }
 #endif
+    
   }
 
   void resize(int w, int h)
@@ -312,6 +336,10 @@ public:
     {
       switch (key)
       {
+      case 'k':
+        renderer->enable_counting(!renderer->enable_counting());
+        std::cout << "enable_counting set to " << renderer->enable_counting() << std::endl;
+        break;
       case 'c':
         renderer->recompile();
         std::cout << "Recompiling shaders..." << std::endl;
@@ -368,6 +396,12 @@ public:
         break;
       case 'r':
         o->rendermode(o->rendermode() == bezierobject::raycasting ? bezierobject::tesselation : bezierobject::raycasting);
+        if (o->rendermode() == bezierobject::raycasting) {
+          std::cout << "Switched to bezierobject::raycasting\n";
+        }
+        else {
+          std::cout << "Switched to bezierobject::tesselation\n";
+        }
         break;
       case 'n':
         o->enable_raycasting(!o->enable_raycasting());

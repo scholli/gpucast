@@ -244,6 +244,14 @@ matrix<value_t, NROWS, NCOLS>::col ( std::size_t c ) const
 
 //////////////////////////////////////////////////////////////////////////////
 template <typename value_t, unsigned NROWS, unsigned NCOLS>
+typename matrix<value_t, NROWS, NCOLS>::value_type const* 
+matrix<value_t, NROWS, NCOLS>::get() const
+{
+  return &_data[0][0];
+}
+
+//////////////////////////////////////////////////////////////////////////////
+template <typename value_t, unsigned NROWS, unsigned NCOLS>
 bool
 matrix<value_t, NROWS, NCOLS>::valid () const
 {
@@ -278,17 +286,25 @@ compute_determinant ( matrix<value_t, N, N> const& M )
 {
   // use generic recursive solution
   value_t det(0);
+  const unsigned c = 0;
   for ( unsigned r = 0; r != N; ++r )
   {
-    for ( unsigned c = 0; c != N; ++c )
-    {
+    //for ( unsigned c = 0; c != N; ++c )
+    //{
       value_t sign = ((r+c)%2 == 1) ? value_t(-1) : value_t(1);
       det += sign * M[r][c] * compute_determinant(generate_submatrix(M, r, c));
-    }
+    //}
   }
   return det;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+value_t
+compute_determinant(matrix<value_t, 2, 2> const& M)
+{
+  return value_t(M[0][0] * M[1][1] - M[0][1] * M[1][0]);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 template <typename value_t>
@@ -302,16 +318,6 @@ compute_determinant ( matrix<value_t, 3, 3> const& M )
                   M[0][1] * M[1][0] * M[2][2] -
                   M[0][0] * M[1][2] * M[2][1]);
 }
-
-
-//////////////////////////////////////////////////////////////////////////////
-template <typename value_t>
-value_t
-compute_determinant ( matrix<value_t, 2, 2> const& M )
-{
-  return value_t(M[0][0] * M[1][1] - M[0][1] * M[1][0]);
-}
-
 
 //////////////////////////////////////////////////////////////////////////////
 template <typename value_t, unsigned NROWS, unsigned NCOLS>
@@ -588,7 +594,7 @@ generate_submatrix ( matrix<value_t, NROWS, NCOLS> const& m, unsigned row, unsig
 
   matrix<value_t, NROWS-1, NCOLS-1> sub;
 
-  std::size_t rm = 0;
+  std::size_t rm = 0; 
   for ( std::size_t r = 0; r != NROWS-1; ++r, ++rm )
   {
     if ( r == row ) {
@@ -604,6 +610,7 @@ generate_submatrix ( matrix<value_t, NROWS, NCOLS> const& m, unsigned row, unsig
       sub[r][c] = m[rm][cm];
     }
   }
+
   return sub;
 }
 

@@ -51,12 +51,14 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   /////////////////////////////////////
   // anti-aliasing modes
   /////////////////////////////////////
-  _antialiasing_modes.insert(std::make_pair(glwidget::disabled, "No Anti-Aliasing"));
-  _antialiasing_modes.insert(std::make_pair(glwidget::prefiltered_edge_estimation, "Prefiltered Edge Estimation"));
-  _antialiasing_modes.insert(std::make_pair(glwidget::supersampling2x2, "Supersampling(2x2)"));
-  _antialiasing_modes.insert(std::make_pair(glwidget::supersampling3x3, "Supersampling(3x3)"));
-  _antialiasing_modes.insert(std::make_pair(glwidget::supersampling4x4, "Supersampling(4x4)"));
-  _antialiasing_modes.insert(std::make_pair(glwidget::supersampling8x8, "Supersampling(8x8)"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::disabled, "No Anti-Aliasing"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::prefiltered_edge_estimation, "Prefiltered Edge Estimation"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling2x2, "Multisampling(2x2)"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling3x3, "Multisampling(3x3)"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling4x4, "Multisampling(4x4)"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling8x8, "Multisampling(8x8)"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::msaa, "MSAA"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::fxaa, "FXAA"));
 
   /////////////////////////////////////
   // trimming modes
@@ -117,7 +119,6 @@ void
 mainwindow::update_interface ( )
 {
   trimming();
-  antialiasing();
 
   // update window
   QMainWindow::update();
@@ -159,11 +160,13 @@ void mainwindow::show_memory_usage(gpucast::beziersurfaceobject::memory_usage co
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void mainwindow::update_count(unsigned tri_count, unsigned frag_count)
+void mainwindow::update_count(unsigned triangles, unsigned fragments, unsigned culled_triangles, unsigned trimmed_fragments, unsigned estimate)
 {
-  QString message = "Triangles : ";
-  message.append(QString("%1").arg(tri_count));
-  message.append(QString(" , Fragments : %1").arg(frag_count));
+  QString message = QString("Triangles %1\n").arg(triangles);
+  message.append(QString("Fragments : %1\n").arg(fragments));
+  message.append(QString("Culled triangles : %1\n").arg(culled_triangles));
+  message.append(QString("Trimmed fragments : %1\n").arg(trimmed_fragments));
+  message.append(QString("Estimate : %1").arg(estimate));
   _counting_result->setText(message);
 }
 
@@ -205,7 +208,7 @@ void mainwindow::antialiasing()
 {
   _glwindow->antialiasing(find_by_second(_antialiasing_modes,
     _combobox_antialiasing->currentText().toStdString(), 
-    glwidget::disabled));
+    gpucast::gl::bezierobject::disabled));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -257,6 +260,7 @@ mainwindow::_create_actions()
   connect(_checkbox_sao,                    SIGNAL( stateChanged(int) ), _glwindow,    SLOT( ambient_occlusion(int) ));
   connect(_checkbox_culling,                SIGNAL(stateChanged(int)),   _glwindow,    SLOT( backface_culling(int)));
   connect(_checkbox_counting,               SIGNAL(stateChanged(int)),   _glwindow,    SLOT( enable_counter(int)));
+  connect(_checkbox_tritesselation,         SIGNAL(stateChanged(int)), _glwindow, SLOT(enable_triangular_tesselation(int)));
   
   connect(_combobox_antialiasing,           SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
   connect(_combobox_trimming,               SIGNAL(currentIndexChanged(int)), this, SLOT(trimming()));
@@ -267,6 +271,7 @@ mainwindow::_create_actions()
   connect(_slider_trim_max_bisections,          SIGNAL(valueChanged(int)),    _glwindow, SLOT(trim_max_bisections(int)));
   connect(_slider_trim_error_tolerance,         SIGNAL(valueChanged(float)),  _glwindow, SLOT(trim_error_tolerance(float)));
   connect(_slider_tesselation_max_pixel_error,  SIGNAL(valueChanged(float)),  _glwindow, SLOT(tesselation_max_pixel_error(float)));
+  connect(_slider_tesselation_max_object_error, SIGNAL(valueChanged(float)),  _glwindow, SLOT(tesselation_max_geometric_error(float)));
   connect(_slider_raycasting_max_iterations,    SIGNAL(valueChanged(int)),    _glwindow, SLOT(raycasting_max_iterations(int)));
   connect(_slider_raycasting_error_tolerance,   SIGNAL(valueChanged(float)),  _glwindow, SLOT(raycasting_error_tolerance(float)));
 
@@ -332,6 +337,7 @@ mainwindow::_create_menus()
   _checkbox_sao          = new QCheckBox("Enable Ambient Occlusion", _menu);
   _checkbox_culling      = new QCheckBox("Backface Culling", _menu);
   _checkbox_counting     = new QCheckBox("Enable Triangle/Fragment Counter", _menu);
+  _checkbox_tritesselation = new QCheckBox("Enable Triangular Tesselation", _menu);
 
   // init combo boxes
   _combobox_rendering = new QComboBox;
@@ -341,7 +347,7 @@ mainwindow::_create_menus()
   _combobox_preclassification = new QComboBox;
 
   std::for_each(_rendering_modes.begin(), _rendering_modes.end(), [&](std::map<gpucast::gl::bezierobject::render_mode, std::string>::value_type const& p) { _combobox_rendering->addItem(p.second.c_str()); });
-  std::for_each(_antialiasing_modes.begin(), _antialiasing_modes.end(), [&](std::map<glwidget::antialiasing_mode, std::string>::value_type const& p) { _combobox_antialiasing->addItem(p.second.c_str()); });
+  std::for_each(_antialiasing_modes.begin(), _antialiasing_modes.end(), [&](std::map<gpucast::gl::bezierobject::anti_aliasing_mode, std::string>::value_type const& p) { _combobox_antialiasing->addItem(p.second.c_str()); });
   std::for_each(_trimming_modes.begin(), _trimming_modes.end(), [&](std::map<gpucast::beziersurfaceobject::trim_approach_t, std::string>::value_type const& p) { _combobox_trimming->addItem(p.second.c_str()); });
   std::for_each(_fill_modes.begin(), _fill_modes.end(), [&](std::map<gpucast::gl::bezierobject::fill_mode, std::string>::value_type const& p) { _combobox_fillmode->addItem(p.second.c_str()); });
   std::for_each(_preclassification_modes.begin(), _preclassification_modes.end(), [&](std::map<unsigned, std::string>::value_type const& p) { _combobox_preclassification->addItem(p.second.c_str()); });
@@ -352,6 +358,7 @@ mainwindow::_create_menus()
 
   _slider_trim_max_bisections = new SlidersGroup(Qt::Horizontal, tr("max. bisections"), 1, 32, this);
   _slider_trim_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. error tolerance"), 0.0001f, 0.1f,  this);
+  _slider_tesselation_max_object_error = new FloatSlidersGroup(Qt::Horizontal, tr("max. object error"), 0.0001f, 1.0f, this);
   _slider_tesselation_max_pixel_error = new FloatSlidersGroup(Qt::Horizontal,tr("max. pixel error"), 0.5f, 64.0f,  this);
   _slider_raycasting_max_iterations = new SlidersGroup(Qt::Horizontal,tr("max. newton iterations"),  1, 16, this);
   _slider_raycasting_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. raycasting error"), 0.0001f, 0.1f,  this);
@@ -359,6 +366,7 @@ mainwindow::_create_menus()
   // apply default values
   _slider_trim_max_bisections->setValue(gpucast::gl::bezierobject::default_render_configuration::trimming_max_bisections);
   _slider_trim_error_tolerance->setValue(gpucast::gl::bezierobject::default_render_configuration::trimming_error_tolerance);
+  _slider_tesselation_max_object_error->setValue(gpucast::gl::bezierobject::default_render_configuration::tesselation_max_geometric_error);
   _slider_tesselation_max_pixel_error->setValue(gpucast::gl::bezierobject::default_render_configuration::tesselation_max_pixel_error);
   _slider_raycasting_max_iterations->setValue(gpucast::gl::bezierobject::default_render_configuration::raycasting_max_iterations);
   _slider_raycasting_error_tolerance->setValue(gpucast::gl::bezierobject::default_render_configuration::raycasting_error_tolerance);
@@ -397,7 +405,9 @@ mainwindow::_create_menus()
   rendering_desc_layout->addWidget(_combobox_rendering);
   rendering_desc_layout->addWidget(_combobox_fillmode);
   rendering_desc_layout->addWidget(_checkbox_culling);
+  rendering_desc_layout->addWidget(_checkbox_tritesselation);
   rendering_desc_layout->addWidget(_slider_tesselation_max_pixel_error);
+  rendering_desc_layout->addWidget(_slider_tesselation_max_object_error);
   rendering_desc_layout->addWidget(_slider_raycasting_max_iterations);
   rendering_desc_layout->addWidget(_slider_raycasting_error_tolerance);
   rendering_desc->setLayout(rendering_desc_layout);

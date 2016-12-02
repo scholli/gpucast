@@ -51,7 +51,6 @@ void main()
     increment       = -1;
   }
 
-
   for ( int i = vertex_id_first; i != vertex_id_last; i += increment )
   {
     gIndex      = teIndex[i];
@@ -69,7 +68,7 @@ void main()
   }                                                                                               
   EndPrimitive();  
   
-  if ( gpucast_enable_counting != 0) {
-    atomicCounterIncrement(triangle_counter);
-  }                                                                                       
+#if GPUCAST_WRITE_DEBUG_COUNTER
+  atomicCounterIncrement(triangle_counter);
+#endif
 }       

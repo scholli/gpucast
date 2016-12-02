@@ -69,6 +69,7 @@ namespace gpucast { namespace math {
 
     row_type const&   row           ( std::size_t r ) const;
     col_type          col           ( std::size_t c ) const;
+    value_type const* get           () const;
 
     bool              valid         () const;
 

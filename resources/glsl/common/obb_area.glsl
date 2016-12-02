@@ -29,9 +29,9 @@ void fetch_obb_data(in samplerBuffer obb_data, in int base_id, out vec4 obb_cent
   obb_center = texelFetch(obb_data, base_id);
 
   obb_orientation = mat4(texelFetch(obb_data, base_id + 3),
-                              texelFetch(obb_data, base_id + 4),
-                              texelFetch(obb_data, base_id + 5),
-                              texelFetch(obb_data, base_id + 6));
+                         texelFetch(obb_data, base_id + 4),
+                         texelFetch(obb_data, base_id + 5),
+                         texelFetch(obb_data, base_id + 6));
 
   obb_orientation_inverse = mat4(texelFetch(obb_data, base_id + 7),
                                  texelFetch(obb_data, base_id + 8),
@@ -78,11 +78,12 @@ float calculate_obb_area(in mat4           modelview_projection,
 
   // project all obb vertices to screen coordinates
   vec2 dst[6];
+  float depths[6];
   for (int i = 0; i != n_visible_vertices; ++i) {
     uint index = gpucast_hvm[pos].vertices[i];
     vec4 corner_screenspace = modelview_projection * (obb_orientation * bbox[index] + vec4(obb_center.xyz, 0.0));
     corner_screenspace /= corner_screenspace.w;
-
+    depths[i] = corner_screenspace.z;
     // if clamped parts at the border appear to coarsly tesselated
     if (clamp_to_screen) {
       dst[i] = clamp(corner_screenspace.xy, vec2(-1.0), vec2(1.0));
@@ -91,13 +92,34 @@ float calculate_obb_area(in mat4           modelview_projection,
     }
   }
 
+  // determine culling
+  bvec4 culling = bvec4(true);
+  bool  near_clipped = true;
+  for (int i = 0; i != n_visible_vertices; ++i) {
+    culling[0]   = culling[0] && (dst[i].x >= 1.0);
+    culling[1]   = culling[1] && (dst[i].x <= -1.0);
+    culling[2]   = culling[2] && (dst[i].y >= 1.0);
+    culling[3]   = culling[3] && (dst[i].y <= -1.0); 
+    near_clipped = near_clipped && (depths[i] < 0.0);
+  }
+
+  if (culling[0] || culling[1] || culling[2] || culling [3] || near_clipped) {
+#if GPUCAST_WRITE_DEBUG_COUNTER
+    atomicCounterIncrement(culled_triangles_counter);
+#endif
+    return 0.0;
+  }
+
   // accumulate area of visible vertices' polygon
   for (int i = 0; i < n_visible_vertices; i++) {
     sum += (dst[i].x - dst[(i + 1) % n_visible_vertices].x) * (dst[i].y + dst[(i + 1) % n_visible_vertices].y);
   }
 
   // return area
-  return abs(sum) / 8.0; // this differs from original, but testet with extra application
+  //return abs(sum) / 2.0; // original
+  return clamp(abs(sum) / 8.0, 0.0, 1.0); // this differs from original, but testet with extra application and should be correct
+  //return abs(sum) / 8.0; // this differs from original, but testet with extra application and should be correct
 }
+
 
 #endif

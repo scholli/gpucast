@@ -1,10 +1,16 @@
 #extension GL_NV_gpu_shader5 : enable
 
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
+
 ///////////////////////////////////////////////////////////////////////////////
 // input
 /////////////////////////////////////////////////////////////////////////////// 
-layout(quads, equal_spacing, ccw) in;               
-                                                            
+#if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION
+  layout(triangles, equal_spacing, ccw) in;        
+#else
+  layout(quads, equal_spacing, ccw) in;               
+#endif                                                       
+
 flat in uint  tcIndex[];                            
 flat in vec2  tcTessCoord[];              
 
@@ -20,7 +26,7 @@ flat out vec4   tePosition;
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////
 #include "./resources/glsl/common/camera_uniforms.glsl"                
-#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
+
                                                             
 uniform samplerBuffer gpucast_control_point_buffer;   
 uniform samplerBuffer gpcuast_attribute_buffer;      
@@ -39,7 +45,28 @@ uniform samplerBuffer gpucast_obb_buffer;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void main()                                                            
-{                                                                      
+{            
+#if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION
+  vec4 p, du, dv;                                                      
+
+  int surface_index   = 0;
+  int surface_order_u = 0;
+  int surface_order_v = 0;
+  retrieve_patch_data(int(tcIndex[0]), surface_index, surface_order_u, surface_order_v);
+
+  vec2 uv = gl_TessCoord.x * tcTessCoord[0].xy + gl_TessCoord.y * tcTessCoord[1].xy + gl_TessCoord.z * tcTessCoord[2].xy;                                                                       
+
+  evaluateSurface(gpucast_control_point_buffer,                                   
+                  surface_index,                                  
+                  surface_order_u,                                
+                  surface_order_v,                                
+                  uv, p, du, dv);                                      
+                                                                               
+  tePosition  = vec4(p.xyz, 1.0);                                                                     
+  teIndex     = tcIndex[0];                                            
+  teTessCoord = uv;                                                    
+  teNormal    = vec4(normalize(cross(du.xyz, dv.xyz)), 0.0); 
+#else                                                          
   vec4 p, du, dv;                                                      
 
   int surface_index   = 0;
@@ -64,4 +91,5 @@ void main()
   teIndex     = tcIndex[0];                                            
   teTessCoord = uv;                                                    
   teNormal    = vec4(normalize(cross(du.xyz, dv.xyz)), 0.0);                                                                                                                                               
+#endif
 }     

@@ -155,8 +155,13 @@ glwidget::resizeGL(int width, int height)
   glViewport(0, 0, GLsizei(_width), GLsizei(_height));
 
   // if renderer already initialized -> resize
-  _colorattachment.reset(new gpucast::gl::texture2d);
-  _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
+  if (_antialiasing == gpucast::gl::bezierobject::msaa) {
+    _colorattachment.reset(new gpucast::gl::texture2d);
+    _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
+  } else{
+    _colorattachment.reset(new gpucast::gl::texture2d);
+    _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
+  }
 
   _depthattachment.reset(new gpucast::gl::texture2d);
   _depthattachment->teximage(0, GL_DEPTH32F_STENCIL8 , GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
@@ -178,7 +183,7 @@ glwidget::resizeGL(int width, int height)
 void 
 glwidget::paintGL()
 {
-#define FBO 0
+#define FBO 1
 
   // draw pre-evaluated stuff... 
   if (!_initialized)
@@ -213,8 +218,6 @@ glwidget::paintGL()
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  gpucast::gl::bezierobject_renderer::instance()->reset_count();
-
   // compute render parameters
   float nearplane = 0.01f * _boundingbox.size().abs();
   float farplane  = 5.0f  * _boundingbox.size().abs();
@@ -245,11 +248,13 @@ glwidget::paintGL()
   }
 
   if (gpucast::gl::bezierobject_renderer::instance()->enable_counting()) {
-    unsigned triangles = gpucast::gl::bezierobject_renderer::instance()->get_triangle_count();
-    unsigned fragments = gpucast::gl::bezierobject_renderer::instance()->get_fragment_count();
+    auto debug_info = gpucast::gl::bezierobject_renderer::instance()->get_debug_count();
+
+    auto estimate = gpucast::gl::bezierobject_renderer::instance()->get_fragment_estimate();
+    auto estimate_total = std::accumulate(estimate.begin(), estimate.end(), 0);
     mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
     if (mainwin) {
-      mainwin->update_count(triangles, fragments);
+      mainwin->update_count(debug_info.triangles, debug_info.fragments, debug_info.culled_triangles, debug_info.trimmed_fragments, estimate_total);
     }
   }
 
@@ -515,11 +520,10 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
 
   ///////////////////////////////////////////////////////////////////////
   void
-  glwidget::antialiasing(antialiasing_mode i)
+  glwidget::antialiasing(gpucast::gl::bezierobject::anti_aliasing_mode i)
   {
-    //for (auto o : _objects) {
-    //  o->
-    //}
+    _antialiasing = i;
+    gpucast::gl::bezierobject_renderer::instance()->antialiasing(i);
   }
 
 
@@ -569,6 +573,13 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
       o->tesselation_max_pixel_error(f);
     }
   }
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::tesselation_max_geometric_error(float f)
+  {
+    for (auto o : _objects) {
+      o->tesselation_max_geometric_error(f);
+    }
+  }
 
   ///////////////////////////////////////////////////////////////////////
   void glwidget::raycasting_max_iterations(int i)
@@ -586,7 +597,11 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
     }
   }
 
-
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::enable_triangular_tesselation(int enable)
+  {
+    gpucast::gl::bezierobject_renderer::instance()->enable_triangular_tesselation(enable);
+  }
 
 ///////////////////////////////////////////////////////////////////////
 void

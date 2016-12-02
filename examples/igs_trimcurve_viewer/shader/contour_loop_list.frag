@@ -15,6 +15,8 @@ uniform int antialiasing;
 uniform int show_costs;
 uniform int pixelsize;
 
+uniform usamplerBuffer sampler_preclass;
+
 uniform vec2 domain_size;
 
 uniform sampler2D prefilter_texture;

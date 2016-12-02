@@ -14,12 +14,34 @@
 
 #include <vector>
 #include <gpucast/math/matrix.hpp>
+#include <gpucast/math/matrix4x4.hpp>
 #include <gpucast/math/parametric/point.hpp>
 
 using namespace gpucast::math;
 
 SUITE (matrix)
 {
+
+  matrix<double, 4,4> generate_matrix4x4(double min, double max)
+  {
+    double d = max - min;
+
+    matrix<double, 4, 4> m;
+    for (std::size_t r = 0; r != 4; ++r)
+    {
+      for (std::size_t c = 0; c != 4; ++c)
+      {
+        m[r][c] = min + d * double(rand()) / RAND_MAX;
+
+        // try to avoid numerical problems
+        if (fabs(m[r][c]) < 0.01) {
+          m[r][c] = 0.01;
+        }
+      }
+    }
+
+    return m;
+  }
 
   matrix<double, 3, 3> generate_matrix3x3 ( double min, double max )
   {
@@ -280,4 +302,40 @@ SUITE (matrix)
     }
   }
 
+  TEST(matrix_determinant3x3)
+  {
+    std::vector<double> mat_data = { 1.0,  0.4, -0.3, 
+                                     1.6,  0.3, -0.1, 
+                                     -1.4,  0.4,  0.6 };
+    matrix<double, 3, 3> m(mat_data.begin(), mat_data.end());
+    auto d = m.determinant();
+    CHECK_CLOSE(d, -0.426, 0.0001);
+  }
+
+  TEST(matrix_conversion)
+  {
+    std::vector<double> mat_data = { 1.0,  0.4, -0.3, 2.1,
+                                     1.6,  0.3, -0.1, 0.1,
+                                    -1.4,  0.4,  0.6, 1.1,
+                                     0.2, -1.4, -0.7, 0.5 };
+
+    matrix<double, 4, 4> m4x4 (mat_data.begin(), mat_data.end());
+    matrix<double, 4, 4> m4x4t = m4x4.transpose();
+
+    const double expected_result = -2.0508;
+
+    point<double, 4> p0(1.0, 3.0, 2.0, 1.0);
+
+    gpucast::math::matrix4d m4d(m4x4);
+    gpucast::math::matrix4d m4dt(m4x4t);
+
+    CHECK_CLOSE(m4x4.determinant(), expected_result, 0.0001);
+    CHECK_CLOSE(m4x4t.determinant(), expected_result, 0.0001);
+
+    CHECK_CLOSE(m4d.determinant(), expected_result, 0.0001);
+    CHECK_CLOSE(m4dt.determinant(), expected_result, 0.0001);
+
+    CHECK(m4x4 * p0 == m4d * p0);
+    CHECK(m4x4t * p0 == m4dt * p0);
+  }
 }
