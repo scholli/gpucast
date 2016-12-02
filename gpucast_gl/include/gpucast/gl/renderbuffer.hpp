@@ -35,7 +35,10 @@ namespace gpucast { namespace gl {
       void            unbind  ( ) const;
       bool            bound   ( ) const;
 
-      void            set     ( GLenum internal_format, std::size_t width, std::size_t height) const;
+      void            set     (GLenum internal_format, std::size_t width, std::size_t height) const;
+      void            set     ( std::size_t samples, GLenum internal_format, std::size_t width, std::size_t height) const;
+      void            set     ( std::size_t coverage_samples, size_t color_samples, GLenum internal_format, std::size_t width, std::size_t height) const;
+      
       GLuint          id      ( ) const;
 
       void            print   ( std::ostream& os ) const;

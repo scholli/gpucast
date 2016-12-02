@@ -39,15 +39,19 @@ namespace gpucast {
     {
       _pathlist.insert("");
 
-      _init_raycasting_program();
-      _init_pretesselation_program();
-      _init_tesselation_program();
+      _program_factory.add_substitution("GPUCAST_MAX_FEEDBACK_BUFFER_INDICES_INPUT", std::to_string(MAX_FEEDBACK_BUFFER_INDICES));
+      _program_factory.add_substitution("GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION_INPUT", std::to_string(_enable_triangular_tesselation));
+      _program_factory.add_substitution("GPUCAST_WRITE_DEBUG_COUNTER_INPUT", std::to_string(_enable_count));
+      _program_factory.add_substitution("GPUCAST_ANTI_ALIASING_MODE_INPUT", std::to_string(_antialiasing));
+
+      recompile();
 
       _init_hullvertexmap();
       _init_prefilter();
       _init_transform_feedback();
 
-      _counter = std::make_shared<atomicbuffer>(2 * sizeof(unsigned), GL_DYNAMIC_COPY);
+      _feedbackbuffer = std::make_shared<shaderstoragebuffer>(MAX_FEEDBACK_BUFFER_INDICES * sizeof(unsigned), GL_DYNAMIC_COPY);
+      _counter = std::make_shared<atomicbuffer>(sizeof(debug_counter), GL_DYNAMIC_COPY);
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -194,8 +198,8 @@ namespace gpucast {
 
       if (_enable_count)
       {
-        p->set_uniform1i("gpucast_enable_counting", _enable_count);
         _counter->bind_buffer_base(bezierobject_renderer::GPUCAST_ATOMIC_COUNTER_BINDING);
+        p->set_shaderstoragebuffer("gpucast_feedback_buffer", *_feedbackbuffer, GPUCAST_FEEDBACK_BUFFER_BINDING);
       }
 
       // camera block
@@ -228,12 +232,34 @@ namespace gpucast {
       } else {
         p->set_uniform1i("diffusemapping", 0);
       }
+
+      auto prefilter_unit = next_texunit();
+      p->set_texture2d("gpucast_prefilter", *_prefilter_texture, prefilter_unit);
+      _prefilter_sampler->bind(prefilter_unit);
     }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::antialiasing(bezierobject::anti_aliasing_mode m)
+    {
+      _antialiasing = m;
+      _program_factory.add_substitution("GPUCAST_ANTI_ALIASING_MODE_INPUT", std::to_string(_antialiasing));
+      recompile();
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    bezierobject::anti_aliasing_mode bezierobject_renderer::antialiasing() const
+    {
+      return _antialiasing;
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::enable_counting(bool b)
     {
       _enable_count = b;
+      _program_factory.add_substitution("GPUCAST_WRITE_DEBUG_COUNTER_INPUT", std::to_string(_enable_count));
+      recompile();
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -243,47 +269,60 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    unsigned bezierobject_renderer::get_triangle_count() const
+    void bezierobject_renderer::enable_triangular_tesselation(bool b)
     {
-      _counter->bind();
-      unsigned* mapped_mem_read = (unsigned*)_counter->map_range(0, sizeof(unsigned), GL_MAP_READ_BIT);
-      unsigned result = mapped_mem_read[0];
-      _counter->unmap();
-      _counter->unbind();
-      return result;
+      _enable_triangular_tesselation = b;
+      _program_factory.add_substitution("GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION_INPUT", std::to_string(_enable_triangular_tesselation));
+      recompile();
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    unsigned bezierobject_renderer::get_fragment_count() const
+    bool bezierobject_renderer::enable_triangular_tesselation() const
     {
-      _counter->bind();
-      unsigned* mapped_mem_read = (unsigned*)_counter->map_range(0, sizeof(unsigned), GL_MAP_READ_BIT);
-      unsigned result = mapped_mem_read[1];
-      _counter->unmap();
-      _counter->unbind();
-      return result;
+      return _enable_triangular_tesselation;
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject_renderer::reset_count() const
+    bezierobject_renderer::debug_counter bezierobject_renderer::get_debug_count() const
     {
+      _counter->bind();
+      debug_counter result;
+      unsigned* mapped_mem_read = (unsigned*)_counter->map_range(0, sizeof(debug_counter), GL_MAP_READ_BIT);
+      std::memcpy(&result, mapped_mem_read, sizeof(debug_counter));
+      _counter->unmap();
+
       // initialize buffer with 0
-      _counter->bind();
-      unsigned* mapped_mem_write = (unsigned*)_counter->map_range(0, 2 * sizeof(unsigned), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-      mapped_mem_write[0] = 0; // triangle count
-      mapped_mem_write[1] = 0; // fragment count
+      unsigned* mapped_mem_write = (unsigned*)_counter->map_range(0, sizeof(debug_counter), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+      std::fill_n(mapped_mem_write, sizeof(debug_counter) / sizeof(unsigned), 0);
       _counter->unmap();
       _counter->unbind();
+
+      return result;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    std::vector<unsigned> bezierobject_renderer::get_fragment_estimate() const
+    {
+      std::vector<unsigned> feedback(MAX_FEEDBACK_BUFFER_INDICES);
+      _feedbackbuffer->bind();
+      unsigned* mapped_mem_read = (unsigned*)_feedbackbuffer->map_range(0, sizeof(unsigned), GL_MAP_READ_BIT);
+      for (auto i = 0; i != MAX_FEEDBACK_BUFFER_INDICES; ++i) {
+        feedback[i] = mapped_mem_read[i];
+      }
+      _feedbackbuffer->unmap();
+      _feedbackbuffer->unbind();
+
+      // clear feedback
+      std::vector<unsigned> feedback_zeroed(MAX_FEEDBACK_BUFFER_INDICES, 0);
+      _feedbackbuffer->update(feedback_zeroed.begin(), feedback_zeroed.end());
+
+      return feedback;
     }
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_raycasting_program()
     {
-      BOOST_LOG_TRIVIAL(info) << "_init_raycasting_program()" << std::endl;
-
-      gpucast::gl::resource_factory factory;
-
-      _raycasting_program = factory.create_program({ 
+      _raycasting_program = _program_factory.create_program({
         { vertex_stage, "resources/glsl/trimmed_surface/raycast_surface.glsl.vert" },
         { fragment_stage, "resources/glsl/trimmed_surface/raycast_surface.glsl.frag" } 
       });
@@ -293,11 +332,7 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_pretesselation_program()
     {
-      BOOST_LOG_TRIVIAL(info) << "_init_pretesselation_program()" << std::endl;
-
-      gpucast::gl::resource_factory factory;
-
-      _pretesselation_program = factory.create_program({ 
+      _pretesselation_program = _program_factory.create_program({
         { vertex_stage, "resources/glsl/trimmed_surface/pretesselation.vert.glsl"},
         { tesselation_control_stage, "resources/glsl/trimmed_surface/pretesselation.tctrl.glsl"},                                                         
         { tesselation_evaluation_stage, "resources/glsl/trimmed_surface/pretesselation.teval.glsl" },
@@ -312,7 +347,7 @@ namespace gpucast {
         "transform_final_tesselation"
       };
 
-      glTransformFeedbackVaryings(_pretesselation_program->id(), 4, (char**)&varyings, GL_INTERLEAVED_ATTRIBS);
+      glTransformFeedbackVaryings(_pretesselation_program->id(), sizeof(varyings)/sizeof(char*), (char**)&varyings, GL_INTERLEAVED_ATTRIBS);
 
       _pretesselation_program->link();
       BOOST_LOG_TRIVIAL(info) << _pretesselation_program->log() << std::endl;;
@@ -321,9 +356,7 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_tesselation_program()
     {
-      gpucast::gl::resource_factory factory;
-      
-      _tesselation_program = factory.create_program({ 
+      _tesselation_program = _program_factory.create_program({
         { vertex_stage, "resources/glsl/trimmed_surface/tesselation.vert.glsl" },
         { tesselation_control_stage, "resources/glsl/trimmed_surface/tesselation.tctrl.glsl" },
         { tesselation_evaluation_stage, "resources/glsl/trimmed_surface/tesselation.teval.glsl" },
@@ -345,6 +378,12 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_prefilter(unsigned prefilter_resolution) 
     {
+      _prefilter_sampler.reset(new gpucast::gl::sampler);
+      _prefilter_sampler->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
+      _prefilter_sampler->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
+      _prefilter_sampler->parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      _prefilter_sampler->parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
       _prefilter_texture = std::make_shared<gpucast::gl::texture2d>();
 
       gpucast::math::util::prefilter2d<gpucast::math::vec2d> pre_integrator(32, 0.5);

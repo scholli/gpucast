@@ -39,14 +39,15 @@ namespace gpucast {
 
       virtual ~resource_factory() {}
 
+      void         add_substitution(std::string const& search_string, std::string const& replacement);
+
       void         add_search_path(std::string const& path);
 
       std::string  read_plain_file(std::string const& file) const;
 
       std::string  read_shader_file(std::string const& file) const;
 
-      std::string  prepare_shader(std::string const& shader_source,
-        std::string const& label) const;
+      std::string  prepare_shader(std::string const& shader_source, std::string const& label) const;
 
       std::string  resolve_substitutions(std::string const& shader_source, substition_map const& smap) const;
 
@@ -69,7 +70,8 @@ namespace gpucast {
         std::string& contents,
         std::string const& custom_label = std::string()) const;
 
-      std::vector<std::string> _search_paths;
+      std::vector<std::string>            _search_paths;
+      std::unordered_map<std::string, std::string>  _substitution_map;
 
     };
 

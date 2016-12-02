@@ -64,6 +64,12 @@ void resource_factory::add_search_path(std::string const& path)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void resource_factory::add_substitution(std::string const& search_string, std::string const& replacement)
+{
+  _substitution_map[search_string] = replacement;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 std::string resource_factory::read_plain_file(std::string const& path) const
 {
@@ -93,7 +99,7 @@ std::string resource_factory::read_shader_file(std::string const& path) const
 ////////////////////////////////////////////////////////////////////////////////
 
 std::string resource_factory::prepare_shader(std::string const& shader_source,
-                                            std::string const& label) const
+                                             std::string const& label) const
 {
   namespace fs = boost::filesystem;
 
@@ -117,6 +123,7 @@ std::string resource_factory::resolve_substitutions(std::string const& shader_so
 
   while (boost::regex_search(s, match, regex)) {
     std::string subs;
+
     auto search = smap.find(match[1]);
     if (search != smap.end()) {
       subs = search->second;
@@ -139,6 +146,10 @@ std::shared_ptr<program> resource_factory::create_program(std::vector<shader_des
     for (auto desc : shader_descs) {
       gpucast::gl::shader shader(desc.type);
       auto shader_source = read_shader_file(desc.filename);
+
+      // replace substitutions
+      std::cout << "Replacing ... " << std::endl;
+      shader_source = resolve_substitutions(shader_source, _substitution_map);
 
       shader.set_source(shader_source.c_str());
       if (!shader.log().empty()) {

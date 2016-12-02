@@ -81,6 +81,20 @@ namespace gpucast { namespace gl {
     unbind();
   }
 
+  ///////////////////////////////////////////////////////////////////////////////
+  void renderbuffer::set(std::size_t samples, GLenum internal_format, std::size_t width, std::size_t height) const
+  {
+    assert(int(width) <= renderbuffer::get_maxsize() && int(height) <= renderbuffer::get_maxsize());
+
+    glNamedRenderbufferStorageMultisampleEXT(_id, samples, internal_format, width, height);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  void renderbuffer::set(std::size_t coverage_samples, size_t color_samples, GLenum internal_format, std::size_t width, std::size_t height) const
+  {
+    assert(int(width) <= renderbuffer::get_maxsize() && int(height) <= renderbuffer::get_maxsize());
+    glNamedRenderbufferStorageMultisampleCoverageEXT(_id, coverage_samples, color_samples, internal_format, width, height);
+  }
 
   ///////////////////////////////////////////////////////////////////////////////
   GLuint renderbuffer::id() const

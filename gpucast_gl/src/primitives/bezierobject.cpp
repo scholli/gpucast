@@ -39,7 +39,7 @@ namespace gpucast {
     const float bezierobject::default_render_configuration::trimming_error_tolerance = 0.001f;
     const float bezierobject::default_render_configuration::tesselation_max_pixel_error = 4.0f;
     const float bezierobject::default_render_configuration::tesselation_max_pretesselation = 64.0f;
-    const float bezierobject::default_render_configuration::tesselation_max_geometric_error = 0.1f;
+    const float bezierobject::default_render_configuration::tesselation_max_geometric_error = 0.0001f;
 
     /////////////////////////////////////////////////////////////////////////////
     bezierobject::bezierobject(gpucast::beziersurfaceobject const& b)
@@ -139,6 +139,18 @@ namespace gpucast {
     float bezierobject::tesselation_max_pixel_error() const
     {
       return _tesselation_max_pixel_error;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject::tesselation_max_geometric_error(float e)
+    {
+      _tesselation_max_geometric_error = e;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    float bezierobject::tesselation_max_geometric_error() const
+    {
+      return _tesselation_max_geometric_error;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -350,6 +362,7 @@ namespace gpucast {
       BOOST_LOG_TRIVIAL(info) << "Primitives written : " << nprimitives << std::endl;
       glDeleteQueries(1, &primitive_query);
 #endif
+
       glDisable(GL_RASTERIZER_DISCARD);
       renderer->begin_program(tesselation_program);
       {
@@ -359,6 +372,10 @@ namespace gpucast {
 
         // bind transform feedback buffer and draw
         tfbuffer->vertex_array_object->bind();
+        if (renderer->enable_triangular_tesselation()) {
+          glPatchParameteri(GL_PATCH_VERTICES, 3);
+        }
+
         glDrawTransformFeedback(GL_PATCHES, tfbuffer->feedback->id());
       }
       renderer->end_program(tesselation_program);
@@ -371,7 +388,7 @@ namespace gpucast {
       p.set_uniform1i("gpucast_enable_newton_iteration", _raycasting);
       p.set_uniform1i("gpucast_raycasting_iterations", _raycasting_max_iterations);
       p.set_uniform1f("gpucast_raycasting_error_tolerance", _raycasting_error_tolerance);
-      p.set_uniform1f("gpucast_tesselation_max_error", _tesselation_max_pixel_error);
+      p.set_uniform1f("gpucast_tesselation_max_pixel_error", _tesselation_max_pixel_error);
       p.set_uniform1f("gpucast_max_pre_tesselation", _tesselation_max_pretesselation);
       p.set_uniform1f("gpucast_max_geometric_error", _tesselation_max_geometric_error);
       p.set_uniform1i("gpucast_shadow_mode", _rendermode);
