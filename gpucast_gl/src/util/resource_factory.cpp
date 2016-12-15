@@ -51,6 +51,14 @@ namespace gpucast {
 resource_factory::resource_factory(std::vector<std::string> const& shader_root_directories)
     : _search_paths(shader_root_directories)
 {
+  add_search_path(std::string("."));
+  add_search_path(std::string("./shaders"));
+  add_search_path(std::string(".."));
+  add_search_path(std::string("../shaders"));
+  add_search_path(std::string("./resources"));
+  add_search_path(std::string("./resources/shaders"));
+  add_search_path(std::string("../resources"));
+  add_search_path(std::string("../resources/shaders"));
   add_search_path(std::string(GPUCAST_INSTALL_DIR));
   add_search_path(std::string(GPUCAST_INSTALL_DIR) + "/resources");
   add_search_path(std::string(GPUCAST_INSTALL_DIR) + "/resources/shaders");

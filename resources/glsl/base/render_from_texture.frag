@@ -69,7 +69,10 @@ void main(void)
 
   switch (fxaa_mode)
   {
-  case 0:  // SSAA 3.11
+  case 0:  // No FXAA
+    out_color = texture2D(colorbuffer, frag_texcoord.xy);
+    break;  
+  case 1:  // SSAA 3.11
     out_color = vec4(FxaaPixelShader(frag_texcoord.xy,
                                 colorbuffer,
                                 inverse_resolution,
@@ -77,12 +80,10 @@ void main(void)
                                 fxaa_edge_threshold,
                                 fxaa_threshold_min).rgb, 1.0);
     break;
-  case 1:  // Simple FXAA
+  default:  // Simple FXAA
     out_color = fxaa_simple(colorbuffer, gl_FragCoord.xy, vec2(width, height));
     break;
-
-  default:  // No FXAA
-    out_color = texture2D(colorbuffer, frag_texcoord.xy);
   }
+
 
 }

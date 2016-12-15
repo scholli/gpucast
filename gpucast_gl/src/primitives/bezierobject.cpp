@@ -222,18 +222,6 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::antialiasing(bezierobject::anti_aliasing_mode mode)
-    {
-      _antialiasing = mode;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    bezierobject::anti_aliasing_mode bezierobject::antialiasing() const
-    {
-      return _antialiasing;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     void bezierobject::fillmode(bezierobject::fill_mode mode)
     {
       _fill_mode = mode;

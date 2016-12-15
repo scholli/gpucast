@@ -75,12 +75,11 @@ void main()
   // transform Bezier uv-coordinates to nurbs knot span
   vec2 domain_size  = vec2(nurbs_domain.z - nurbs_domain.x, nurbs_domain.w - nurbs_domain.y);
 
-#if GPUCAST_ANTI_ALIASING_MODE == 0
+  // no anti-aliasing
+#if GPUCAST_ANTI_ALIASING_MODE != 1 
+
   vec2 uv_nurbs     = geometry_texcoords.xy * domain_size + nurbs_domain.xy;
 
-  vec2 duv_dx       = dFdx(geometry_texcoords.xy);
-  vec2 duv_dy       = dFdy(geometry_texcoords.xy);
-  
   bool is_trimmed = false;
   int trim_type = retrieve_trim_type(int(gIndex));
   int tmp = 0;
@@ -161,9 +160,10 @@ void main()
                                   diffusemap);
 #endif
 
-#if GPUCAST_ANTI_ALIASING_MODE
+#if GPUCAST_ANTI_ALIASING_MODE == 1
 
-  vec2 uv_nurbs     = geometry_texcoords.xy * domain_size + nurbs_domain.xy;
+  vec2 uv           = geometry_texcoords.xy;
+  vec2 uv_nurbs     = uv * domain_size + nurbs_domain.xy;
 
   vec2 duv_dx       = dFdx(geometry_texcoords.xy);
   vec2 duv_dy       = dFdy(geometry_texcoords.xy);
@@ -259,6 +259,7 @@ void main()
   vec4 normal_world     = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
   vec4 viewer           = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
 
+#if 1
   out_color = shade_phong_fresnel(vec4(geometry_world_position, 1.0), 
                                  normalize(normal_world.xyz), 
                                  normalize(viewer.xyz),
@@ -272,6 +273,9 @@ void main()
                                  bool(diffusemapping),
                                  diffusemap);
   out_color *= coverage;
+#else
+  out_color = vec4(vec2(1.0) - uv, 0.0, coverage);
+#endif
 
 #endif
 

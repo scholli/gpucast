@@ -126,7 +126,11 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
   // initialize
   for (surface_ptr const& surface : _surfaces) 
   {
-    if (!surface->is_pretrimmable(_preclassification_resolution)) {
+    // TODO: there still seems to be a bug in is_pretrimmable -> fix it
+#if 0
+    if (!surface->is_pretrimmable(_preclassification_resolution)) 
+#endif
+    {
       // general preprocessing
       surface->preprocess(_subdivision_u, _subdivision_v);
 

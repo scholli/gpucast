@@ -50,14 +50,13 @@ public:
   };
 
   enum anti_aliasing_mode {
-    disabled = 0x00,
+    disabled         = 0x00,
     prefiltered_edge_estimation = 0x01,
     multisampling2x2 = 0x02,
     multisampling3x3 = 0x03,
     multisampling4x4 = 0x04,
     multisampling8x8 = 0x05,
-    msaa             = 0x06,
-    fxaa             = 0x07,
+    msaa             = 0x06
   };
 
   enum fill_mode
@@ -119,9 +118,6 @@ public:
   beziersurfaceobject::trim_approach_t trimming() const;
   void                trimming(beziersurfaceobject::trim_approach_t type);
 
-  void                antialiasing(enum anti_aliasing_mode);
-  anti_aliasing_mode  antialiasing() const;
-
   void                fillmode(fill_mode mode);
   fill_mode           fillmode() const;
 
@@ -154,7 +150,6 @@ private :
   bool                                  _raycasting              = true;
 
   render_mode                           _rendermode    = raycasting;
-  anti_aliasing_mode                    _antialiasing  = disabled;
   beziersurfaceobject::trim_approach_t  _trimming      = beziersurfaceobject::contour_kd_partition;
     
   beziersurfaceobject                   _object;
