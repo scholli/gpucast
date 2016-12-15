@@ -142,6 +142,7 @@ private : // attributes
   double                                                                      _gputime = 0.0;
   double                                                                      _postprocess = 0.0;
 
+  gpucast::gl::bezierobject::fill_mode                                        _fillmode;
   gpucast::gl::bezierobject::anti_aliasing_mode                               _antialiasing = gpucast::gl::bezierobject::disabled;
 
   std::shared_ptr<gpucast::gl::program>                                       _fxaa_program;

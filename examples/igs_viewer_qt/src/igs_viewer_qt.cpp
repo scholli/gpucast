@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
   try 
   {
     QApplication app(argc, argv);
-    mainwindow win(argc, argv, 2560, 1600);
+    mainwindow win(argc, argv, 1920, 1080);
     win.show();
     app.exec();
   } 

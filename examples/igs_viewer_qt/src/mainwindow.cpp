@@ -58,7 +58,6 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling4x4, "Multisampling(4x4)"));
   _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling8x8, "Multisampling(8x8)"));
   _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::msaa, "MSAA"));
-  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::fxaa, "FXAA"));
 
   /////////////////////////////////////
   // trimming modes
@@ -129,16 +128,17 @@ mainwindow::update_interface ( )
 void 
 mainwindow::show_fps ( double cputime, double gputime, double postprocess )
 {
-  QString message = "Fps=";
+  QString message = "IGS Viewer || fps=";
   message.append(QString("%1").arg(1000.0f/gputime));
   message.append(tr(" Hz"));
-  message.append(QString("\nSize : %1").arg(_glwindow->width()));
+  message.append(QString(" || Size : %1").arg(_glwindow->width()));
   message.append("x");
   message.append(QString("%1").arg(_glwindow->height()));
-  message.append(QString("\nCPU=%1 ms ").arg(cputime));
-  message.append(QString("\nDraw=%1 ms ").arg(gputime));
-  message.append(QString("\nPostDraw=%1 ms ").arg(postprocess));
+  message.append(QString(" || CPU=%1 ms ").arg(cputime));
+  message.append(QString(" || Draw=%1 ms ").arg(gputime));
+  message.append(QString(" || PostDraw=%1 ms ").arg(postprocess));
   _fps_result->setText(message);
+  setWindowTitle(message);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -312,7 +312,7 @@ mainwindow::_create_menus()
 
   auto widget = new QWidget { _menu };
   _menu->setWidget(widget);
-  _menu->setFixedWidth(800);
+  _menu->setFixedWidth(500);
   //_menu->setFixedHeight(1400);
   this->addDockWidget(Qt::RightDockWidgetArea, _menu);
 
@@ -378,7 +378,7 @@ mainwindow::_create_menus()
   system_desc_layout->addWidget(_checkbox_vsync);
   system_desc_layout->addWidget(_checkbox_counting);
   system_desc_layout->addWidget(_counting_result);
-  system_desc_layout->addWidget(_fps_result);
+  //system_desc_layout->addWidget(_fps_result);
   system_desc_layout->addWidget(_memory_usage);
   system_desc->setLayout(system_desc_layout);
   layout->addWidget(system_desc);
