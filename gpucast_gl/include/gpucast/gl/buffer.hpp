@@ -80,6 +80,9 @@ public : // methods
   void            bind_range      (unsigned in_index, std::size_t in_offset, std::size_t in_size);
   void            unbind_range    (unsigned in_index);
 
+  void            clear_data      (GLenum internal_format, GLenum format, GLenum type, void* data);
+  void            clear_subdata   (GLenum internal_format, unsigned offset, unsigned size, GLenum format, GLenum type, void* data);
+
   virtual void    bind            ( ) const = 0;
   virtual void    unbind          ( ) const = 0;
   virtual GLenum  target          ( ) const = 0;

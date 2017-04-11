@@ -1,3 +1,5 @@
+#extension GL_NV_gpu_shader5 : enable
+
 ///////////////////////////////////////////////////////////////////////////////
 // input
 ///////////////////////////////////////////////////////////////////////////////                                                               
@@ -20,18 +22,37 @@ flat out uint gIndex;
 out vec3 geometry_world_position;
 out vec3 geometry_normal;
 out vec2 geometry_texcoords;
-                                                                   
+                                                           
 ///////////////////////////////////////////////////////////////////////////////
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////                                                                      
 #include "./resources/glsl/common/camera_uniforms.glsl"
 #include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
+#include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"
+
+void compute_partial_derivatives(in vec4 a, // xy_uv
+                                 in vec4 b, // xy_uv
+                                 in vec4 c, // xy_uv
+                                 out vec2 duv_dx,
+                                 out vec2 duv_dy)
+{
+  vec2 ab = b.xy - a.xy;
+  vec2 ac = c.xy - a.xy;
+
+  duv_dy = ( b.zw / ab.x - c.zw / ac.x - a.zw / ab.x + a.zw / ac.x ) / 
+          ( ab.y / ab.x - ac.y / ac.x );
+  duv_dx = ( b.zw - a.zw - ab.y * duv_dy ) / ab.x;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void main()
 {
+  vec4 nurbs_domain = retrieve_patch_domain(int(teIndex[0]));
+  vec2 domain_size  = vec2(nurbs_domain.z - nurbs_domain.x, nurbs_domain.w - nurbs_domain.y);
+
   // force vertex order to be face forward to prevent backface culling!!!
   vec3 a_view_space = (gpucast_model_view_matrix * tePosition[0]).xyz;
   vec3 b_view_space = (gpucast_model_view_matrix * tePosition[1]).xyz;
@@ -59,7 +80,11 @@ void main()
     ///////////////////////////////////////////////////////
     geometry_world_position   = (gpucast_model_matrix * tePosition[i]).xyz;
     geometry_normal           = float(increment) * teNormal[i].xyz; // invert normal if necessary
+#if GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION
     geometry_texcoords        = teTessCoord[i];
+#else
+    geometry_texcoords        =  teTessCoord[i] * domain_size + nurbs_domain.xy;
+#endif
     ///////////////////////////////////////////////////////
                       
     gl_Position = gpucast_model_view_projection_matrix * vec4(tePosition[i].xyz, 1.0);

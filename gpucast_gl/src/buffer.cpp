@@ -233,5 +233,28 @@ void buffer::unbind_range(unsigned in_index)
   glBindBufferBase(target(), in_index, 0);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void buffer::clear_data(GLenum internal_format, GLenum format, GLenum type, void* data)
+{
+#if 0 
+  glClearNamedBufferDataEXT(id(), internal_format, format, type, data);
+#else
+  bind();
+  glClearBufferData(target(), internal_format, format, type, data);
+  unbind();
+#endif
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void buffer::clear_subdata(GLenum internal_format, unsigned offset, unsigned size, GLenum format, GLenum type, void* data)
+{
+#if 0
+  glClearNamedBufferSubDataEXT(id(), internal_format, offset, size, format, type, data);
+#else 
+  bind();
+  glClearBufferSubData(target(), internal_format, offset, size, format, type, data);
+  unbind();
+#endif
+}
 
 } } // namespace gpucast / namespace gl

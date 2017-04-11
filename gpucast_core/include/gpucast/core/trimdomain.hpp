@@ -100,6 +100,8 @@ class GPUCAST_CORE trimdomain
     bool                      type          () const;
     void                      type          ( bool inner );
 
+    void                      normalize     ();
+
     curve_container           curves        () const;
     std::size_t               loop_count    () const;
     std::size_t               max_degree    () const;

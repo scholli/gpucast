@@ -25,7 +25,6 @@ bisect_curve(in samplerBuffer curvedata_buffer,
   // initialize search
   float t = 0.0;
   vec4 p = vec4(0.0);
-  int iters = 0;
 
   // evaluate curve to determine if uv is on left or right of curve
   for (int i = 0; i < max_iterations; ++i)
@@ -89,15 +88,14 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
                       in float         tmax,
                       inout int        intersections,
                       inout int        iterations,
-                      inout vec2       point_on_curve,
-                      inout vec2       gradient,
+                      out vec2         point_on_curve,
+                      out vec2         closest_bounds,
                       in float         tolerance,
                       in int           max_iterations,
                       in vec4          curve_bbox)
 {
   // initialize search 
   point_on_curve = vec2(0.0);
-  gradient = vec2(0.0);
 
   vec4 remaining_bbox = curve_bbox;
 
@@ -110,14 +108,13 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
     float t = (tmax + tmin) / 2.0;
     evaluateCurve(curvedata_buffer, index, order, t, p);
 
-    if (!horizontally_increasing) {
-      //vec2 sekant = remaining_bbox.xw - remaining_bbox.zy;
-      vec2 sekant = remaining_bbox.zy - remaining_bbox.xw;
-      gradient = tangent_to_gradient(sekant);
-    }
-    else {
-      vec2 sekant = remaining_bbox.zw - remaining_bbox.xy;
-      gradient = tangent_to_gradient(sekant);
+    vec2 p0 = horizontally_increasing ? remaining_bbox.xy : remaining_bbox.xw;
+    vec2 p1 = horizontally_increasing ? remaining_bbox.zw : remaining_bbox.zy;
+
+    if (distance(uv,p0) < distance(uv,p1)) {
+      closest_bounds = p0;
+    } else {
+      closest_bounds = p1;
     }
 
     // stop if point on curve is very close to uv

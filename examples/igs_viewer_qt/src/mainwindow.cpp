@@ -261,7 +261,9 @@ mainwindow::_create_actions()
   connect(_checkbox_culling,                SIGNAL(stateChanged(int)),   _glwindow,    SLOT( backface_culling(int)));
   connect(_checkbox_counting,               SIGNAL(stateChanged(int)),   _glwindow,    SLOT( enable_counter(int)));
   connect(_checkbox_tritesselation,         SIGNAL(stateChanged(int)), _glwindow, SLOT(enable_triangular_tesselation(int)));
+  connect(_checkbox_holefilling,            SIGNAL(stateChanged(int)), _glwindow, SLOT(holefilling(int)));
   
+
   connect(_combobox_antialiasing,           SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
   connect(_combobox_trimming,               SIGNAL(currentIndexChanged(int)), this, SLOT(trimming()));
   connect(_combobox_rendering,              SIGNAL(currentIndexChanged(int)), this, SLOT(rendering()));
@@ -338,6 +340,7 @@ mainwindow::_create_menus()
   _checkbox_culling      = new QCheckBox("Backface Culling", _menu);
   _checkbox_counting     = new QCheckBox("Enable Triangle/Fragment Counter", _menu);
   _checkbox_tritesselation = new QCheckBox("Enable Triangular Tesselation", _menu);
+  _checkbox_holefilling = new QCheckBox("Enable Holefilling", _menu);
 
   // init combo boxes
   _combobox_rendering = new QComboBox;
@@ -386,6 +389,7 @@ mainwindow::_create_menus()
   QGroupBox* aa_desc = new QGroupBox("Anti-Aliasing", this);
   QVBoxLayout* aa_desc_layout = new QVBoxLayout;
   aa_desc_layout->addWidget(_checkbox_fxaa);
+  aa_desc_layout->addWidget(_checkbox_holefilling);
   aa_desc_layout->addWidget(new QLabel("Shader-based anti-aliasing"));
   aa_desc_layout->addWidget(_combobox_antialiasing);
   aa_desc->setLayout(aa_desc_layout);

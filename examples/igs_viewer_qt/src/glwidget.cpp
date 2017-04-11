@@ -153,70 +153,27 @@ glwidget::resizeGL(int width, int height)
   _width  = width;
   _height = height;
 
+  std::cout << "reisze : " << width << " : " << height << std::endl;
+
   if (!_initialized) {
     return;
   }
   
   glViewport(0, 0, GLsizei(_width), GLsizei(_height));
 
+  auto renderer = gpucast::gl::bezierobject_renderer::instance();
+  renderer->set_resolution(_width, _height);
+
   // create texture for FBO
-  _colorattachment_read.reset(new gpucast::gl::texture2d);
-  _colorattachment_read->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
-  _colorattachment_write.reset(new gpucast::gl::texture2d);
-  _colorattachment_write->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
-  _colorattachment_multisample.reset(new gpucast::gl::renderbuffer);
-  _colorattachment_multisample->set(8, GL_RGBA8, GLsizei(_width), GLsizei(_height));
-
-  // create also texture for depth as necessary for FXAA
-  _depthattachment_read.reset(new gpucast::gl::texture2d);
-  _depthattachment_read->teximage(0, GL_DEPTH32F_STENCIL8 , GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-  _depthattachment_write.reset(new gpucast::gl::texture2d);
-  _depthattachment_write->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-
-  int max_samples = 0;
-  glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
-  std::cout << "Max samples : " << max_samples << std::endl;
-
-  int nsamples = 8;
-  switch (_antialiasing) {
-    case gpucast::gl::bezierobject::multisampling2x2 : nsamples = 4; break;
-    case gpucast::gl::bezierobject::multisampling3x3 : nsamples = 8; break;
-    case gpucast::gl::bezierobject::multisampling4x4 : nsamples = 12; break;
-    case gpucast::gl::bezierobject::multisampling8x8 : nsamples = 6; break;
-    case gpucast::gl::bezierobject::msaa:              nsamples = 8; break;
-    default:                nsamples = 8;
+  if (!_colorattachment || !_depthattachment) {
+    _colorattachment.reset(new gpucast::gl::texture2d);
+    _depthattachment.reset(new gpucast::gl::texture2d);
   }
-  // clamp to max samples
-  nsamples = std::min(nsamples, max_samples);
+    
+  _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
+  _depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-  _depthattachment_multisample.reset(new gpucast::gl::renderbuffer);
-  _depthattachment_multisample->set(nsamples, GL_DEPTH32F_STENCIL8, GLsizei(_width), GLsizei(_height));
-
-  // create FBOs 
-  _fbo_read.reset(new gpucast::gl::framebufferobject);
-  _fbo_read->attach_texture(*_colorattachment_read, GL_COLOR_ATTACHMENT0_EXT);
-  _fbo_read->attach_texture(*_depthattachment_read, GL_DEPTH_STENCIL_ATTACHMENT);
-
-  _fbo_write.reset(new gpucast::gl::framebufferobject);
-  _fbo_write->attach_texture(*_colorattachment_write, GL_COLOR_ATTACHMENT0_EXT);
-  _fbo_write->attach_texture(*_depthattachment_write, GL_DEPTH_STENCIL_ATTACHMENT);
-
-  _fbo_multisample.reset(new gpucast::gl::framebufferobject);
-  _fbo_multisample->attach_renderbuffer(*_colorattachment_multisample, GL_COLOR_ATTACHMENT0_EXT);
-  _fbo_multisample->attach_renderbuffer(*_depthattachment_multisample, GL_DEPTH_STENCIL_ATTACHMENT);
-
-  // check FBOs
-  _fbo_read->bind();
-  _fbo_read->status();
-  _fbo_read->unbind();
-
-  _fbo_write->bind();
-  _fbo_write->status();
-  _fbo_write->unbind();
-
-  _fbo_multisample->bind();
-  _fbo_multisample->status();
-  _fbo_multisample->unbind();
+  renderer->attach_custom_textures(_colorattachment, _depthattachment);
 
   _generate_random_texture();
 }
@@ -250,38 +207,13 @@ glwidget::paintGL()
   if (!_cputimer) _cputimer = std::make_shared<gpucast::gl::timer>();
 
   _gputimer->begin();
-#if 1
+
   //////////////////////////////////////////////
   // bind FBO
   //////////////////////////////////////////////
-  if (!_fbo_multisample || !_fbo_read || !_fbo_write) {
+  if (!_colorattachment || !_depthattachment) {
     resizeGL(_width, _height);
   }
-
-  if (_antialiasing == gpucast::gl::bezierobject::msaa || 
-      _antialiasing == gpucast::gl::bezierobject::multisampling2x2 || 
-      _antialiasing == gpucast::gl::bezierobject::multisampling3x3 ||
-      _antialiasing == gpucast::gl::bezierobject::multisampling4x4 ||
-      _antialiasing == gpucast::gl::bezierobject::multisampling8x8 
-      ) {
-    _fbo_multisample->bind();
-  }
-  else {
-    if (_fillmode == gpucast::gl::bezierobject::solid) {
-      _fbo_write->bind();
-    }
-  }
-#endif
-  //////////////////////////////////////////////
-  // GL state setup
-  //////////////////////////////////////////////
-  glEnable(GL_DEPTH_TEST);
-  //glEnable(GL_CULL_FACE);
-
-  glClearColor(_background[0], _background[1], _background[2], 1.0f);
-  //glClearDepth(1.0f);
-  
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
   //////////////////////////////////////////////
   // compute render parameters and view setup
@@ -301,10 +233,15 @@ glwidget::paintGL()
   gpucast::math::matrix4f proj = gpucast::math::perspective(50.0f, float(_width) / _height, nearplane, farplane); 
 
   //////////////////////////////////////////////
-  // apply camera setup to renderer
+  // GL state setup
   //////////////////////////////////////////////
   auto renderer = gpucast::gl::bezierobject_renderer::instance();
+  glEnable(GL_DEPTH_TEST);
+  glClearColor(_background[0], _background[1], _background[2], 1.0f);
 
+  //////////////////////////////////////////////
+  // apply camera setup to renderer
+  //////////////////////////////////////////////
   renderer->set_nearfar(nearplane, farplane);
   renderer->set_resolution(_width, _height);
 
@@ -312,28 +249,14 @@ glwidget::paintGL()
   renderer->current_viewmatrix(view);
   renderer->current_projectionmatrix(proj);
 
+  renderer->begin_draw();
+
   for (auto const& o : _objects) {
     o->draw();
   }
 
-#if 1
-  //////////////////////////////////////////////
-  // unbind FBO
-  //////////////////////////////////////////////
-  if (_antialiasing == gpucast::gl::bezierobject::msaa ||
-    _antialiasing == gpucast::gl::bezierobject::multisampling2x2 ||
-    _antialiasing == gpucast::gl::bezierobject::multisampling3x3 ||
-    _antialiasing == gpucast::gl::bezierobject::multisampling4x4 ||
-    _antialiasing == gpucast::gl::bezierobject::multisampling8x8
-    ) {
-    _fbo_multisample->unbind();
-  }
-  else {
-    if (_fillmode == gpucast::gl::bezierobject::solid) {
-      _fbo_write->unbind();
-    }
-  }
-#endif
+  renderer->end_draw();
+
   //////////////////////////////////////////////
   // readback debug info if enabled
   //////////////////////////////////////////////
@@ -361,52 +284,38 @@ glwidget::paintGL()
   _cputime += cputime_seconds;
   _gputime += _gputimer->time_in_ms();
 #if 1
-  //////////////////////////////////////////////
-  // blit FBO 
-  //////////////////////////////////////////////
-  if (_fillmode == gpucast::gl::bezierobject::solid)
-  {
-    if (_antialiasing == gpucast::gl::bezierobject::msaa ||
-      _antialiasing == gpucast::gl::bezierobject::multisampling2x2 ||
-      _antialiasing == gpucast::gl::bezierobject::multisampling3x3 ||
-      _antialiasing == gpucast::gl::bezierobject::multisampling4x4 ||
-      _antialiasing == gpucast::gl::bezierobject::multisampling8x8
-      ) {
-      glBlitNamedFramebuffer(_fbo_multisample->id(), _fbo_write->id(),
-        0, 0, _width, _height, 0, 0, _width, _height,
-        GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    }
 
-    std::swap(_fbo_read, _fbo_write);
 
-    gpucast::math::matrix4f mvp = proj * view * model;
-    gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
+  gpucast::math::matrix4f mvp = proj * view * model;
+  gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
 
-    _cputimer->start();
-    _gputimer->begin();
+  _cputimer->start();
+  _gputimer->begin();
 
-    // render into drawbuffer
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    _fxaa_program->begin();
+  // render into drawbuffer
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  glClearColor(_background[0], _background[1], _background[2], 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  _fxaa_program->begin();
 
-    _fxaa_program->set_uniform_matrix4fv("modelviewprojectioninverse", 1, false, &mvpi[0]);
-    _fxaa_program->set_uniform_matrix4fv("modelviewprojection", 1, false, &mvp[0]);
+  _fxaa_program->set_uniform_matrix4fv("modelviewprojectioninverse", 1, false, &mvpi[0]);
+  _fxaa_program->set_uniform_matrix4fv("modelviewprojection", 1, false, &mvp[0]);
 
-    _fxaa_program->set_texture2d("colorbuffer", *_colorattachment_write, 1);
-    _fxaa_program->set_texture2d("depthbuffer", *_depthattachment_write, 2);
+  _fxaa_program->set_texture2d("colorbuffer", *_colorattachment, 1);
+  _fxaa_program->set_texture2d("depthbuffer", *_depthattachment, 2);
 
-    _sample_linear->bind(1);
-    _sample_linear->bind(2);
+  _sample_linear->bind(1);
+  _sample_linear->bind(2);
 
-    _fxaa_program->set_uniform1i("fxaa_mode", int(_fxaa));
-    _fxaa_program->set_uniform1i("width", GLsizei(_width));
-    _fxaa_program->set_uniform1i("height", GLsizei(_height));
-    _quad->draw();
+  _fxaa_program->set_uniform1i("fxaa_mode", int(_fxaa));
+  _fxaa_program->set_uniform1i("width", GLsizei(_width));
+  _fxaa_program->set_uniform1i("height", GLsizei(_height));
+  _quad->draw();
 
-    _fxaa_program->end();
+  _fxaa_program->end();
 
-    _gputimer->end();
-  }
+  _gputimer->end();
+
 #endif
 
   double postprocess = _gputimer->time_in_ms();
@@ -593,6 +502,12 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   {
     _ambient_occlusion = i;
   }
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::holefilling(int h)
+  {
+    gpucast::gl::bezierobject_renderer::instance()->enable_holefilling(h);
+  }
+
 
   ///////////////////////////////////////////////////////////////////////
   void glwidget::backface_culling(int i) {
@@ -625,6 +540,11 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   {
     _antialiasing = i;
     gpucast::gl::bezierobject_renderer::instance()->antialiasing(i);
+
+    for (auto o : _objects) {
+      o->trimming(_trimming);
+    }
+
     resizeGL(_width, _height);
   }
 
@@ -633,6 +553,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void
   glwidget::trimming(gpucast::beziersurfaceobject::trim_approach_t t)
   {
+    _trimming = t;
     for (auto o : _objects) {
       o->trimming(t);
     }

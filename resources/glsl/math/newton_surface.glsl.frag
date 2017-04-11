@@ -35,6 +35,11 @@ newton(inout vec2       uv,
     mat2 J    = mat2(Fu, Fv); 
 
     float det = determinant(J);
+
+    if (det == 0) {
+      return false;
+    }
+
     mat2 Jinv = adjoint(J) / det;
 
     uv = uv - Jinv * Fuv; 

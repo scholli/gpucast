@@ -70,7 +70,7 @@ void main(void)
   switch (fxaa_mode)
   {
   case 0:  // No FXAA
-    out_color = texture2D(colorbuffer, frag_texcoord.xy);
+    out_color = texture(colorbuffer, frag_texcoord.xy);
     break;  
   case 1:  // SSAA 3.11
     out_color = vec4(FxaaPixelShader(frag_texcoord.xy,

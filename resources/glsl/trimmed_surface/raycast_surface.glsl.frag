@@ -190,8 +190,8 @@ void main(void)
   }
 
   /*********************************************************************
-   * depth correction
-   *********************************************************************/
+    * depth correction
+    *********************************************************************/
   vec4 position_world = gpucast_model_matrix * vec4(p.xyz, 1.0);
   vec4 normal_world   = gpucast_normal_matrix * vec4(normal, 0.0);
   vec4 viewer         = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
@@ -203,15 +203,16 @@ void main(void)
     normal_world *= -1.0f;
   }
 
-
   float corrected_depth = compute_depth ( gpucast_view_matrix * position_world, gpucast_clip_near, gpucast_clip_far );
+
   gl_FragDepth = corrected_depth;
-  
+
   /*********************************************************************
-   * Shading process
-   ********************************************************************/
+    * Shading process
+    ********************************************************************/
   if (bool(gpucast_enable_newton_iteration)) 
   {
+    
     out_color = shade_phong_fresnel(position_world, 
                                     normalize(normal_world.xyz), 
                                     normalize(viewer.xyz),

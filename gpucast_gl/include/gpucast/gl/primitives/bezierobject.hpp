@@ -41,29 +41,29 @@ public:
 
   struct GPUCAST_GL default_render_configuration {
     static const unsigned raycasting_max_iterations = 6;
-    static const float    raycasting_error_tolerance;     // default set to 0.001f
-    static const unsigned trimming_max_bisections = 16;
-    static const float    trimming_error_tolerance;       // default set to 0.001f
-    static const float    tesselation_max_pixel_error;    // default set to 4.0 pixel
-    static const float    tesselation_max_pretesselation; // default set to 64.0f
+    static const float    raycasting_error_tolerance;      // default set to 0.001f
+    static const unsigned trimming_max_bisections = 16;    
+    static const float    trimming_error_tolerance;        // default set to 0.001f
+    static const float    tesselation_max_pixel_error;     // default set to 4.0 pixel
+    static const float    tesselation_max_pretesselation;  // default set to 64.0f
     static const float    tesselation_max_geometric_error; // default set to 0.0001f = 0.1 mm
   };
 
   enum anti_aliasing_mode {
-    disabled         = 0x00,
+    disabled                    = 0x00,
     prefiltered_edge_estimation = 0x01,
-    multisampling2x2 = 0x02,
-    multisampling3x3 = 0x03,
-    multisampling4x4 = 0x04,
-    multisampling8x8 = 0x05,
-    msaa             = 0x06
+    multisampling2x2            = 0x02,
+    multisampling3x3            = 0x03,
+    multisampling4x4            = 0x04,
+    multisampling8x8            = 0x05,
+    msaa                        = 0x06
   };
 
   enum fill_mode
   {
-    solid = 0x00,
-    wireframe,
-    points
+    solid     = 0x00,
+    wireframe = 0x01,
+    points    = 0x02
   }; 
 
   enum render_mode {

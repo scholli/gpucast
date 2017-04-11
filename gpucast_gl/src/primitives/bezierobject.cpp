@@ -211,6 +211,7 @@ namespace gpucast {
     void bezierobject::trimming(beziersurfaceobject::trim_approach_t approach)
     {
       if (_trimming != approach) {
+
         _trimming = approach;
 
         // update CPU object

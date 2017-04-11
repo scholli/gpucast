@@ -5,6 +5,7 @@
 
 #include "resources/glsl/trimming/binary_search.glsl"
 #include "resources/glsl/trimming/bisect_curve.glsl"
+#include "resources/glsl/trimming/classification_to_coverage.glsl"
 #include "resources/glsl/trimming/pre_classification.glsl"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -17,7 +18,7 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
                          in vec2    uv, 
                          in int     id, 
                          in int     trim_outer, 
-                         inout int  iters,
+                         inout int  iterations,
                          in float   tolerance,
                          in int     max_iterations)
 {
@@ -112,7 +113,7 @@ trimming_double_binary ( in samplerBuffer partition_buffer,
     int order = abs(floatBitsToInt(curveinfo[1]));
     bool horizontally_increasing = floatBitsToInt(curveinfo[1]) > 0;
 
-    bisect_curve(curvedata_buffer, uv, index, order, horizontally_increasing, 0.0, 1.0, total_intersections, iters, tolerance, max_iterations);
+    bisect_curve(curvedata_buffer, uv, index, order, horizontally_increasing, 0.0, 1.0, total_intersections, iterations, tolerance, max_iterations);
   }
 
   if ( mod(total_intersections, 2) == 1 ) 
@@ -148,7 +149,7 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
   int v_intervals = int(floatBitsToUint(baseinfo[0]));
 
   vec2 closest_point_on_curve = vec2(0);
-  vec2 closest_gradient_on_curve = vec2(0);
+  vec2 closest_bounds = vec2(0);
   vec4 remaining_bbox = vec4(0);
 
   /////////////////////////////////////////////////////////////////////////////
@@ -239,7 +240,7 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
     int order = abs(floatBitsToInt(curveinfo[1]));
     bool horizontally_increasing = floatBitsToInt(curveinfo[1]) > 0;
 
-    bisect_curve_coverage(curvedata_buffer, uv, index, order, horizontally_increasing, 0.0, 1.0, total_intersections, iters, closest_point_on_curve, closest_gradient_on_curve, tolerance, max_iterations, remaining_bbox);
+    bisect_curve_coverage(curvedata_buffer, uv, index, order, horizontally_increasing, 0.0, 1.0, total_intersections, iters, closest_point_on_curve, closest_bounds, tolerance, max_iterations, remaining_bbox);
   }
 
   bool is_trimmed = (mod(total_intersections, 2) == 1) ? !bool(trim_outer) : bool(trim_outer);
@@ -252,37 +253,7 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
   /////////////////////////////////////////////////////////////////////////////////////
   // coverage estimation
   /////////////////////////////////////////////////////////////////////////////////////
-  mat2 J = mat2(duvdx, duvdy);
-
-  if (determinant(J) == 0.0) {
-    return float(!is_trimmed);
-  }
-
-  mat2 Jinv = inverse(J);
-
-  vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient_on_curve);
-  vec2 uv_pixel_coords = Jinv*uv;
-  vec2 point_pixel_coords = Jinv*closest_point_on_curve;
-
-  float distance_pixel_coords = abs(dot(gradient_pixel_coords, uv_pixel_coords - point_pixel_coords));
-  const float sqrt2 = sqrt(2.0);
-
-  if (is_trimmed) {
-    distance_pixel_coords = -distance_pixel_coords;
-  }
-
-  const float gradient_angle = gradient_pixel_coords.y > 0.0 ? gradient_pixel_coords.y : -gradient_pixel_coords.y;
-  const float normalized_signed_distance = clamp((distance_pixel_coords + sqrt2 / 2.0) / sqrt2, 0.0, 1.0);
-
-  switch (coverage_estimation_type)
-  {
-  case 1: // edge estimation
-    return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
-  case 2: // curve estimation -> TODO: not implemented yet
-    return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
-  case 3: // distance estimation
-    return min(1.0, distance_pixel_coords + sqrt(2.0) / 2.0);
-  };
+  return classification_to_coverage(uv, duvdx, duvdy, !is_trimmed, closest_point_on_curve, closest_bounds, gpucast_prefilter);
 }
 
 

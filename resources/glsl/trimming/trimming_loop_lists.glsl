@@ -7,6 +7,7 @@
 #include "resources/glsl/trimming/trimming_uniforms.glsl"
 #include "resources/glsl/trimming/binary_search.glsl"
 #include "resources/glsl/trimming/bisect_curve.glsl"
+#include "resources/glsl/trimming/classification_to_coverage.glsl"
 #include "resources/glsl/trimming/pre_classification.glsl"
 
 struct bbox_t {
@@ -742,62 +743,27 @@ trimming_loop_list_coverage(in vec2 uv,
   /////////////////////////////////////////////////////////////////////////////
   // 2. magnification - exact classification
   /////////////////////////////////////////////////////////////////////////////
-  float coverage = 0.0;
-  bool is_trimmed;
-
   vec2 closest_point_on_curve;
-  vec2 closest_gradient_on_curve;
+  vec2 closest_bounds;
 
-  is_trimmed = classify_loop_coverage(uv, index, closest_point_on_curve, closest_gradient_on_curve);
+  bool is_trimmed = classify_loop_coverage(uv, index, closest_point_on_curve, closest_bounds);
 
   for (unsigned int i = 0; i < loops[index].nchildren; ++i) {
     vec2 point_on_curve;
-    vec2 gradient_on_curve;
-    bool loop_trimmed = classify_loop_coverage(uv, int(loops[index].child_index + i), point_on_curve, gradient_on_curve);
+    vec2 bounds_on_curve;
+    bool loop_trimmed = classify_loop_coverage(uv, int(loops[index].child_index + i), point_on_curve, bounds_on_curve);
     is_trimmed = is_trimmed == loop_trimmed;
 
     if (length(point_on_curve - uv) < length(closest_point_on_curve - uv)) {
       closest_point_on_curve = point_on_curve;
-      closest_gradient_on_curve = gradient_on_curve;
+      closest_bounds = bounds_on_curve;
     }
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // coverage estimation
   /////////////////////////////////////////////////////////////////////////////
-
-  mat2 J = mat2(duvdx, duvdy);
-
-  if (determinant(J) == 0.0) {
-    return float(!is_trimmed);
-  }
-
-  mat2 Jinv = inverse(J);
-
-  vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient_on_curve);
-  vec2 uv_pixel_coords = Jinv*uv;
-  vec2 point_pixel_coords = Jinv*closest_point_on_curve;
-
-  float distance_pixel_coords = abs(dot(gradient_pixel_coords, uv_pixel_coords - point_pixel_coords));
-
-  if (is_trimmed) {
-    distance_pixel_coords = -distance_pixel_coords;
-  }
-
-  const float sqrt2 = sqrt(2.0);
-  const float gradient_angle = gradient_pixel_coords.y > 0.0 ? gradient_pixel_coords.y : -gradient_pixel_coords.y;
-  const float normalized_signed_distance = (distance_pixel_coords + sqrt2 / 2.0) / sqrt2;
-
-  switch (coverage_estimation_type)
-  {
-  case 1: // edge estimation
-    return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
-  case 2: // curve estimation -> TODO: not implemented yet
-    return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
-  case 3: // distance estimation
-    return min(1.0, distance_pixel_coords + sqrt(2.0) / 2.0);
-  };
+  return classification_to_coverage(uv, duvdx, duvdy, !is_trimmed, closest_point_on_curve, closest_bounds, prefilter);
 }
 
 

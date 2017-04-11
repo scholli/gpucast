@@ -71,6 +71,7 @@ public Q_SLOTS :
   void                    vsync                         ( int );
   void                    ambient_occlusion             ( int );
 
+  void                    holefilling                   (int);
   void                    backface_culling              (int);
   void                    rendermode                    (gpucast::gl::bezierobject::render_mode mode);
   void                    fillmode                      (gpucast::gl::bezierobject::fill_mode mode);
@@ -144,23 +145,14 @@ private : // attributes
 
   gpucast::gl::bezierobject::fill_mode                                        _fillmode;
   gpucast::gl::bezierobject::anti_aliasing_mode                               _antialiasing = gpucast::gl::bezierobject::disabled;
+  gpucast::beziersurfaceobject::trim_approach_t                               _trimming = gpucast::beziersurfaceobject::contour_kd_partition;
 
   std::shared_ptr<gpucast::gl::program>                                       _fxaa_program;
   std::shared_ptr<gpucast::gl::program>                                       _ssao_program;
 
-  std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo_read;
-  std::shared_ptr<gpucast::gl::texture2d>                                     _depthattachment_read;
-  std::shared_ptr<gpucast::gl::texture2d>                                     _colorattachment_read;
-
-  std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo_write;
-  std::shared_ptr<gpucast::gl::texture2d>                                     _depthattachment_write;
-  std::shared_ptr<gpucast::gl::texture2d>                                     _colorattachment_write;
-
-  std::shared_ptr<gpucast::gl::framebufferobject>                             _fbo_multisample;
-  std::shared_ptr<gpucast::gl::renderbuffer>                                  _colorattachment_multisample;
-  std::shared_ptr<gpucast::gl::renderbuffer>                                  _depthattachment_multisample;
-
   std::shared_ptr<gpucast::gl::sampler>                                       _sample_linear;
+  std::shared_ptr<gpucast::gl::texture2d>                                     _depthattachment;
+  std::shared_ptr<gpucast::gl::texture2d>                                     _colorattachment;
 
   float                                                                       _aoradius;
   unsigned                                                                    _aosamples;

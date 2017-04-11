@@ -29,7 +29,7 @@ namespace gpucast { namespace gl {
     /*virtual*/ void begin() const override;
     /*virtual*/ void end() const override;
 
-    double time_in_ms(bool wait = true) const; // in ms
+    double time_in_ms(bool wait = true, double timeout_ms = 1000) const; // in ms
 
   private : // member
 

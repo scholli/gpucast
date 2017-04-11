@@ -35,8 +35,9 @@ namespace gpucast {
   namespace gl {
 
     /////////////////////////////////////////////////////////////////////////////
-    bezierobject_renderer::bezierobject_renderer() 
+    bezierobject_renderer::bezierobject_renderer()
     {
+      // configure program generation and initialization
       _pathlist.insert("");
 
       _program_factory.add_substitution("GPUCAST_MAX_FEEDBACK_BUFFER_INDICES_INPUT", std::to_string(MAX_FEEDBACK_BUFFER_INDICES));
@@ -44,14 +45,68 @@ namespace gpucast {
       _program_factory.add_substitution("GPUCAST_WRITE_DEBUG_COUNTER_INPUT", std::to_string(_enable_count));
       _program_factory.add_substitution("GPUCAST_ANTI_ALIASING_MODE_INPUT", std::to_string(_antialiasing));
 
+      _program_factory.add_substitution("GPUCAST_HULLVERTEXMAP_SSBO_BINDING_INPUT", std::to_string(GPUCAST_HULLVERTEXMAP_SSBO_BINDING));
+      _program_factory.add_substitution("GPUCAST_ATTRIBUTE_SSBO_BINDING_INPUT", std::to_string(GPUCAST_ATTRIBUTE_SSBO_BINDING));
+      _program_factory.add_substitution("GPUCAST_ATOMIC_COUNTER_BINDING_INPUT", std::to_string(GPUCAST_ATOMIC_COUNTER_BINDING));
+      _program_factory.add_substitution("GPUCAST_FEEDBACK_BUFFER_BINDING_INPUT", std::to_string(GPUCAST_FEEDBACK_BUFFER_BINDING));
+      _program_factory.add_substitution("GPUCAST_HOLE_FILLING_INPUT", std::to_string(_enable_holefilling));
+
+      _program_factory.add_substitution("GPUCAST_ABUFFER_ATOMIC_BUFFER_BINDING_INPUT", std::to_string(GPUCAST_ABUFFER_ATOMIC_BUFFER_BINDING));
+      _program_factory.add_substitution("GPUCAST_ABUFFER_FRAGMENT_LIST_BUFFER_BINDING_INPUT", std::to_string(GPUCAST_ABUFFER_FRAGMENT_LIST_BUFFER_BINDING));
+      _program_factory.add_substitution("GPUCAST_ABUFFER_FRAGMENT_DATA_BUFFER_BINDING_INPUT", std::to_string(GPUCAST_ABUFFER_FRAGMENT_DATA_BUFFER_BINDING));
+
+      // build programs
       recompile();
 
+      // init auxilliary structures
       _init_hullvertexmap();
       _init_prefilter();
       _init_transform_feedback();
 
+      // init debug data structures
       _feedbackbuffer = std::make_shared<shaderstoragebuffer>(MAX_FEEDBACK_BUFFER_INDICES * sizeof(unsigned), GL_DYNAMIC_COPY);
       _counter = std::make_shared<atomicbuffer>(sizeof(debug_counter), GL_DYNAMIC_COPY);
+
+      // create offscreen targets
+      _fbo = std::make_shared<framebufferobject>();
+      _fbo_multisample = std::make_shared<framebufferobject>();
+      _gbuffer = std::make_shared<framebufferobject>();
+
+      _gbuffer_colorattachment = std::make_shared<texture2d>();
+      _gbuffer_depthattachment = std::make_shared<texture2d>();
+
+      _colorattachment = std::make_shared<texture2d>();
+      _depthattachment = std::make_shared<texture2d>();
+
+      _colorattachment_multisample = std::make_shared<renderbuffer>();
+      _depthattachment_multisample = std::make_shared<renderbuffer>();
+
+      // fullscreen pass geometry
+      _fullscreen_quad = std::make_shared<gpucast::gl::plane>(0, -1, 1);
+      //_fullscreen_quad->size(1.0, 1.0);
+
+      _nearest_sampler = std::make_shared<sampler>();
+      _nearest_sampler->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
+      _nearest_sampler->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
+      _nearest_sampler->parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      _nearest_sampler->parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+      _linear_sampler = std::make_shared<sampler>();
+      _linear_sampler->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+      _linear_sampler->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+      _linear_sampler->parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      _linear_sampler->parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+      const unsigned abuffer_list_size = GPUCAST_ABUFFER_MAX_FRAGMENTS * 2 * sizeof(unsigned);
+      const unsigned abuffer_data_size = GPUCAST_ABUFFER_MAX_FRAGMENTS * sizeof(gpucast::math::vec4u);
+
+      BOOST_LOG_TRIVIAL(info) << "bezierobject_renderer::bezierobject_renderer() : Allocating " << (abuffer_list_size + abuffer_data_size) / (1024 * 1024) << "MB for A-Buffer storage.";
+
+      _abuffer_fragment_list = std::make_shared<shaderstoragebuffer>(abuffer_list_size, GL_DYNAMIC_COPY);
+      _abuffer_fragment_data = std::make_shared<shaderstoragebuffer>(abuffer_data_size, GL_DYNAMIC_COPY);
+
+      _abuffer_atomic_buffer = std::make_shared<atomicbuffer>(2*sizeof(unsigned), GL_DYNAMIC_COPY);
+      _abuffer_atomic_buffer->clear_data(GL_RG32UI, GL_RGB, GL_UNSIGNED_INT, 0);
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -122,6 +177,15 @@ namespace gpucast {
       _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::attach_custom_textures(std::shared_ptr<texture2d> const& color_texture,
+      std::shared_ptr<texture2d> const& depth_texture)
+    {
+      _colorattachment = color_texture;
+      _depthattachment = depth_texture;
+
+      create_fbo();
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::set_nearfar(float near, float far)
@@ -131,9 +195,145 @@ namespace gpucast {
       current_projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
     }
 
+    /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::set_resolution(unsigned width, unsigned height)
     {
-      _resolution = gpucast::math::vec2i(width, height);
+      if (width == _resolution[0] && height == _resolution[1]) {
+        return;
+      }
+      else {
+
+        // recreate offscreen targets with new textures
+        _resolution = gpucast::math::vec2i(width, height);
+
+        // resize fbo textures
+        _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_resolution[0]), GLsizei(_resolution[1]), 0, GL_RGBA, GL_FLOAT, 0);
+        _depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_resolution[0]), GLsizei(_resolution[1]), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+        _gbuffer_colorattachment->teximage(0, GL_RGBA32F, GLsizei(_resolution[0]), GLsizei(_resolution[1]), 0, GL_RGBA, GL_FLOAT, 0);
+        _gbuffer_depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_resolution[0]), GLsizei(_resolution[1]), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+        // resize multisample textures
+        const int nsamples = 8;
+        _colorattachment_multisample->set(8, GL_RGBA8, GLsizei(_resolution[0]), GLsizei(_resolution[1]));
+        _depthattachment_multisample->set(nsamples, GL_DEPTH32F_STENCIL8, GLsizei(_resolution[0]), GLsizei(_resolution[1]));
+
+        // update FBOs 
+        create_fbo();
+        create_multisample_fbo();
+        create_gbuffer();
+      }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::create_fbo()
+    {
+      _fbo->attach_texture(*_colorattachment, GL_COLOR_ATTACHMENT0_EXT);
+      _fbo->attach_texture(*_depthattachment, GL_DEPTH_STENCIL_ATTACHMENT);
+
+      _fbo->bind();
+      _fbo->status();
+      _fbo->unbind();
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::create_multisample_fbo()
+    {
+      _fbo_multisample->attach_renderbuffer(*_colorattachment_multisample, GL_COLOR_ATTACHMENT0_EXT);
+      _fbo_multisample->attach_renderbuffer(*_depthattachment_multisample, GL_DEPTH_STENCIL_ATTACHMENT);
+
+      _fbo_multisample->bind();
+      _fbo_multisample->status();
+      _fbo_multisample->unbind();
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::create_gbuffer()
+    {
+      _gbuffer->attach_texture(*_gbuffer_colorattachment, GL_COLOR_ATTACHMENT0_EXT);
+      _gbuffer->attach_texture(*_gbuffer_depthattachment, GL_DEPTH_STENCIL_ATTACHMENT);
+
+      _gbuffer->bind();
+      _gbuffer->status();
+      _gbuffer->unbind();
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::begin_draw() 
+    {
+      // first clear abuffer
+      _abuffer_clear();
+
+      if (_antialiasing == gpucast::gl::bezierobject::msaa) {
+        _fbo_multisample->bind(); 
+      } else {
+        _gbuffer->bind();
+        glClearColor(_background[0], _background[1], _background[2], 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+        // backup GL state
+        glGetIntegerv(GL_POLYGON_MODE, &_glstate_backup._polygonmode);
+        _glstate_backup._conservative_rasterization_enabled = glIsEnabled(GL_CONSERVATIVE_RASTERIZATION_NV);
+        if (!_glstate_backup._conservative_rasterization_enabled) {
+          glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+        }
+      }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::end_draw() 
+    {
+      // blit FBO if MSAA is enabled 
+      if (_antialiasing == gpucast::gl::bezierobject::msaa) 
+      {
+        _fbo_multisample->unbind();
+
+        glBlitNamedFramebuffer(_fbo_multisample->id(), _gbuffer->id(),
+          0, 0, _resolution[0], _resolution[1], 0, 0, _resolution[0], _resolution[1],
+          GL_COLOR_BUFFER_BIT, GL_NEAREST);
+      }
+      else {
+        _gbuffer->unbind();
+      }
+
+#if 1
+
+      // restore GL state
+      if (!_glstate_backup._conservative_rasterization_enabled) {
+        glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
+      } 
+      glPolygonMode(GL_FRONT_AND_BACK, _glstate_backup._polygonmode);
+      
+      glEnable(GL_DEPTH_TEST);
+      glClearDepth(1.0f);
+      glClearColor(_background[0], _background[1], _background[2], 1.0f);
+
+      // resolve into FBO
+      _fbo->bind();
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+      begin_program(_resolve_program);
+      {
+        _resolve_program->set_uniform2i("gpucast_resolution", _resolution[0], _resolution[1]);
+
+        _resolve_program->set_texture2d("gpucast_gbuffer_color", *_gbuffer_colorattachment, 1);
+        _nearest_sampler->bind(1);
+
+        _resolve_program->set_texture2d("gpucast_gbuffer_depth", *_gbuffer_depthattachment, 2);
+        _nearest_sampler->bind(2);
+
+        _fullscreen_quad->draw();
+      }
+      end_program(_resolve_program);
+
+      _fbo->unbind();
+#endif
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    gpucast::math::vec2i const& bezierobject_renderer::get_resolution() const
+    {
+      return _resolution;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -169,6 +369,7 @@ namespace gpucast {
       _init_raycasting_program();
       _init_pretesselation_program();
       _init_tesselation_program();
+      _init_resolve_program();
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -219,6 +420,21 @@ namespace gpucast {
       p->set_uniform_matrix4fv("gpucast_model_view_projection_matrix", 1, false, &_modelviewprojectionmatrix[0]);
       p->set_uniform_matrix4fv("gpucast_model_view_projection_inverse_matrix", 1, false, &_modelviewprojectionmatrixinverse[0]);
 
+      if (_antialiasing != gpucast::gl::bezierobject::msaa) {
+        auto depthtex_unit = next_texunit();
+        p->set_texture2d("gpucast_depth_buffer", *_depthattachment, depthtex_unit);
+        _nearest_sampler->bind(depthtex_unit);
+      }
+      else {
+        BOOST_LOG_TRIVIAL(info) << "Warning: Depth buffer cannot be bound in MSAA mode.";
+      }
+
+      if (p == _tesselation_program) {
+        _abuffer_atomic_buffer->bind_buffer_base(bezierobject_renderer::GPUCAST_ABUFFER_ATOMIC_BUFFER_BINDING);
+        p->set_shaderstoragebuffer("gpucast_abuffer_list", *_abuffer_fragment_list, GPUCAST_ABUFFER_FRAGMENT_LIST_BUFFER_BINDING);
+        p->set_shaderstoragebuffer("gpucast_abuffer_data", *_abuffer_fragment_data, GPUCAST_ABUFFER_FRAGMENT_DATA_BUFFER_BINDING);
+      }
+
       if (_spheremap) {
         p->set_uniform1i("spheremapping", 1);
         p->set_texture2d("spheremap", *_spheremap, next_texunit());
@@ -235,7 +451,7 @@ namespace gpucast {
 
       auto prefilter_unit = next_texunit();
       p->set_texture2d("gpucast_prefilter", *_prefilter_texture, prefilter_unit);
-      _prefilter_sampler->bind(prefilter_unit);
+      _linear_sampler->bind(prefilter_unit);
     }
 
 
@@ -253,6 +469,19 @@ namespace gpucast {
       return _antialiasing;
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::enable_holefilling(bool b)
+    {
+      _enable_holefilling = b;
+      _program_factory.add_substitution("GPUCAST_HOLE_FILLING_INPUT", std::to_string(_enable_holefilling));
+      recompile();
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    bool bezierobject_renderer::enable_holefilling() const
+    {
+      return _enable_holefilling;
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::enable_counting(bool b)
@@ -320,6 +549,43 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::_abuffer_clear()
+    {
+      // readback
+#if 0
+      _abuffer_atomic_buffer->bind();
+      unsigned* ctr_read = reinterpret_cast<unsigned*>(_abuffer_atomic_buffer->map_range(0, sizeof(unsigned), GL_MAP_READ_BIT));
+
+      if (ctr_read) {
+        unsigned fragcount;
+        std::memcpy(&fragcount, ctr_read, sizeof(unsigned));
+        BOOST_LOG_TRIVIAL(info) << "transparent frags : " << fragcount;
+      } else {
+        BOOST_LOG_TRIVIAL(info) << "Unable to map buffer";
+      }
+      _abuffer_atomic_buffer->unmap();
+      _abuffer_atomic_buffer->unbind();
+#endif
+
+#if 1
+      _abuffer_atomic_buffer->bind();
+      unsigned* ctr_clear = reinterpret_cast<unsigned*>(_abuffer_atomic_buffer->map_range(0, sizeof(unsigned), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT));
+      if (ctr_clear) {
+        *ctr_clear = 0;
+      } else {
+        BOOST_LOG_TRIVIAL(info) << "Unable to map buffer";
+      }
+      _abuffer_atomic_buffer->unmap();
+      _abuffer_atomic_buffer->unbind();
+#endif
+
+#if 1
+      const unsigned abuffer_list_size = _resolution[0] * _resolution[1] * 2 * sizeof(unsigned);
+      _abuffer_fragment_list->clear_subdata(GL_RG32UI, 0u, abuffer_list_size, GL_RGB, GL_UNSIGNED_INT, 0);
+#endif
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_raycasting_program()
     {
       _raycasting_program = _program_factory.create_program({
@@ -366,6 +632,15 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::_init_resolve_program()
+    {
+      _resolve_program = _program_factory.create_program({
+        { vertex_stage, "resources/glsl/trimmed_surface/abuffer_resolve.vert.glsl" },
+        { fragment_stage, "resources/glsl/trimmed_surface/abuffer_resolve.frag.glsl" }
+      });
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_hullvertexmap() 
     {
       _hullvertexmap = std::make_shared<shaderstoragebuffer>();
@@ -378,12 +653,6 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_prefilter(unsigned prefilter_resolution) 
     {
-      _prefilter_sampler.reset(new gpucast::gl::sampler);
-      _prefilter_sampler->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
-      _prefilter_sampler->parameter(GL_TEXTURE_WRAP_T, GL_CLAMP);
-      _prefilter_sampler->parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      _prefilter_sampler->parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
       _prefilter_texture = std::make_shared<gpucast::gl::texture2d>();
 
       gpucast::math::util::prefilter2d<gpucast::math::vec2d> pre_integrator(32, 0.5);

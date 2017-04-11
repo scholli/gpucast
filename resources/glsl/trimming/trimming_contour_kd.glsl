@@ -13,9 +13,9 @@
 #include "resources/glsl/trimming/binary_search.glsl"
 #include "resources/glsl/trimming/bisect_curve.glsl"
 #include "resources/glsl/trimming/bisect_contour.glsl"
+#include "resources/glsl/trimming/classification_to_coverage.glsl"
 #include "resources/glsl/trimming/linear_search_contour.glsl"
 #include "resources/glsl/trimming/pre_classification.glsl"
-
 
 bool
 kd_search ( in samplerBuffer search_buffer,
@@ -115,7 +115,7 @@ trimming_contour_kd ( in samplerBuffer  domainpartition,
                       in vec2           uv, 
                       in int            id, 
                       in int            trim_outer, 
-                      inout int         iters,
+                      inout int         iterations,
                       in float          tolerance,
                       in int            max_iterations )
 {
@@ -218,12 +218,13 @@ trimming_contour_kd ( in samplerBuffer  domainpartition,
       uint pointid    = 0;
       uint curveorder = 0;
       intToUint8_24 ( floatBitsToUint ( curveinfo ), curveorder, pointid );
-      bisect_curve ( pointdata, uv, int(pointid), int(curveorder), contour_uincreasing, 0.0f, 1.0f, total_intersections, iters, tolerance, max_iterations );
+      bisect_curve ( pointdata, uv, int(pointid), int(curveorder), contour_uincreasing, 0.0f, 1.0f, total_intersections, iterations, tolerance, max_iterations );
     }
   }
   
   return ((mod(total_intersections, 2) == 1) != bool(trim_outer));
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // returns coverage of pixel
@@ -305,13 +306,13 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
   int overlapping_contours = int(kdnode_info.w);
   int contourlist_id       = int(floatBitsToUint(kdnode[1]));
 
-  vec2 closest_gradient = vec2(1);
+  vec2 closest_bounds = vec2(0);
   vec2 closest_point_on_curve = vec2(0);
   float closest_distance = 1.0;
 
   for (int i = 0; i < overlapping_contours; ++i)
   {
-    vec2 gradient = vec2(0);
+    vec2 closest_contour_bounds = vec2(0);
     vec2 point_on_curve = vec2(0.0);
     vec4 contour = texelFetch(contourlist, contourlist_id + i);
     gpucast_count_texel_fetch();
@@ -323,7 +324,7 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
     int curveid = 0;
 
     vec4 remaining_bbox = vec4(unpackHalf2x16(floatBitsToUint(contour.z)), unpackHalf2x16(floatBitsToUint(contour.w)));
-
+    vec2 tmp;
     bool process_curve = bisect_contour_coverage(curvelist,
       uv,
       curvelist_id,
@@ -333,7 +334,7 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
       curveid,
       remaining_bbox,
       point_on_curve,
-      gradient);
+      closest_contour_bounds);
 
     if (process_curve)
     {
@@ -344,14 +345,14 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
       uint pointid = 0;
       uint curveorder = 0;
       intToUint8_24(floatBitsToUint(curveinfo), curveorder, pointid);
-      bisect_curve_coverage(pointdata, uv, int(pointid), int(curveorder), contour_uincreasing, 0.0f, 1.0f, total_intersections, iterations, point_on_curve, gradient, tolerance, max_iterations, remaining_bbox);
+      bisect_curve_coverage(pointdata, uv, int(pointid), int(curveorder), contour_uincreasing, 0.0f, 1.0f, total_intersections, iterations, point_on_curve, closest_contour_bounds, tolerance, max_iterations, remaining_bbox);
 
       float distance = length_squared(point_on_curve.xy - uv.xy);
       if (distance < closest_distance) 
       {
         closest_distance = distance;
         closest_point_on_curve = point_on_curve;
-        closest_gradient = gradient;
+        closest_bounds = closest_contour_bounds;
       }
     }
   }
@@ -360,40 +361,7 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
   // coverage estimation
   /////////////////////////////////////////////////////////////////////////////////////
   bool covered = bool((mod(total_intersections, 2) == 1) == bool(trim_outer));
-  mat2 J = mat2(duvdx, duvdy);
-
-  if (determinant(J) == 0.0) {
-    return float(!covered);
-  }
-
-  mat2 Jinv = inverse(J);
-
-  vec2 gradient_pixel_coords = normalize(Jinv*closest_gradient); // ok
-  vec2 uv_pixel_coords = Jinv*uv; // ok
-  vec2 point_pixel_coords = Jinv*closest_point_on_curve; // ok
-
-  float distance_pixel_coords = abs(dot(gradient_pixel_coords, uv_pixel_coords - point_pixel_coords));
-  const float sqrt2 = sqrt(2.0);
-
-  if (!covered) {
-    distance_pixel_coords = -distance_pixel_coords;
-  }
-
-  const float gradient_angle = gradient_pixel_coords.y > 0.0 ? gradient_pixel_coords.y : -gradient_pixel_coords.y;
-  const float normalized_signed_distance = clamp((distance_pixel_coords + sqrt2 / 2.0) / sqrt2, 0.0, 1.0);
-
-  switch (coverage_estimation_type) 
-  { 
-    case 1: // edge estimation
-      return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
-    case 2: // curve estimation -> TODO: not implemented yet
-      return texture2D(prefilter, vec2(gradient_angle, normalized_signed_distance)).r;
-    case 3: // distance estimation
-      return min(1.0, distance_pixel_coords + sqrt(2.0) / 2.0);
-    default : 
-      return 0.0;
-  };
-
+  return classification_to_coverage(uv, duvdx, duvdy, covered, closest_point_on_curve, closest_bounds, gpucast_prefilter);
 }
 
 

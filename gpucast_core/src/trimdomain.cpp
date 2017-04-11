@@ -99,6 +99,23 @@ namespace gpucast {
     _type = inner;
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  void trimdomain::normalize()
+  {
+    double size_u = _nurbsdomain.max[0] - _nurbsdomain.min[0];
+    double size_v = _nurbsdomain.max[1] - _nurbsdomain.min[1];
+
+    for (contour_type const& loop : _trimloops) {
+      for (auto c : loop) {
+        for (auto p = c->begin(); p != c->end(); ++p) {
+          (*p)[0] = ((*p)[0] - _nurbsdomain.min[0]) / size_u;
+          (*p)[1] = ((*p)[1] - _nurbsdomain.min[1]) / size_v;
+        }
+      }
+    }
+    _nurbsdomain.min = point2d{ 0,0 };
+    _nurbsdomain.max = point2d{ 1,1 };
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   trimdomain::curve_container       

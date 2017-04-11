@@ -67,6 +67,8 @@ public : // methods
   void                          trimtype       ( bool type );
   bool                          is_pretrimmable(unsigned preclass_resolution) const;
 
+  void                          normalize_domain();
+
   /// set the parameter range of the nurbs surface the bezier surface belongs to (there might be trimming curves that effect this surface)
   void                          nurbsdomain    ( trimdomain::bbox_type const& );
   trimdomain::bbox_type const&  nurbsdomain    () const;

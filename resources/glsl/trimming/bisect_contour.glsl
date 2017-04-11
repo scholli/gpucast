@@ -86,7 +86,7 @@ bisect_contour_coverage(in samplerBuffer data,
                         inout int        curveindex,
                         inout vec4       bbox,
                         out vec2         classification_point,
-                        out vec2         classification_gradient)
+                        out vec2         classification_closest_bounds)
 {
   int id_min = id;
   int id_max = id + intervals - 1;
@@ -95,6 +95,7 @@ bisect_contour_coverage(in samplerBuffer data,
   bool found = false;
   vec4 remaining_bbox = bbox;
   classification_point = vec2(-100000);
+  classification_closest_bounds = vec2(0);
 
   while (id_min <= id_max)
   {
@@ -102,6 +103,15 @@ bisect_contour_coverage(in samplerBuffer data,
 
     curve_bbox = texelFetch(data, id).zxwy; // [umin, vmin, umax, vmax] [vmin, vmax, umin, umax]
     gpucast_count_texel_fetch();
+
+    vec2 p0 = uincreasing ? remaining_bbox.xy : remaining_bbox.xw;
+    vec2 p1 = uincreasing ? remaining_bbox.zw : remaining_bbox.zy;
+
+    if (distance(uv,p0) < distance(uv,p1)) {
+      classification_closest_bounds = p0;
+    } else {
+      classification_closest_bounds = p1;
+    }
 
     if (uv[1] >= curve_bbox[1] && uv[1] <= curve_bbox[3]) // point is in v-interval
     {
@@ -147,15 +157,6 @@ bisect_contour_coverage(in samplerBuffer data,
           classification_point = vec2(curve_bbox[0] + (curve_bbox[2] - curve_bbox[0])*alpha, curve_bbox[1] + (curve_bbox[3] - curve_bbox[1])*alpha);
 #endif
         }
-
-        if (uincreasing) {
-          vec2 sekant = remaining_bbox.zw - remaining_bbox.xy;
-          classification_gradient = normalize(vec2(-sekant.y, sekant.x));
-        }
-        else {
-          vec2 sekant = remaining_bbox.xw - remaining_bbox.zy;
-          classification_gradient = normalize(vec2(-sekant.y, sekant.x));
-        }
       }
       break;
     }
@@ -172,8 +173,6 @@ bisect_contour_coverage(in samplerBuffer data,
       if (uv[1] < curve_bbox[1] && uv[0] > curve_bbox[0] && uincreasing ) 
       {
         classification_point = vec2((curve_bbox[0]+curve_bbox[2])/2.0, (curve_bbox[1]+curve_bbox[3])/2.0); // use center of curve bbox
-        vec2 sekant = remaining_bbox.zw - remaining_bbox.xy;
-        classification_gradient = normalize(vec2(-sekant.y, sekant.x));
         break;
       }
 
@@ -187,8 +186,6 @@ bisect_contour_coverage(in samplerBuffer data,
       //  | __________________\|
       if ( uv[1] > curve_bbox[3] && uv[0] > curve_bbox[0] && !uincreasing ) {
         classification_point = vec2((curve_bbox[0] + curve_bbox[2]) / 2.0, (curve_bbox[1] + curve_bbox[3]) / 2.0); // use center of curve bbox
-        vec2 sekant = remaining_bbox.xw - remaining_bbox.zy;
-        classification_gradient = normalize(vec2(-sekant.y, sekant.x));
         break;
       }
 
@@ -202,8 +199,6 @@ bisect_contour_coverage(in samplerBuffer data,
       // |__________________|
       if ( uv[1] > curve_bbox[3] && uv[0] < curve_bbox[2] && uincreasing ) {
         classification_point = vec2((curve_bbox[0] + curve_bbox[2]) / 2.0, (curve_bbox[1] + curve_bbox[3]) / 2.0); // use center of curve bbox
-        vec2 sekant = remaining_bbox.zw - remaining_bbox.xy;
-        classification_gradient = normalize(vec2(-sekant.y, sekant.x));
         ++intersections;
         break;
       }
@@ -218,8 +213,6 @@ bisect_contour_coverage(in samplerBuffer data,
       //  |xxxxxxxxxx_______\| 
       if ( uv[1] < curve_bbox[1] && uv[0] < curve_bbox[2] && !uincreasing ) {
         classification_point = vec2((curve_bbox[0] + curve_bbox[2]) / 2.0, (curve_bbox[1] + curve_bbox[3]) / 2.0); // use center of curve bbox
-        vec2 sekant = remaining_bbox.xw - remaining_bbox.zy;
-        classification_gradient = normalize(vec2(-sekant.y, sekant.x));
         ++intersections;
         break;
       }

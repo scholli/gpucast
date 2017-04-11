@@ -107,6 +107,15 @@ namespace gpucast {
     return surface_is_trimmed;
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  void beziersurface::normalize_domain()
+  {
+    _bezierdomain.min[0] = (_bezierdomain.min[0] - _trimdomain->nurbsdomain().min[0]) / (_trimdomain->nurbsdomain().max[0] - _trimdomain->nurbsdomain().min[0]);
+    _bezierdomain.min[1] = (_bezierdomain.min[1] - _trimdomain->nurbsdomain().min[1]) / (_trimdomain->nurbsdomain().max[1] - _trimdomain->nurbsdomain().min[1]);
+    _bezierdomain.max[0] = (_bezierdomain.max[0] - _trimdomain->nurbsdomain().min[0]) / (_trimdomain->nurbsdomain().max[0] - _trimdomain->nurbsdomain().min[0]);
+    _bezierdomain.max[1] = (_bezierdomain.max[1] - _trimdomain->nurbsdomain().min[1]) / (_trimdomain->nurbsdomain().max[1] - _trimdomain->nurbsdomain().min[1]);
+    _trimdomain->normalize();
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   void

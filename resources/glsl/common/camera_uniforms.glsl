@@ -1,4 +1,7 @@
-// goucast matrices
+#ifndef GPUCAST_GLSL_CAMERA_UNIFORMS
+#define GPUCAST_GLSL_CAMERA_UNIFORMS
+
+// gpucast matrices
 uniform mat4 gpucast_model_matrix; // used
 uniform mat4 gpucast_model_inverse_matrix;
 
@@ -23,3 +26,5 @@ uniform ivec2 gpucast_resolution;
 
 uniform float gpucast_clip_near;
 uniform float gpucast_clip_far;
+
+#endif

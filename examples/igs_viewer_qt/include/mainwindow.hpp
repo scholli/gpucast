@@ -102,6 +102,7 @@ private: // attributes
   QAction*              _action_addfile;
 
   QCheckBox*            _checkbox_fxaa;
+  QCheckBox*            _checkbox_holefilling;
   QCheckBox*            _checkbox_vsync;
   QCheckBox*            _checkbox_sao;
   QCheckBox*            _checkbox_diffusemap;
