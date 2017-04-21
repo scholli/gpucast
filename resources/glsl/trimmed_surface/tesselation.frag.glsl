@@ -47,9 +47,17 @@ uniform int spheremapping;
 
 uniform float shininess;
 uniform float opacity;
-uniform vec3 mat_ambient;
-uniform vec3 mat_diffuse;
-uniform vec3 mat_specular;
+
+#if 0
+  uniform vec3 mat_ambient;
+  uniform vec3 mat_diffuse;
+  uniform vec3 mat_specular;
+#else 
+  vec3 mat_ambient = vec3(0.0);
+  vec3 mat_diffuse = vec3(1.0);
+  vec3 mat_specular = vec3(0.0);
+#endif
+
 
 #include "./resources/glsl/trimmed_surface/shade_phong_fresnel.glsl.frag"
 
@@ -295,8 +303,8 @@ void main()
                                  spheremap,
                                  bool(diffusemapping),
                                  diffusemap);
-  
-  submit_fragment(gl_FragDepth,
+
+  submit_fragment(gl_FragCoord.z,
                   coverage,
                   gpucast_depth_buffer, 
                   1.0, 1.0, 1.0,  // pbr

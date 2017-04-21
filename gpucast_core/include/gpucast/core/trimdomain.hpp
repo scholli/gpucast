@@ -39,7 +39,10 @@ class grid : public std::vector<T> {
 public :
   grid(unsigned w, unsigned h) : std::vector<T>(w*h, T()), _width(w), _height(h) {}
 
-  T operator()(unsigned x, unsigned y) {
+  T& operator()(unsigned x, unsigned y) {
+    return (*this)[x + y*_width];
+  }
+  T const& operator()(unsigned x, unsigned y) const {
     return (*this)[x + y*_width];
   }
 
@@ -110,7 +113,9 @@ class GPUCAST_CORE trimdomain
     
     grid<value_type>          signed_distance_field(unsigned resolution) const;
     value_type                signed_distance(point_type const& point) const;
+
     grid<unsigned char>       signed_distance_pre_classification(unsigned resolution) const;
+    grid<unsigned char>       pre_classification(unsigned resolution) const;
 
     void                      print         ( std::ostream& os ) const;
 

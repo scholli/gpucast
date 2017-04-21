@@ -30,7 +30,7 @@ vec3 abuffer_get_color(uint pos) {
 }
 
 //////////////////////////////////////////////////////////////
-bool abuffer_contains_fragments (inout float depth) 
+bool abuffer_contains_fragments (out float depth) 
 {
   const ivec2 frag_pos = ivec2(gl_FragCoord.xy);
   uint current = gpucast_resolution.x * frag_pos.y + frag_pos.x;
@@ -40,6 +40,7 @@ bool abuffer_contains_fragments (inout float depth)
   current = frag.x;
 
   if (current == 0) {
+    depth = 1.0;
     return false;
   } else {
     depth = unpack_depth24(frag.y);

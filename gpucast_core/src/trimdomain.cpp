@@ -263,6 +263,63 @@ namespace gpucast {
     return result;
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  grid<unsigned char> trimdomain::pre_classification(unsigned resolution) const
+  {
+    grid<unsigned char> result(resolution, resolution);
+
+    gpucast::math::vec2d texel_size_uv = nurbsdomain().size() / resolution;
+
+    // inline lambda for texel classification
+    auto classify_texel = [&](gpucast::math::bbox2d const& texel) -> int {
+      int curves_in_positive_u = 0;
+      for (auto const& l : loops()) {
+        for (auto const& c : l.curves()) {
+          // if curve bounding box overlaps texel -> no easy early classification possible
+          auto curve_bbox = c->bbox_simple(); 
+
+          if (texel.overlap(curve_bbox)) {
+            return unknown;
+          }
+
+          // start ray from texel center
+          auto origin = point2d(texel.max[0], (texel.min[1] + texel.max[1])/2.0 );
+          intervald vrange{ c->front()[1] , c->back()[1], included, included };
+
+          bool origin_is_v_interval = vrange.in(origin[1]);
+          bool origin_is_left_of_curve = origin[0] < curve_bbox.min[0];
+
+          if (origin_is_v_interval && origin_is_left_of_curve) {
+            curves_in_positive_u++;
+          }
+        }
+      }
+
+      // if outer part is trimmed
+      bool odd_number_intersections = curves_in_positive_u % 2 == 1;
+      if (type() == true) {
+        // if odd number of intersections        
+        return odd_number_intersections ? untrimmed : trimmed;
+      }
+      else {
+        return odd_number_intersections ? trimmed : untrimmed;
+      }
+      return unknown;
+    };
+
+    // iterate over all texels
+    for (int v = 0; v != resolution; ++v) {
+      for (int u = 0; u != resolution; ++u) {
+        gpucast::math::bbox2d texel = { point2d{ nurbsdomain().min[0] + u * texel_size_uv[0],
+                                                 nurbsdomain().min[1] + v * texel_size_uv[1] },
+                                        point2d{ nurbsdomain().min[0] + (u + 1) * texel_size_uv[0],
+                                                 nurbsdomain().min[1] + (v+1) * texel_size_uv[1] } };
+        auto c = classify_texel(texel);
+        result(u, v) = c;
+      }  
+    }
+    return result;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   void

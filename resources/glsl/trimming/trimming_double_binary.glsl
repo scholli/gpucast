@@ -253,7 +253,7 @@ trimming_double_binary_coverage(in samplerBuffer partition_buffer,
   /////////////////////////////////////////////////////////////////////////////////////
   // coverage estimation
   /////////////////////////////////////////////////////////////////////////////////////
-  return classification_to_coverage(uv, duvdx, duvdy, !is_trimmed, closest_point_on_curve, closest_bounds, gpucast_prefilter);
+  return classification_to_coverage(uv, duvdx, duvdy, !is_trimmed, closest_point_on_curve, closest_bounds, prefilter);
 }
 
 

@@ -105,8 +105,8 @@ void main()
     int surface_index   = 0;
     int surface_order_u = 0;
     int surface_order_v = 0;
-    retrieve_patch_data(int(eval_index[0]), surface_index, surface_order_u, surface_order_v);
-                                                                                           
+    retrieve_patch_data(int(eval_index[0]), surface_index, surface_order_u, surface_order_v);                  
+                                                                                                                      
     evaluateSurface ( gpucast_control_point_buffer,                                             
                       int(surface_index),                                            
                       int(surface_order_u),                                          

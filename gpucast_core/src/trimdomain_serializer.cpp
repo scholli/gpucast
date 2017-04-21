@@ -65,9 +65,12 @@ trimdomain_serializer::address_type  trimdomain_serializer::serialize(trimdomain
 {
   address_type classification_id = address_type(output_classification_field.size());
 
+#if 0
   // get pre-classified texture data
   auto pre_classification = input_domain->signed_distance_pre_classification(texture_classification_resolution);
-
+#else
+  auto pre_classification = input_domain->pre_classification(texture_classification_resolution);
+#endif
   // copy to global field
   std::copy(pre_classification.begin(), pre_classification.end(), std::back_inserter(output_classification_field));
   

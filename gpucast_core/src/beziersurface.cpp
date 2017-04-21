@@ -91,7 +91,7 @@ namespace gpucast {
     unsigned vi_max = std::min(preclass_resolution, 1 + unsigned(preclass_resolution * ((bezierdomain().max[trimdomain::point_type::v] - nurbsdomain().min[trimdomain::point_type::v]) / dv)));
 
     // get pre-classification grid
-    auto preclass = domain()->signed_distance_pre_classification(preclass_resolution);
+    auto preclass = domain()->pre_classification(preclass_resolution);
 
     // iterate all texels in preclassification grid that correspond to this bezier surface -> if all trimmed, discard patch
     bool surface_is_trimmed = true;

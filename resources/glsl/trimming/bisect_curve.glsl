@@ -111,7 +111,7 @@ bisect_curve_coverage(in samplerBuffer curvedata_buffer,
     vec2 p0 = horizontally_increasing ? remaining_bbox.xy : remaining_bbox.xw;
     vec2 p1 = horizontally_increasing ? remaining_bbox.zw : remaining_bbox.zy;
 
-    if (distance(uv,p0) < distance(uv,p1)) {
+    if (distance(uv, p0) < distance(uv,p1)) {
       closest_bounds = p0;
     } else {
       closest_bounds = p1;

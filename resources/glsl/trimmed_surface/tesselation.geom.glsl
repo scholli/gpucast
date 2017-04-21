@@ -28,6 +28,8 @@ out vec2 geometry_texcoords;
 ///////////////////////////////////////////////////////////////////////////////                                                                      
 #include "./resources/glsl/common/camera_uniforms.glsl"
 #include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
+#include "./resources/glsl/trimming/trimming_uniforms.glsl"
+#include "./resources/glsl/trimming/pre_classification.glsl"
 #include "./resources/glsl/trimmed_surface/ssbo_per_patch_data.glsl"
 
 void compute_partial_derivatives(in vec4 a, // xy_uv
@@ -72,6 +74,47 @@ void main()
     increment       = -1;
   }
 
+  
+#if GPUCAST_TEXTURE_BASED_GEOMETRY_DISCARD
+  ///////////////////////////////////////////////////////////
+  // pre-classification discard
+  ////////////////////////////////////////////////////////////
+  bool discard_triangle = true;
+  for ( int i = vertex_id_first; i != vertex_id_last; i += increment )
+  {
+#if GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION
+    geometry_texcoords        = teTessCoord[i];
+#else
+    geometry_texcoords        =  teTessCoord[i] * domain_size + nurbs_domain.xy;
+#endif
+    int trim_index = retrieve_trim_index(int(teIndex[0]));
+    vec4 baseinfo  = texelFetch(gpucast_kd_partition, trim_index);
+    int classification_base_id = int(floatBitsToUint(baseinfo.y));
+    vec4 domainbounds = texelFetch(gpucast_kd_partition, trim_index + 2);
+
+    if (classification_base_id != 0)
+    {
+      int preclasstex_width  = int(floatBitsToUint(baseinfo.z));
+      int preclasstex_height = int(floatBitsToUint(baseinfo.w));    
+
+      int pre_class = pre_classify(gpucast_preclassification,
+                                    classification_base_id,
+                                    geometry_texcoords,
+                                    domainbounds,
+                                    preclasstex_width, 
+                                    preclasstex_height);
+      discard_triangle = discard_triangle && ( pre_class == 2);
+    }
+  }
+
+  if (discard_triangle) {
+    return;
+  }
+  ///////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////
+#endif
+
   for ( int i = vertex_id_first; i != vertex_id_last; i += increment )
   {
     gIndex      = teIndex[i];
@@ -83,7 +126,7 @@ void main()
 #if GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION
     geometry_texcoords        = teTessCoord[i];
 #else
-    geometry_texcoords        =  teTessCoord[i] * domain_size + nurbs_domain.xy;
+    geometry_texcoords        = teTessCoord[i] * domain_size + nurbs_domain.xy;
 #endif
     ///////////////////////////////////////////////////////
                       

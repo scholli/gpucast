@@ -101,7 +101,7 @@ void submit_fragment(float depth,
 
   // transparent fragment is hidden
   if (depth > z) {
-    discard;
+    //discard; //disable this optimization
   }
 
   // transparent fragment is barely visible -> discard

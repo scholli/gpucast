@@ -1,5 +1,7 @@
 #ifndef GPUCAST_PRE_CLASSIFICATION_GLSL
-#define GPUCAST_PRE_CLASSIFICATION_GLSL         
+#define GPUCAST_PRE_CLASSIFICATION_GLSL      
+
+#include "resources/glsl/common/config.glsl"
 
 int pre_classify(in usamplerBuffer preclassification,
                   in int base_id,

@@ -268,16 +268,17 @@ namespace gpucast {
         _fbo_multisample->bind(); 
       } else {
         _gbuffer->bind();
-        glClearColor(_background[0], _background[1], _background[2], 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-        // backup GL state
-        glGetIntegerv(GL_POLYGON_MODE, &_glstate_backup._polygonmode);
-        _glstate_backup._conservative_rasterization_enabled = glIsEnabled(GL_CONSERVATIVE_RASTERIZATION_NV);
-        if (!_glstate_backup._conservative_rasterization_enabled) {
-          glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
-        }
       }
+
+      // backup GL state
+      glGetIntegerv(GL_POLYGON_MODE, &_glstate_backup._polygonmode);
+      _glstate_backup._conservative_rasterization_enabled = glIsEnabled(GL_CONSERVATIVE_RASTERIZATION_NV);
+      if (!_glstate_backup._conservative_rasterization_enabled && _conservative_rasterization) {
+        glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+      }
+
+      glClearColor(_background[0], _background[1], _background[2], 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -287,6 +288,10 @@ namespace gpucast {
       if (_antialiasing == gpucast::gl::bezierobject::msaa) 
       {
         _fbo_multisample->unbind();
+
+        _gbuffer->bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        _gbuffer->unbind();
 
         glBlitNamedFramebuffer(_fbo_multisample->id(), _gbuffer->id(),
           0, 0, _resolution[0], _resolution[1], 0, 0, _resolution[0], _resolution[1],
@@ -426,7 +431,7 @@ namespace gpucast {
         _nearest_sampler->bind(depthtex_unit);
       }
       else {
-        BOOST_LOG_TRIVIAL(info) << "Warning: Depth buffer cannot be bound in MSAA mode.";
+        //BOOST_LOG_TRIVIAL(info) << "Warning: Depth buffer cannot be bound in MSAA mode.";
       }
 
       if (p == _tesselation_program) {
@@ -467,6 +472,19 @@ namespace gpucast {
     bezierobject::anti_aliasing_mode bezierobject_renderer::antialiasing() const
     {
       return _antialiasing;
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::enable_conservative_rasterization(bool b)
+    {
+      _conservative_rasterization = b;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    bool bezierobject_renderer::enable_conservative_rasterization() const
+    {
+      return _conservative_rasterization;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -580,8 +598,11 @@ namespace gpucast {
 #endif
 
 #if 1
-      const unsigned abuffer_list_size = _resolution[0] * _resolution[1] * 2 * sizeof(unsigned);
+      const unsigned abuffer_list_size = GPUCAST_ABUFFER_MAX_FRAGMENTS * 2 * sizeof(unsigned);
+      const unsigned abuffer_data_size = GPUCAST_ABUFFER_MAX_FRAGMENTS * sizeof(gpucast::math::vec4u);
+
       _abuffer_fragment_list->clear_subdata(GL_RG32UI, 0u, abuffer_list_size, GL_RGB, GL_UNSIGNED_INT, 0);
+      _abuffer_fragment_data->clear_subdata(GL_RG32UI, 0u, abuffer_data_size, GL_RGB, GL_UNSIGNED_INT, 0);
 #endif
     }
 

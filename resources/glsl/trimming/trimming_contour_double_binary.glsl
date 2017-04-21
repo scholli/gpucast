@@ -316,7 +316,7 @@ trimming_contour_double_binary_coverage(in samplerBuffer domainpartition,
   }
 
   bool covered = bool((mod(total_intersections, 2) == 1) == bool(trim_outer));
-  return classification_to_coverage(uv, duvdx, duvdy, covered, closest_point_on_curve, closest_bounds, gpucast_prefilter);
+  return classification_to_coverage(uv, duvdx, duvdy, covered, closest_point_on_curve, closest_bounds, prefilter);
 }
 
 #endif

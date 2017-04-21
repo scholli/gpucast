@@ -22,7 +22,7 @@ void main(void)
     return;
   }
 
-  bool trimmed = lookup.x < 0.0;   
+  bool trimmed = lookup.x < 0.0;    
 
   if (show_costs != 0)
   {

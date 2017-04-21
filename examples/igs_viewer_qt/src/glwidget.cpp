@@ -502,6 +502,13 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   {
     _ambient_occlusion = i;
   }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::conservative_rasterization(int h)
+  {
+    gpucast::gl::bezierobject_renderer::instance()->enable_conservative_rasterization(h);
+  }
+
   ///////////////////////////////////////////////////////////////////////
   void glwidget::holefilling(int h)
   {
@@ -563,7 +570,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void glwidget::preclassification(int i)
   {
     for (auto o : _objects) {
-      o->init(0,0,i);
+      o->init(0, 0, i);
     }
   }
 

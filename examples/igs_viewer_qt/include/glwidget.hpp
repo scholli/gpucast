@@ -71,6 +71,8 @@ public Q_SLOTS :
   void                    vsync                         ( int );
   void                    ambient_occlusion             ( int );
 
+  
+  void                    conservative_rasterization    (int);
   void                    holefilling                   (int);
   void                    backface_culling              (int);
   void                    rendermode                    (gpucast::gl::bezierobject::render_mode mode);

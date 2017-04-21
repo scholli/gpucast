@@ -222,9 +222,10 @@ void mainwindow::fillmode()
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::preclassification()
 {
-  _glwindow->preclassification(find_by_second(_preclassification_modes,
+  auto pre = find_by_second(_preclassification_modes,
     _combobox_preclassification->currentText().toStdString(),
-    gpucast::beziersurfaceobject::trim_preclassification_default_resolution));
+    gpucast::beziersurfaceobject::trim_preclassification_default_resolution);
+  _glwindow->preclassification(pre);
 }
 
 
@@ -262,6 +263,7 @@ mainwindow::_create_actions()
   connect(_checkbox_counting,               SIGNAL(stateChanged(int)),   _glwindow,    SLOT( enable_counter(int)));
   connect(_checkbox_tritesselation,         SIGNAL(stateChanged(int)), _glwindow, SLOT(enable_triangular_tesselation(int)));
   connect(_checkbox_holefilling,            SIGNAL(stateChanged(int)), _glwindow, SLOT(holefilling(int)));
+  connect(_checkbox_conservative_rasterization, SIGNAL(stateChanged(int)), _glwindow, SLOT(conservative_rasterization(int)));
   
 
   connect(_combobox_antialiasing,           SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
@@ -341,6 +343,7 @@ mainwindow::_create_menus()
   _checkbox_counting     = new QCheckBox("Enable Triangle/Fragment Counter", _menu);
   _checkbox_tritesselation = new QCheckBox("Enable Triangular Tesselation", _menu);
   _checkbox_holefilling = new QCheckBox("Enable Holefilling", _menu);
+  _checkbox_conservative_rasterization = new QCheckBox("Enable Conservative Rasterization", _menu);
 
   // init combo boxes
   _combobox_rendering = new QComboBox;
@@ -410,6 +413,7 @@ mainwindow::_create_menus()
   rendering_desc_layout->addWidget(_combobox_fillmode);
   rendering_desc_layout->addWidget(_checkbox_culling);
   rendering_desc_layout->addWidget(_checkbox_tritesselation);
+  rendering_desc_layout->addWidget(_checkbox_conservative_rasterization);
   rendering_desc_layout->addWidget(_slider_tesselation_max_pixel_error);
   rendering_desc_layout->addWidget(_slider_tesselation_max_object_error);
   rendering_desc_layout->addWidget(_slider_raycasting_max_iterations);

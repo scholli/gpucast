@@ -16,6 +16,7 @@
 #define GPUCAST_TRIMMING_COVERAGE_ESTIMATION      3
 
 #define GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION   0
+#define GPUCAST_TEXTURE_BASED_GEOMETRY_DISCARD    0
 
 // tesselation
 uniform float gpucast_max_pre_tesselation;

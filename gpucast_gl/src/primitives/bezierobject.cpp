@@ -442,6 +442,10 @@ namespace gpucast {
 
         p.set_texturebuffer("gpucast_preclassification", _loop_list_preclassification, renderer->next_texunit());
         break;
+      case beziersurfaceobject::no_trimming:
+        p.set_texturebuffer("gpucast_kd_partition", _kd_partition, renderer->next_texunit());
+        p.set_texturebuffer("gpucast_preclassification", _kd_preclassification, renderer->next_texunit());
+        break;
       };
     }
 

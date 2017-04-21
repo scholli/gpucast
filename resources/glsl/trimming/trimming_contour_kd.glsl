@@ -163,9 +163,12 @@ trimming_contour_kd ( in samplerBuffer  domainpartition,
                                  preclasstex_width, 
                                  preclasstex_height);
   
-    if (pre_class != 0) {
-      return mod(pre_class, 2) == 0;
-    }  
+    if (pre_class == 1) {
+      return false;
+    } 
+    if (pre_class == 2) {
+      return true;
+    } 
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -361,7 +364,7 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
   // coverage estimation
   /////////////////////////////////////////////////////////////////////////////////////
   bool covered = bool((mod(total_intersections, 2) == 1) == bool(trim_outer));
-  return classification_to_coverage(uv, duvdx, duvdy, covered, closest_point_on_curve, closest_bounds, gpucast_prefilter);
+  return classification_to_coverage(uv, duvdx, duvdy, covered, closest_point_on_curve, closest_bounds, prefilter);
 }
 
 

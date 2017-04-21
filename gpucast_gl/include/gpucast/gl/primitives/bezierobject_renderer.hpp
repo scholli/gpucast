@@ -60,8 +60,8 @@ public: // enums, typedefs
   static const unsigned GPUCAST_ANTI_ALIASING_MODE                   = bezierobject::anti_aliasing_mode::disabled;
 
   struct debug_counter {
-    unsigned fragments;
     unsigned triangles;
+    unsigned fragments;
     unsigned culled_triangles;
     unsigned trimmed_fragments;
   };
@@ -112,6 +112,9 @@ public: // methods
   void           antialiasing(bezierobject::anti_aliasing_mode m);
   bezierobject::anti_aliasing_mode antialiasing() const;
 
+  void           enable_conservative_rasterization(bool);
+  bool           enable_conservative_rasterization() const;
+
   void           enable_holefilling(bool);
   bool           enable_holefilling() const;
 
@@ -141,6 +144,7 @@ private: // attributes
   float                                 _nearplane;
   float                                 _farplane;
 
+  bool                                  _conservative_rasterization = false;
   bool                                  _enable_holefilling = false;
   bool                                  _enable_count = false;
   bool                                  _enable_triangular_tesselation = false;
