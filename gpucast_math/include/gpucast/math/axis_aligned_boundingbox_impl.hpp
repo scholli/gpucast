@@ -16,6 +16,8 @@
 
 // header, system
 #include <vector>
+#include <array>
+#include <algorithm>
 #include <limits>
 
 // header, project
@@ -445,6 +447,44 @@ namespace gpucast { namespace math {
     return tmp;
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  template<typename point_t>
+  axis_aligned_boundingbox<point_t> operator&&(axis_aligned_boundingbox<point_t> const& a, axis_aligned_boundingbox<point_t> const& b)
+  {
+    if (a.overlap(b)) 
+    {
+      std::array<std::vector<point_t::value_type>, point_t::coordinates> candidates;
+
+      // gather split candidates
+      for (unsigned i = 0; i != point_t::coordinates; ++i)
+      {
+        candidates[i].push_back(a.min[i]);
+        candidates[i].push_back(a.max[i]);
+
+        candidates[i].push_back(b.min[i]);
+        candidates[i].push_back(b.max[i]);
+      }
+      // sort arrays
+      for (unsigned i = 0; i != point_t::coordinates; ++i)
+      {
+        std::sort(candidates[i].begin(), candidates[i].end());
+      }
+
+      // there are 4 split candidates -> use nr. 2 and 3
+      point_t minimum, maximum;
+      for (unsigned i = 0; i != point_t::coordinates; ++i)
+      {
+        minimum[i] = candidates[i][1];
+        maximum[i] = candidates[i][2];
+      }
+
+      return axis_aligned_boundingbox<point_t>(minimum, maximum);
+    }
+    else { 
+      // return empty bbox
+      return axis_aligned_boundingbox<point_t>(a.min, a.min);
+    }
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   template<typename point_t>

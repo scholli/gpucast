@@ -30,7 +30,7 @@ namespace gpucast { namespace math {
   public : // typedefs
 
     typedef axis_aligned_boundingbox<point_t>   type;
-    typedef std::shared_ptr<type>             pointer_type;
+    typedef std::shared_ptr<type>               pointer_type;
 
     typedef typename point_t::value_type        value_type;
     typedef point_t                             point_type;
@@ -104,6 +104,10 @@ namespace gpucast { namespace math {
 
   template<typename point_t>
   axis_aligned_boundingbox<point_t> merge(axis_aligned_boundingbox<point_t> const& a, axis_aligned_boundingbox<point_t> const& b);
+
+  template<typename point_t>
+  axis_aligned_boundingbox<point_t> operator&&(axis_aligned_boundingbox<point_t> const& a,
+                                               axis_aligned_boundingbox<point_t> const& b);
 
   template<typename point_t>
   std::ostream& operator<<(std::ostream& os, axis_aligned_boundingbox<point_t> const& a);

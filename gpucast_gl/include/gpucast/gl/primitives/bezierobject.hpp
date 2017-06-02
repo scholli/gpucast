@@ -212,6 +212,8 @@ private :
   gpucast::gl::texturebuffer            _loop_list_preclassification;
 };
 
+typedef std::shared_ptr<bezierobject> bezierobject_ptr;
+
 } } // namespace gpucast / namespace gl
 
 #endif // GPUCAST_GL_BEZIEROBJECT_HPP

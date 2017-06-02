@@ -144,7 +144,14 @@ mainwindow::show_fps ( double cputime, double gputime, double postprocess )
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::show_memory_usage(gpucast::beziersurfaceobject::memory_usage const& usage)
 {
+  auto surface_info = _glwindow->surfaces_total_and_average_degree();
+  auto curve_info = _glwindow->curves_total_and_average_degree();
+
   QString message = "";
+  message.append(QString("Surfaces                   : %1 \n").arg(surface_info.first));
+  message.append(QString("Trimming Curves            : %1 \n").arg(curve_info.first));
+  message.append(QString("Surfaces Average Degree    : %1 \n").arg(surface_info.second));
+  message.append(QString("Trimming Curves Avg. Deg   : %1 \n").arg(curve_info.second));
   message.append(QString("Control point data         : %1 kb\n").arg(usage.surface_control_point_data / 1024));
   message.append(QString("Trim point data            : %1 kb\n").arg(usage.trimcurve_control_point_data / 1024));
 

@@ -195,6 +195,7 @@ namespace gpucast { namespace math {
     void                  reverse     ();
 
     void                  intersect_chull (unsigned def, unsigned val, value_type& t0, value_type& t1);
+    value_type            control_polygon_length() const;
 
     // reset curve
     void                  clear       ();

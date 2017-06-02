@@ -235,6 +235,25 @@ contour_segment<value_t>::size () const
   return _curves.size();
 }
 
+/////////////////////////////////////////////////////////////////////////////
+template <typename value_t>
+std::pair<typename contour_segment<value_t>::contour_segment_ptr, 
+          typename contour_segment<value_t>::contour_segment_ptr> 
+contour_segment<value_t>::split(std::size_t pos) const
+{
+  if (pos >= size()) {
+    return std::make_pair(nullptr, nullptr);
+  } else {
+    auto split_iter = _curves.begin();
+    std::advance(split_iter, pos);
+
+    auto lhs = std::make_shared<contour_segment>(_curves.begin(), split_iter);
+    auto rhs = std::make_shared<contour_segment>(split_iter, _curves.end());
+
+    return std::make_pair(lhs, rhs);
+  }
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename value_t>

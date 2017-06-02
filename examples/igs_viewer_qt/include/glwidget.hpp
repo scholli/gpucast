@@ -60,6 +60,10 @@ public :
   void                    open                          ( std::list<std::string> const& );
   void                    add                           ( std::list<std::string> const& );
 
+  std::pair<unsigned, double> surfaces_total_and_average_degree() const;
+  std::pair<unsigned, double> curves_total_and_average_degree() const;
+  
+
 public Q_SLOTS : 
 
   void                    recompile                     ();
@@ -71,7 +75,6 @@ public Q_SLOTS :
   void                    vsync                         ( int );
   void                    ambient_occlusion             ( int );
 
-  
   void                    conservative_rasterization    (int);
   void                    holefilling                   (int);
   void                    backface_culling              (int);

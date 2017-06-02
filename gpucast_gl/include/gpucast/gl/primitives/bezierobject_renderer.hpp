@@ -103,6 +103,7 @@ public: // methods
   void           current_modelmatrix(gpucast::math::matrix4f const& m);
   void           current_projectionmatrix(gpucast::math::matrix4f const& m);
 
+  bool           inside_frustum(bezierobject const&) const;
   void           recompile();
                  
   void           begin_program(std::shared_ptr<program> const& p);

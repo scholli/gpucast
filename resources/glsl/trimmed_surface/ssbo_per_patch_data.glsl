@@ -11,7 +11,10 @@ struct per_patch_data
   vec4 bbox_min;
   vec4 bbox_max;
 
-  vec4 dist;
+  float ratio_uv;
+  float edge_u;
+  float edge_v;
+  float curvature;
 };
 
 layout(std430, binding = GPUCAST_ATTRIBUTE_SSBO_BINDING) buffer gpucast_attribute_ssbo{
@@ -74,7 +77,25 @@ void retrieve_patch_bbox(in int index, out vec4 bboxmin, out vec4 bboxmax)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-vec4 retrieve_patch_distance(in int index)
+float retrieve_patch_ratio_uv(in int index)
 {
-  return gpucast_attribute_data[index].dist;
+  return gpucast_attribute_data[index].ratio_uv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+float retrieve_patch_curvature(in int index)
+{
+  return gpucast_attribute_data[index].curvature;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+float retrieve_patch_edge_length_u(in int index)
+{
+  return gpucast_attribute_data[index].edge_u;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+float retrieve_patch_edge_length_v(in int index)
+{
+  return gpucast_attribute_data[index].edge_v;
 }

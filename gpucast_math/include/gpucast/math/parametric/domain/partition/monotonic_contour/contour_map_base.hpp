@@ -44,6 +44,13 @@ class contour_map_base
     typedef beziercurve<point_type>                                 curve_type;
     typedef std::shared_ptr<curve_type>                             curve_ptr;
 
+    struct overlap
+    {
+      contour_segment_ptr              segment;
+      std::vector<contour_segment_ptr> other;
+      value_type                       area;
+    };
+
   public : // c'tor / d'tor
 
     contour_map_base           ();
@@ -61,6 +68,17 @@ class contour_map_base
     std::vector<curve_ptr>            curves                        () const;
     bbox_type const&                  bounds                        () const;
     void                              update_bounds                 ();
+
+    void                              minimize_overlaps             ();
+
+    std::vector<overlap>  find_overlaps(contour_segment_container const& segments) const;
+    double                accumulate_overlap_area(std::vector<overlap> const& v) const;
+    std::size_t           get_best_candidate(std::map<std::size_t, double> const& candidates) const;
+    double                compute_costs(contour_segment_container const& segments) const;
+    bool                  get_splittable_segment(std::vector<overlap> const& overlaps, overlap& found) const;
+    void                  apply_split(contour_segment_container& segments, contour_segment_ptr const& s, std::size_t pos) const;
+
+    void                              optimize_traversal_costs      ();
 
   public : // virtual methods
 

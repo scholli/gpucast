@@ -124,6 +124,9 @@ namespace gpucast { namespace math {
     void                   split_u        ( value_type const& u,
                                             beziersurface& lhs,
                                             beziersurface& rhs ) const;
+    void                   split_v        ( value_type const& v,
+                                            beziersurface& lhs,
+                                            beziersurface& rhs) const;
 
     void                   transpose      ();
     beziervolume<point_t>  extrude        ( beziercurve<point_t> const& extrusion ) const;
@@ -142,7 +145,11 @@ namespace gpucast { namespace math {
     const_iterator         end            ( ) const;
 
     bool                   valid          ( ) const;
+
     value_type             curvature      ( ) const;
+
+    value_type             max_edge_length_u  ( ) const;
+    value_type             max_edge_length_v  ( ) const;
 
   protected : // attributes
 

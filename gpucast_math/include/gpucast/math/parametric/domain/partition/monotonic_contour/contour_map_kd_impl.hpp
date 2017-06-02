@@ -39,6 +39,8 @@ template <typename value_t>
 bool
 contour_map_kd<value_t>::initialize()
 {
+  minimize_overlaps();
+
   std::set<contour_segment_ptr> segment_set(_contour_segments.begin(), _contour_segments.end());
   bool success = false;
   switch (_split_strategy)

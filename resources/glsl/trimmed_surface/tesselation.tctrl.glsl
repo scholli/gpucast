@@ -174,6 +174,22 @@ void main()
   //adjust_tesselation_by_edge_length_estimate(final_tess_level, u_edge_lengths, v_edge_lengths, inner_tessel_level, outer_tessel_level);
   adjust_tesselation_by_edge_lengths(final_tess_level, inner_tessel_level, outer_tessel_level);
 
+  // adjust by patch ratio 
+#if 1
+  float ratio = retrieve_patch_ratio_uv(int(vertex_index[gl_InvocationID]));
+
+  inner_tessel_level[0] *= ratio;
+  inner_tessel_level[1] /= ratio;
+
+  outer_tessel_level[0] /= ratio;
+  outer_tessel_level[1] *= ratio;
+  outer_tessel_level[2] /= ratio;                                                                                                                
+  outer_tessel_level[3] *= ratio;
+
+  clamp(outer_tessel_level, 1, 64);
+  clamp(inner_tessel_level, 1, 64);
+#endif
+
 #if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION
   gl_TessLevelInner[0] = inner_tessel_level[0];
   gl_TessLevelOuter[0] = outer_tessel_level[0];

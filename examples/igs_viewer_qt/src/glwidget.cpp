@@ -117,6 +117,37 @@ glwidget::add ( std::list<std::string> const& files )
   _update_memory_usage();
 }
 
+///////////////////////////////////////////////////////////////////////
+std::pair<unsigned, double> glwidget::surfaces_total_and_average_degree() const
+{
+  unsigned surfaces_total = 0;
+  double surfaces_accumulated_degree = 0.0;
+
+  for (auto const& o : _objects) {
+    for (auto const& surface_pair : o->object().order_surfaces()) {
+      surfaces_total += surface_pair.second;
+      surfaces_accumulated_degree += surface_pair.second * surface_pair.first;
+    }
+  }
+
+  return std::make_pair(surfaces_total, surfaces_accumulated_degree / surfaces_total);
+}
+
+///////////////////////////////////////////////////////////////////////
+std::pair<unsigned, double> glwidget::curves_total_and_average_degree() const
+{
+  unsigned curves_total = 0;
+  double curves_accumulated_degree = 0.0;
+
+  for (auto const& o : _objects) {
+    for (auto const& curve_pair : o->object().order_trimcurves()) {
+      curves_total += curve_pair.second;
+      curves_accumulated_degree += curve_pair.first * curve_pair.second;
+    }
+  }
+
+  return std::make_pair(curves_total, curves_accumulated_degree / curves_total);
+}
 
 
 ///////////////////////////////////////////////////////////////////////

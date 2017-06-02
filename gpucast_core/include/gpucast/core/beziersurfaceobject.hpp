@@ -40,7 +40,14 @@ public : // friends
   friend class surface_renderer_gl;
 
   static const unsigned trim_preclassification_default_resolution = 8;
-  static const unsigned default_initial_subdivision = 0;
+  static const unsigned default_initial_subdivision               = 0;
+
+  // split bezier patches if they exceed a ratio of 1:x (spatial dimensions u : v)
+  // set to 0 to disable
+  static const unsigned limit_max_uv_patch_ratio                  = 200; 
+  static const unsigned object_space_error_threshold_micro_meter  = 10;
+
+  double object_space_error_threshold();
 
 public : // enums, typedefs
 
@@ -65,7 +72,11 @@ public : // enums, typedefs
     math::vec4f nurbs_domain;
     math::vec4f bbox_min;
     math::vec4f bbox_max;
-    math::vec4f distance;
+    
+    float ratio_uv;
+    float edge_length_u;
+    float edge_length_v;
+    float curvature;
   };
 
   struct GPUCAST_CORE memory_usage {

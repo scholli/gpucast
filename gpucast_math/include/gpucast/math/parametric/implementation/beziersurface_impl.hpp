@@ -374,6 +374,19 @@ namespace gpucast { namespace math {
     rhs._degree_v = _degree_v;
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
+  void beziersurface<point_t>::split_v(value_type const& v, beziersurface<point_t>& lhs, beziersurface<point_t>& rhs) const
+  {
+    beziersurface cpy(*this);
+
+    cpy.transpose();
+    cpy.split_u(v, lhs, rhs);
+
+    lhs.transpose();
+    rhs.transpose();
+  }
+
 
   //////////////////////////////////////////////////////////////////////////////
   template <typename point_t>
@@ -547,6 +560,33 @@ namespace gpucast { namespace math {
     return alpha;
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
+  inline typename beziersurface<point_t>::value_type
+  beziersurface<point_t>::max_edge_length_u() const
+  {
+    value_type length = 0;
+    for (std::size_t r = 0; r != _points.height(); ++r)
+    {
+      gpucast::math::beziercurve<point_t> row_curve(_points.row(r));
+      length = std::max(length, row_curve.control_polygon_length());
+    }
+    return length;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  template <typename point_t>
+  inline typename beziersurface<point_t>::value_type        
+  beziersurface<point_t>::max_edge_length_v() const
+  {
+    value_type length = 0;
+    for (std::size_t c = 0; c != _points.width(); ++c)
+    {
+      gpucast::math::beziercurve<point_t> col_curve(_points.column(c));
+      length = std::max(length, col_curve.control_polygon_length());
+    }
+    return length;
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   template <typename point_t>

@@ -281,4 +281,37 @@ SUITE (boundingbox_classes)
     CHECK_CLOSE(b.distance(p10), point2d(2, 2, 1).abs(), 0.000001);
   }
 
+  TEST(logic_and)
+  {
+    point2d p0(0.0, 1.0);
+    point2d p1(3.0, 3.0);
+    point2d p2(6.0, 5.0);
+    point2d p3(8.0, 9.0);
+
+    axis_aligned_boundingbox<point2d> a(p0, p1);
+    axis_aligned_boundingbox<point2d> b(p0, p3);
+    axis_aligned_boundingbox<point2d> c(p1, p2);
+    axis_aligned_boundingbox<point2d> d(p1, p3);
+    axis_aligned_boundingbox<point2d> e(p2, p3);
+    axis_aligned_boundingbox<point2d> f(p0, p2);
+
+    CHECK_CLOSE((a&&e).volume(), 0.0, 0.000001);
+    CHECK_CLOSE((d&&a).volume(), 0.0, 0.000001);
+    CHECK_CLOSE((e&&f).volume(), 0.0, 0.000001);
+    
+    CHECK_CLOSE((b&&c).volume(), 6.0, 0.000001);
+    CHECK_CLOSE((f&&d).volume(), 6.0, 0.000001);
+    
+    CHECK_CLOSE((f&&b).volume(), 24.0, 0.000001);
+    
+    CHECK_CLOSE((e&&b).volume(), 8.0, 0.000001);
+    CHECK_CLOSE((d&&b).volume(), 30.0, 0.000001);
+    
+    CHECK_CLOSE((b&&b).volume(), 64.0, 0.000001);
+    CHECK_CLOSE((c&&c).volume(), 6.0, 0.000001);
+    
+    CHECK_CLOSE((a&&a).volume(), 6.0, 0.000001);
+    CHECK_CLOSE((d&&d).volume(), 30.0, 0.000001);
+   
+  } 
 }

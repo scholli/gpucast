@@ -288,6 +288,10 @@ namespace gpucast {
       auto const& tesselation_program = renderer->get_tesselation_program();
       auto tfbuffer = singleton<transform_feedback_buffer>::instance();
 
+      if (!renderer->inside_frustum(*this)) {
+        return;
+      }
+
 #define QUERY_XFB_PRIMITIVE_COUNT 0
 #if QUERY_XFB_PRIMITIVE_COUNT
       unsigned primitive_query;

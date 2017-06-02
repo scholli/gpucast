@@ -179,6 +179,7 @@ void main()
                                   spheremap,
                                   bool(diffusemapping),
                                   diffusemap);
+
 #endif
   
   /////////////////////////////////////////////////////////////////////////////
@@ -303,6 +304,7 @@ void main()
                                  spheremap,
                                  bool(diffusemapping),
                                  diffusemap);
+
 
   submit_fragment(gl_FragCoord.z,
                   coverage,

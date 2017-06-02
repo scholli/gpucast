@@ -369,6 +369,81 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    bool bezierobject_renderer::inside_frustum(bezierobject const& bo) const
+    {
+      // get objects bounding box in world space
+      auto bbox_min = gpucast::math::point3f(bo.object().bbox().min);
+      auto bbox_max = gpucast::math::point3f(bo.object().bbox().max);
+
+      bbox_min.weight(1.0f);
+      bbox_max.weight(1.0f);
+
+      gpucast::math::axis_aligned_boundingbox<gpucast::math::point3f> bbox(bbox_min, bbox_max);
+
+      // compute planes
+      std::array<gpucast::math::vec4f, 6> planes;
+      auto projection_view = _projectionmatrix * _viewmatrix * _modelmatrix;
+
+      //left plane
+      planes[0] = gpucast::math::vec4f(projection_view[3] + projection_view[0],
+        projection_view[7] + projection_view[4],
+        projection_view[11] + projection_view[8],
+        projection_view[15] + projection_view[12]);
+
+      //right plane
+      planes[1] = gpucast::math::vec4f(projection_view[3] - projection_view[0],
+        projection_view[7] - projection_view[4],
+        projection_view[11] - projection_view[8],
+        projection_view[15] - projection_view[12]);
+
+      //bottom plane
+      planes[2] = gpucast::math::vec4f(projection_view[3] + projection_view[1],
+        projection_view[7] + projection_view[5],
+        projection_view[11] + projection_view[9],
+        projection_view[15] + projection_view[13]);
+
+      //top plane
+      planes[3] = gpucast::math::vec4f(projection_view[3] - projection_view[1],
+        projection_view[7] - projection_view[5],
+        projection_view[11] - projection_view[9],
+        projection_view[15] - projection_view[13]);
+
+      //near plane
+      planes[4] = gpucast::math::vec4f(projection_view[3] + projection_view[2],
+        projection_view[7] + projection_view[6],
+        projection_view[11] + projection_view[10],
+        projection_view[15] + projection_view[14]);
+
+      //far plane
+      planes[5] = gpucast::math::vec4f(projection_view[3] - projection_view[2],
+        projection_view[7] - projection_view[6],
+        projection_view[11] - projection_view[10],
+        projection_view[15] - projection_view[14]);
+
+      auto outside = [](gpucast::math::vec4f const& plane, gpucast::math::vec3f const& point) {
+        return plane[0] * point[0] + plane[1] * point[1] + plane[2] * point[2] + plane[3] < 0;
+      };
+
+      for (unsigned i(0); i < 6; ++i) 
+      {
+        auto p(bbox.min);
+        if (planes[i][0] >= 0)
+          p[0] = bbox.max[0];
+        if (planes[i][1] >= 0)
+          p[1] = bbox.max[1];
+        if (planes[i][2] >= 0)
+          p[2] = bbox.max[2];
+
+        // is the positive vertex outside?
+        if (outside(planes[i], p)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::recompile()
     {
       _init_raycasting_program();

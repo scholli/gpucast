@@ -37,6 +37,7 @@ public : // enums / typedefs
   typedef axis_aligned_boundingbox<point_type>      bbox_type;
 
   typedef beziercurve<point_type>                   curve_type;
+  typedef std::shared_ptr<contour_segment>          contour_segment_ptr;
   typedef std::shared_ptr<curve_type>               curve_ptr;
 
   typedef std::vector<curve_ptr>                    curve_container;
@@ -67,6 +68,8 @@ public : // methods
                                                value_type const& v) const;
 
   std::size_t           size                 () const;
+  std::pair<contour_segment_ptr, contour_segment_ptr> split(std::size_t pos) const;
+
   const_curve_iterator  begin                () const;
   const_curve_iterator  end                  () const;
 

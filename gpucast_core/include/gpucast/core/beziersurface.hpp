@@ -36,6 +36,7 @@ class GPUCAST_CORE beziersurface : public gpucast::math::beziersurface3d
 {
 public : // enums, typedefs
 
+  typedef typename point_type::value_type        value_type;
   typedef gpucast::math::beziersurface3d         base_type;
   typedef gpucast::math::pointmesh2d<point_type> mesh_type;
 

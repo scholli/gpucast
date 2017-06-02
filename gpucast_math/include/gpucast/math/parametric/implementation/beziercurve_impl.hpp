@@ -1224,6 +1224,23 @@ namespace gpucast { namespace math {
     t2 = mx;
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename point_t>
+  inline typename beziercurve<point_t>::value_type
+  beziercurve<point_t>::control_polygon_length() const
+  {
+    if (order() <= 1) {
+      return 0;
+    }
+
+    value_type length = 0;
+    for (int i = 1; i != order(); ++i) {
+      auto d = _points[i] - _points[i - 1];
+      length += d.abs();
+    }
+
+    return length;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   template<typename point_t>

@@ -14,6 +14,7 @@
 #include "gpucast/core/beziersurfaceobject.hpp"
 
 // header, system
+#include <boost/log/trivial.hpp>
 
 // header, project
 #include <gpucast/core/hyperspace_adapter.hpp>
@@ -25,6 +26,14 @@
 
 namespace gpucast {
 
+  ////////////////////////////////////////////////////////////////////////////////
+  double beziersurfaceobject::object_space_error_threshold()
+  {
+    const double micro_meter_per_meter = 1000000.0;
+    return double(object_space_error_threshold_micro_meter)/ micro_meter_per_meter;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
   beziersurfaceobject::memory_usage& beziersurfaceobject::memory_usage::operator+=( beziersurfaceobject::memory_usage const& rhs)
   {
     surface_control_point_data += rhs.surface_control_point_data;
@@ -123,6 +132,93 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
   _subdivision_v                = subdivision_level_v;
   _preclassification_resolution = fast_trim_texture_resolution;
 
+  // split elongated patches, if enabled
+  if (beziersurfaceobject::limit_max_uv_patch_ratio != 0) 
+  {
+    //std::cout << "Presplitting surfaces. Original count " << _surfaces.size() << std::endl;
+
+    // backup original surfaces
+    surface_container split_surfaces(_surfaces);
+    _surfaces.clear();
+
+    while (!split_surfaces.empty())
+    {
+      auto surface = *split_surfaces.begin();
+      split_surfaces.erase(surface);
+      
+      auto edge_u = surface->max_edge_length_u();
+      auto edge_v = surface->max_edge_length_v();
+
+      auto ratio = std::max(edge_u, edge_v) / std::min(edge_u, edge_v);
+      
+      // if ratio is exceeded, split in corresponding dimension
+      if (ratio < beziersurfaceobject::limit_max_uv_patch_ratio ||
+          edge_u < object_space_error_threshold() ||
+          edge_v < object_space_error_threshold() )
+      {
+        _surfaces.insert(surface);
+      }
+      else {
+
+        gpucast::math::beziersurface3d bc(*surface);
+
+        //std::cout << "\rSplitting patch :" << _surfaces.size() << " ratio=" << ratio << std::endl;
+        //std::cout << "edge u : " << edge_u << " edge_v : " << edge_v << std::endl;
+        //if (ratio > 1000) {
+        //  bc.print(std::cout);
+        //}
+
+        // split surface
+        bool split_u = edge_u > edge_v;
+        auto dmin = surface->bezierdomain().min;
+        auto dmax = surface->bezierdomain().max;
+
+        gpucast::math::beziersurface3d lhs_face, rhs_face;
+        trimdomain::bbox_type bbox_lhs, bbox_rhs;
+
+        if (split_u) {
+          surface->split_u(0.5, lhs_face, rhs_face);
+          bbox_lhs = trimdomain::bbox_type(dmin, trimdomain::point_type((dmin[0] + dmax[0]) / 2.0, dmax[1]));
+          bbox_rhs = trimdomain::bbox_type(trimdomain::point_type((dmin[0] + dmax[0]) / 2.0, dmin[1]), dmax);
+        }
+        else {
+          surface->split_v(0.5, lhs_face, rhs_face);
+          bbox_lhs = trimdomain::bbox_type(dmin, trimdomain::point_type(dmax[0], (dmin[1] + dmax[1]) / 2.0));
+          bbox_rhs = trimdomain::bbox_type(trimdomain::point_type(dmin[0], (dmin[1] + dmax[1]) / 2.0), dmax);
+        }
+
+        auto lhs = std::make_shared<beziersurface>(lhs_face);
+        auto rhs = std::make_shared<beziersurface>(rhs_face);
+
+#if 0
+        if (ratio > 1000) {
+          lhs_face.print(std::cout);
+          rhs_face.print(std::cout);
+        }
+
+        auto edge_u_lhs = lhs->max_edge_length_u();
+        auto edge_v_lhs = lhs->max_edge_length_v();
+        auto edge_u_rhs = rhs->max_edge_length_u();
+        auto edge_v_rhs = rhs->max_edge_length_v();
+
+        std::cout << "left: edge_legth u = " << edge_u_lhs << " , v = " << edge_v_lhs << " ratio: " << edge_u_lhs / edge_v_lhs << std::endl;
+        std::cout << "right: edge_legth u = " << edge_u_rhs << " , v = " << edge_v_rhs << " ratio: " << edge_u_rhs / edge_v_rhs << std::endl;
+
+        system("pause");
+#endif
+        // apply trim domain
+        lhs->domain(surface->domain());
+        rhs->domain(surface->domain());
+
+        lhs->bezierdomain(bbox_lhs);
+        rhs->bezierdomain(bbox_rhs);
+
+        split_surfaces.insert(lhs);
+        split_surfaces.insert(rhs);
+      }
+    }
+  }
+
   // initialize
   for (surface_ptr const& surface : _surfaces) 
   {
@@ -131,6 +227,7 @@ beziersurfaceobject::init(unsigned subdivision_level_u,
     if (!surface->is_pretrimmable(_preclassification_resolution)) 
 #endif
     {
+
       // general preprocessing
       surface->preprocess(_subdivision_u, _subdivision_v);
 
@@ -610,9 +707,16 @@ void beziersurfaceobject::_serialize_adaptive_tesselation_data(surface_ptr const
     surface->bbox().max[1],
     surface->bbox().max[2],
     (float) 0.0f);
-  p.distance = math::vec4f(std::fabs(edge_dist[0]), std::fabs(edge_dist[1]), std::fabs(edge_dist[2]), std::fabs(edge_dist[3]));
+  //p.distance = math::vec4f(std::fabs(edge_dist[0]), std::fabs(edge_dist[1]), std::fabs(edge_dist[2]), std::fabs(edge_dist[3]));
+  
+  p.edge_length_u = surface->max_edge_length_u();
+  p.edge_length_v = surface->max_edge_length_v();
+  p.ratio_uv = p.edge_length_u / p.edge_length_v;
+  p.curvature = surface->curvature();
 
   _tesselation_data.patch_data_buffer.push_back(p);
 }
+
+
 
 } // namespace gpucast
