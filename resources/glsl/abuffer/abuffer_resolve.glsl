@@ -52,7 +52,8 @@ bool abuffer_contains_fragments (out float depth)
 bool abuffer_blend(in vec4 opaque_color,
                    out vec4 color, 
                    inout float emissivity, 
-                   float opaque_depth) 
+                   float opaque_depth,
+                   float close_up_threshold) 
 {
   const ivec2 frag_pos = ivec2(gl_FragCoord.xy);
   uint current = gpucast_resolution.x * frag_pos.y + frag_pos.x;
@@ -77,6 +78,10 @@ bool abuffer_blend(in vec4 opaque_color,
     }
 
     float alpha = float(bitfieldExtract(frag.y, 0, 8)) / 255.0;
+
+    if (opaque_depth > close_up_threshold) {
+      alpha = 0;
+    }
 
 #if USE_DEBUG_COLORS
     vec3 shaded_color = (alpha < 0.5) ? vec3(0.0, 1.0, 0.0) : vec3(0.0, 0.0, 1.0);

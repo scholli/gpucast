@@ -148,12 +148,15 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
     if (is_leaf()) {
       point_type center = (bbox.min + bbox.max) / 2.0;
       std::size_t sum_parity = 0;
-      for (auto const& s : segments) {
-        if (center[point_type::u] <= s->bbox().min[point_type::u] && // - center is on left side of segments bbox
-            center[point_type::v] < s->bbox().max[point_type::v] && // - center in 
-            center[point_type::v] > s->bbox().min[point_type::v] && 
-            overlapping_segments.count(s) == 0) {
-            ++sum_parity;
+      for (auto const& s : segments) 
+      {
+        auto bb = s->bbox();
+
+        if (center[point_type::u] <= bb.min[point_type::u] && // - center is on left side of segments bbox
+          center[point_type::v] < bb.max[point_type::v] && // - center in 
+          center[point_type::v] > bb.min[point_type::v] &&
+          overlapping_segments.count(s) == 0) {
+          ++sum_parity;
         }
       }
       parity = sum_parity;

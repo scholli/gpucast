@@ -2,6 +2,7 @@
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_ARB_shader_storage_buffer_object : enable
 #extension GL_ARB_separate_shader_objects : enable 
+#extension GL_NV_shader_atomic_int64 : enable
 
 /****************************************************
 * choose type of root finder for trimming
@@ -23,12 +24,6 @@ uniform sampler2D   diffusemap;
 
 uniform int diffusemapping;
 uniform int spheremapping;
-
-uniform float shininess;
-uniform float opacity;
-uniform vec3 mat_ambient;
-uniform vec3 mat_diffuse;
-uniform vec3 mat_specular;
 
 /*******************************************************************************
  * VARYINGS :
@@ -55,6 +50,9 @@ flat in vec4 uvrange;
 #include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"
 #include "./resources/glsl/trimmed_surface/raycasting_uniforms.glsl"
 #include "./resources/glsl/trimming/trimming_uniforms.glsl"
+
+uniform sampler2D gpucast_depth_buffer;    
+#include "./resources/glsl/abuffer/abuffer_collect.glsl"
 
 /*******************************************************************************
  * OUTPUT
@@ -218,9 +216,11 @@ void main(void)
                                     normalize(viewer.xyz),
                                     vec4(0.0, 0.0, 10000.0, 1.0),
                                     //vec3(0.1), vec3(0.8, 0.5, 0.2), vec3(1.0),
-                                    mat_ambient, mat_diffuse, mat_specular,
-                                    shininess,
-                                    opacity,
+                                    gpucast_material_ambient.rgb, 
+                                    gpucast_material_diffuse.rgb, 
+                                    gpucast_material_specular.rgb,
+                                    gpucast_shininess,
+                                    gpucast_opacity,
                                     bool(spheremapping),
                                     spheremap,
                                     bool(diffusemapping),
@@ -229,6 +229,14 @@ void main(void)
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }
+
+  submit_fragment(corrected_depth,
+                  gpucast_opacity,
+                  gpucast_depth_buffer, 
+                  1.0, 1.0, 1.0,  // pbr
+                  out_color.rgb,  
+                  normal_world.rgb, 
+                  false);
 }
 
 

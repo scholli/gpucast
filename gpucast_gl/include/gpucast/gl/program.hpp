@@ -26,6 +26,7 @@ namespace gpucast { namespace gl {
 
 class texturebuffer;
 class shaderstoragebuffer;
+class uniformbuffer;
 class cubemap;
 class texturearray;
 class texture1d;
@@ -86,7 +87,8 @@ public : // methods
 
   void        set_texturebuffer          ( char const* varname, texturebuffer&, GLint unit ) const;
   void        set_shaderstoragebuffer    ( char const* varname, shaderstoragebuffer&, unsigned binding_point) const;
-
+  void        set_uniformbuffer          ( char const* varname, uniformbuffer&, unsigned binding_point) const;
+     
   void        set_texture1d              ( char const* varname, texture1d&, GLint unit ) const;
   void        set_texture2d              ( char const* varname, texture2d&, GLint unit ) const;
   void        set_texture3d              ( char const* varname, texture3d&, GLint unit ) const;

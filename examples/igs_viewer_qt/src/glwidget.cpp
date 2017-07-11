@@ -50,6 +50,7 @@
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/log/trivial.hpp>
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -118,13 +119,26 @@ glwidget::add ( std::list<std::string> const& files )
 }
 
 ///////////////////////////////////////////////////////////////////////
+void glwidget::remove(std::list<std::string> const& files)
+{
+  if (files.empty()) return;
+
+  std::for_each(files.begin(), files.end(), [&](std::string const& file)
+  {
+    BOOST_LOG_TRIVIAL(info) << "removing : " << file << std::endl;
+    _objects.erase(file);
+  }
+  );
+}
+
+///////////////////////////////////////////////////////////////////////
 std::pair<unsigned, double> glwidget::surfaces_total_and_average_degree() const
 {
   unsigned surfaces_total = 0;
   double surfaces_accumulated_degree = 0.0;
 
   for (auto const& o : _objects) {
-    for (auto const& surface_pair : o->object().order_surfaces()) {
+    for (auto const& surface_pair : o.second->object().order_surfaces()) {
       surfaces_total += surface_pair.second;
       surfaces_accumulated_degree += surface_pair.second * surface_pair.first;
     }
@@ -140,7 +154,7 @@ std::pair<unsigned, double> glwidget::curves_total_and_average_degree() const
   double curves_accumulated_degree = 0.0;
 
   for (auto const& o : _objects) {
-    for (auto const& curve_pair : o->object().order_trimcurves()) {
+    for (auto const& curve_pair : o.second->object().order_trimcurves()) {
       curves_total += curve_pair.second;
       curves_accumulated_degree += curve_pair.first * curve_pair.second;
     }
@@ -235,9 +249,17 @@ glwidget::paintGL()
   }
 
   if (!_gputimer) _gputimer = std::make_shared<gpucast::gl::timer_query>();
+  if (!_gputimer_postprocess) _gputimer_postprocess = std::make_shared<gpucast::gl::timer_query>();
   if (!_cputimer) _cputimer = std::make_shared<gpucast::gl::timer>();
 
-  _gputimer->begin();
+  bool query_this_frame = _gputimer->result_fetched();
+
+  _cputimer->start();
+
+  if (query_this_frame) {
+    ++_frames;
+    _gputimer->begin();
+  }
 
   //////////////////////////////////////////////
   // bind FBO
@@ -283,10 +305,11 @@ glwidget::paintGL()
   renderer->begin_draw();
 
   for (auto const& o : _objects) {
-    o->draw();
+    o.second->draw();
   }
 
   renderer->end_draw();
+
 
   //////////////////////////////////////////////
   // readback debug info if enabled
@@ -302,26 +325,29 @@ glwidget::paintGL()
     }
   }
 
+ 
+
   //////////////////////////////////////////////
   // pass fps to GUI window
   //////////////////////////////////////////////
-  ++_frames;
-  _gputimer->end();
+  if (query_this_frame) {
+    _gputimer->end();
+  }
 
-  _cputimer->stop();
-
-  gpucast::gl::time_duration cpu_elapsed = _cputimer->result();
-  double cputime_seconds = cpu_elapsed.fractional_seconds + cpu_elapsed.seconds; // discard minutes
-  _cputime += cputime_seconds;
-  _gputime += _gputimer->time_in_ms();
+  if (_gputimer->is_available()) {
+    _gputime += _gputimer->time_in_ms(false);
+  }
 #if 1
 
 
   gpucast::math::matrix4f mvp = proj * view * model;
   gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
 
-  _cputimer->start();
-  _gputimer->begin();
+  query_this_frame = _gputimer_postprocess->result_fetched();
+  if (query_this_frame) {
+    ++_frames_postprocess;
+    _gputimer_postprocess->begin();
+  }
 
   // render into drawbuffer
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -345,11 +371,20 @@ glwidget::paintGL()
 
   _fxaa_program->end();
 
-  _gputimer->end();
+  if (query_this_frame) {
+    _gputimer_postprocess->end();
+  }
 
 #endif
 
-  double postprocess = _gputimer->time_in_ms();
+  if (_gputimer_postprocess->is_available()) {
+    _postprocess += _gputimer_postprocess->time_in_ms(false);
+  }
+
+  _cputimer->stop();
+  gpucast::gl::time_duration cpu_elapsed = _cputimer->result();
+  double cputime_seconds = cpu_elapsed.fractional_seconds + cpu_elapsed.seconds; // discard minutes
+  _cputime += cputime_seconds;
 
   // show message and reset counter if more than 1s passed
   if (_gputime > 500 || _frames > 10)
@@ -357,13 +392,15 @@ glwidget::paintGL()
     mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
     if (mainwin)
     {
-      mainwin->show_fps(_cputime / (1000.0*_frames), _gputime / _frames, postprocess / _frames);
+      mainwin->show_fps( (1000.0*_cputime) / _frames, _gputime / _frames, _postprocess / _frames_postprocess);
     }
     _frames = 0;
 
     _cputime = 0.0;
     _gputime = 0.0;
   }
+
+
 
   // redraw
   this->update();
@@ -442,40 +479,40 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
     switch (key)
     {
       case 'q':
-        switch (o->trimming()) {
+        switch (o.second->trimming()) {
         case gpucast::beziersurfaceobject::no_trimming:
-          o->trimming(gpucast::beziersurfaceobject::curve_binary_partition);
+          o.second->trimming(gpucast::beziersurfaceobject::curve_binary_partition);
           std::cout << "Switching trim approach to: curve_binary_partition" << std::endl;
           break;
         case gpucast::beziersurfaceobject::curve_binary_partition :
-          o->trimming(gpucast::beziersurfaceobject::contour_binary_partition);
+          o.second->trimming(gpucast::beziersurfaceobject::contour_binary_partition);
           std::cout << "Switching trim approach to: contour_binary_partition" << std::endl;
           break;
         case gpucast::beziersurfaceobject::contour_binary_partition:
-          o->trimming(gpucast::beziersurfaceobject::contour_kd_partition);
+          o.second->trimming(gpucast::beziersurfaceobject::contour_kd_partition);
           std::cout << "Switching trim approach to: contour_kd_partition" << std::endl;
           break;
         case gpucast::beziersurfaceobject::contour_kd_partition:
-          o->trimming(gpucast::beziersurfaceobject::contour_list);
+          o.second->trimming(gpucast::beziersurfaceobject::contour_list);
           std::cout << "Switching trim approach to: contour_list" << std::endl;
           break;
         case gpucast::beziersurfaceobject::contour_list:
-          o->trimming(gpucast::beziersurfaceobject::no_trimming);
+          o.second->trimming(gpucast::beziersurfaceobject::no_trimming);
           std::cout << "Switching trim approach to: no_trimming" << std::endl;
           break;
         };
         break;
       case 'I':
-        o->raycasting_max_iterations(o->raycasting_max_iterations() + 1);
+        o.second->raycasting_max_iterations(o.second->raycasting_max_iterations() + 1);
         break;
       case 'i':
-        o->raycasting_max_iterations(std::max(1U, o->raycasting_max_iterations() - 1));
+        o.second->raycasting_max_iterations(std::max(1U, o.second->raycasting_max_iterations() - 1));
         break;
       case 'n':
-        o->enable_raycasting(!o->enable_raycasting());
+        o.second->enable_raycasting(!o.second->enable_raycasting());
         break;
       case 'b':
-        o->culling(!o->culling());
+        o.second->culling(!o.second->culling());
         break;
       default:
         break;// do nothing 
@@ -535,6 +572,20 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   }
 
   ///////////////////////////////////////////////////////////////////////
+  void glwidget::apply_material(std::string const& name, gpucast::math::vec4f const& ambient, gpucast::math::vec4f const& diffuse, gpucast::math::vec4f const& specular, float shininess, float opacity)
+  {
+    auto o = _objects.at(name);
+    if (o) {
+      gpucast::gl::material new_mat{ ambient, diffuse, specular, shininess, opacity };
+      o->set_material(new_mat);
+      BOOST_LOG_TRIVIAL(info) << "Set Material : A[" << name << ambient << " ], D[" << diffuse << "], S[" << specular << "], shininess=" << shininess << " , opacity= " << opacity << std::endl;
+    }
+    else {
+      BOOST_LOG_TRIVIAL(error) << "Could not find object " << name << std::endl;
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////
   void glwidget::conservative_rasterization(int h)
   {
     gpucast::gl::bezierobject_renderer::instance()->enable_conservative_rasterization(h);
@@ -550,7 +601,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   ///////////////////////////////////////////////////////////////////////
   void glwidget::backface_culling(int i) {
     for (auto o : _objects) {
-      o->culling(i != 0);
+      o.second->culling(i != 0);
     }
   }
 
@@ -558,8 +609,8 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void glwidget::rendermode(gpucast::gl::bezierobject::render_mode mode)
   {
     for (auto o : _objects) {
-      o->rendermode(mode);
-      o->fillmode(_fillmode);
+      o.second->rendermode(mode);
+      o.second->fillmode(_fillmode);
     }
   }
 
@@ -568,7 +619,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   {
     _fillmode = mode;
     for (auto o : _objects) {
-      o->fillmode(mode);
+      o.second->fillmode(mode);
     }
   }
 
@@ -580,7 +631,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
     gpucast::gl::bezierobject_renderer::instance()->antialiasing(i);
 
     for (auto o : _objects) {
-      o->trimming(_trimming);
+      o.second->trimming(_trimming);
     }
 
     resizeGL(_width, _height);
@@ -593,7 +644,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   {
     _trimming = t;
     for (auto o : _objects) {
-      o->trimming(t);
+      o.second->trimming(t);
     }
   }
 
@@ -601,7 +652,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void glwidget::preclassification(int i)
   {
     for (auto o : _objects) {
-      o->init(0, 0, i);
+      o.second->init(0, 0, i);
     }
   }
 
@@ -615,7 +666,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void glwidget::trim_max_bisections(int i)
   {
     for (auto o : _objects) {
-      o->trimming_max_bisections(i);
+      o.second->trimming_max_bisections(i);
     }
   }
 
@@ -623,7 +674,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void glwidget::trim_error_tolerance(float f)
   {
     for (auto o : _objects) {
-      o->trimming_error_tolerance(f);
+      o.second->trimming_error_tolerance(f);
     }
   }
 
@@ -631,14 +682,14 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void glwidget::tesselation_max_pixel_error(float f)
   {
     for (auto o : _objects) {
-      o->tesselation_max_pixel_error(f);
+      o.second->tesselation_max_pixel_error(f);
     }
   }
   ///////////////////////////////////////////////////////////////////////
   void glwidget::tesselation_max_geometric_error(float f)
   {
     for (auto o : _objects) {
-      o->tesselation_max_geometric_error(f);
+      o.second->tesselation_max_geometric_error(f);
     }
   }
 
@@ -646,7 +697,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void glwidget::raycasting_max_iterations(int i)
   {
     for (auto o : _objects) {
-      o->raycasting_max_iterations(i);
+      o.second->raycasting_max_iterations(i);
     }
   }
 
@@ -654,7 +705,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   void glwidget::raycasting_error_tolerance(float f)
   {
     for (auto o : _objects) {
-      o->raycasting_error_tolerance(f);
+      o.second->raycasting_error_tolerance(f);
     }
   }
 
@@ -678,8 +729,6 @@ glwidget::_init()
   renderer->recompile();
 
   _trackball.reset       ( new gpucast::gl::trackball );
-
-  resize(1, 1);
 
   _aorandom_texture.reset( new gpucast::gl::texture2d );
   _aosample_offsets.reset( new gpucast::gl::texturebuffer );
@@ -797,7 +846,7 @@ glwidget::_openfile ( std::string const& file, gpucast::math::axis_aligned_bound
       
       
 
-      _objects.push_back(drawable);
+      _objects.insert(std::make_pair(file, drawable));
 
       bbox = bezierobject->bbox();
     }
@@ -870,7 +919,7 @@ glwidget::_openfile ( std::string const& file, gpucast::math::axis_aligned_bound
         drawable->set_material(i->first);
         bbox = bezierobject->bbox();
 
-        _objects.push_back(drawable);
+        _objects.insert(std::make_pair (file, drawable));
 
         if (i == filemap.begin())
         {
@@ -952,7 +1001,7 @@ glwidget::_update_memory_usage()
   gpucast::beziersurfaceobject::memory_usage usage;
 
   for (auto const& i : _objects) {
-    usage += i->object().get_memory_usage();
+    usage += i.second->object().get_memory_usage();
   }
   mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
   if (mainwin) {

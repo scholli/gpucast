@@ -26,13 +26,14 @@ namespace gpucast { namespace gl {
   {
   public : // methods
 
-    /*virtual*/ void begin() const override;
-    /*virtual*/ void end() const override;
+    /*virtual*/ void begin() override;
+    /*virtual*/ void end() override;
 
-    double time_in_ms(bool wait = true, double timeout_ms = 1000) const; // in ms
+    double time_in_ms(bool wait = true, double timeout_ms = 1000); // in ms
+    bool   result_fetched() const;
 
   private : // member
-
+    bool _result_fetched = true;
 };
 
 } } // namespace gpucast / namespace gl

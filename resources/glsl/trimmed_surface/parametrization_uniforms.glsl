@@ -18,30 +18,41 @@
 #define GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION   0
 #define GPUCAST_TEXTURE_BASED_GEOMETRY_DISCARD    0
 
-// tesselation
-uniform float gpucast_max_pre_tesselation;
-uniform float gpucast_tesselation_max_pixel_error;
-uniform float gpucast_max_geometric_error;
+layout (std140) uniform gpucast_object_uniforms
+{ 
+  // raycasting parameters
+  int gpucast_enable_newton_iteration;  
+  int gpucast_raycasting_iterations; 
+  float gpucast_raycasting_error_tolerance;  
 
-// gpucast_shadow_mode = 0 // no shadow 
-// gpucast_shadow_mode = 1 // coarse shadow mode 1/16th of full tesselation
-// gpucast_shadow_mode = 2 // fine shadow mode 1/4th of full tesselation
-uniform int   gpucast_shadow_mode; 
+  // tesselation parameters
+  float gpucast_tesselation_max_pixel_error;  
+  float gpucast_max_pre_tesselation; 
+  float gpucast_max_geometric_error;  
 
-// ray casting
-uniform int   gpucast_enable_newton_iteration;
-uniform float gpucast_raycasting_error_tolerance;
-uniform int   gpucast_raycasting_iterations;
+  // gpucast_shadow_mode = 0 // no shadow 
+  // gpucast_shadow_mode = 1 // coarse shadow mode 1/16th of full tesselation
+  // gpucast_shadow_mode = 2 // fine shadow mode 1/4th of full tesselation
+  int gpucast_shadow_mode; 
+  int gpucast_trimming_max_bisections; 
+  float gpucast_trimming_error_tolerance;  
 
-// trimming 
-// 0 - disabled
-// 1 - classic double binary partition
-// 2 - contour binary partition
-// 3 - contour kd partition
-// 4 - loop list partition
-uniform int   gpucast_trimming_method;
-uniform float gpucast_trimming_error_tolerance;
-uniform int   gpucast_trimming_max_bisections;
+  // trimming 
+  // 0 - disabled
+  // 1 - classic double binary partition
+  // 2 - contour binary partition
+  // 3 - contour kd partition
+  // 4 - loop list partition
+  int gpucast_trimming_method;  
+
+  // material configuration
+  float gpucast_shininess; 
+  float gpucast_opacity;
+
+  vec4 gpucast_material_ambient;
+  vec4 gpucast_material_diffuse;
+  vec4 gpucast_material_specular;
+};
 
 layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 0) uniform atomic_uint  triangle_counter;
 layout(binding = GPUCAST_ATOMIC_COUNTER_BINDING, offset = 4) uniform atomic_uint  fragment_counter;

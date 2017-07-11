@@ -19,8 +19,11 @@
 #include <QtWidgets/QStatusBar>  
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QAction>
+#include <QtWidgets/QListWidget>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QSizePolicy>
+#include <QtWidgets/QColorDialog>
 #include <QtCore/QString>
 
 #include <iostream>
@@ -82,7 +85,7 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   /////////////////////////////////////
   // create GUI
   /////////////////////////////////////
-  _create_widgets( argc, argv );
+  _create_widgets(argc, argv);
   _create_menus();
   _create_statusbar();
   _create_actions();
@@ -117,7 +120,18 @@ mainwindow::close_window()
 void 
 mainwindow::update_interface ( )
 {
+  _menu->update();
+  _shading_menu->update();
+
   trimming();
+
+  set_button_color(_current_ambient, _current_material.ambient);
+  set_button_color(_current_diffuse, _current_material.diffuse);
+  set_button_color(_current_specular, _current_material.specular);
+
+  std::cout << _current_material.ambient.redF() << _current_material.ambient.greenF() << _current_material.ambient.blueF() << std::endl;
+  std::cout << _current_material.diffuse.redF() << _current_material.diffuse.greenF() << _current_material.diffuse.blueF() << std::endl;
+  std::cout << _current_material.specular.redF() << _current_material.specular.greenF() << _current_material.specular.blueF() << std::endl;
 
   // update window
   QMainWindow::update();
@@ -177,6 +191,12 @@ void mainwindow::update_count(unsigned triangles, unsigned fragments, unsigned c
   _counting_result->setText(message);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::set_button_color(QPushButton* button, QColor const& color)
+{
+  QString qss = QString("background-color: %1").arg(color.name());
+  button->setStyleSheet(qss);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
@@ -186,6 +206,9 @@ mainwindow::openfile()
  std::list<std::string> filelist;
  std::transform(qfilelist.begin(), qfilelist.end(), std::back_inserter(filelist), []( QString const& qstr ) { return qstr.toStdString(); } );
  _glwindow->open(filelist); 
+
+ _object_list->addItems(qfilelist);
+
  update_interface();
 }
 
@@ -198,9 +221,30 @@ mainwindow::addfile()
  std::list<std::string> filelist;
  std::transform(qfilelist.begin(), qfilelist.end(), std::back_inserter(filelist), []( QString const& qstr ) { return qstr.toStdString(); } );
  _glwindow->add(filelist); 
+
+ _object_list->addItems(qfilelist);
+
  update_interface();
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void
+mainwindow::deletefiles()
+{
+  std::list<std::string> filelist;
+
+  auto items = _object_list->selectedItems();
+
+  for (auto item : items) {
+    filelist.push_back(item->text().toStdString());
+  }
+
+  _glwindow->remove(filelist);
+
+  qDeleteAll(_object_list->selectedItems());
+
+  update_interface();
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::trimming()
@@ -244,6 +288,64 @@ void mainwindow::rendering()
     gpucast::gl::bezierobject::raycasting));
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::set_specular()
+{
+  QColor color = QColorDialog::getColor(_current_material.specular, this);
+  std::cout << color.greenF() << std::endl;
+  _current_material.specular = color;
+  update_interface();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::set_diffuse()
+{
+  QColor color = QColorDialog::getColor(_current_material.diffuse, this);
+  std::cout << color.greenF() << std::endl;
+  _current_material.diffuse = color;
+  update_interface();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::set_ambient()
+{
+  QColor color = QColorDialog::getColor(_current_material.ambient, this);
+  std::cout << color.greenF() << std::endl;
+  _current_material.ambient = color;
+  update_interface();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::set_shininess(float s)
+{
+  _current_material.shininess = s;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::set_opacity(float o)
+{
+  _current_material.opacity = o;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::apply_material()
+{ 
+  auto items = _object_list->selectedItems();
+
+  gpucast::math::vec4f mat_amb(_current_material.ambient.redF(), _current_material.ambient.greenF(), _current_material.ambient.blueF(), 1.0);
+  gpucast::math::vec4f mat_diff(_current_material.diffuse.redF(), _current_material.diffuse.greenF(), _current_material.diffuse.blueF(), 1.0);
+  gpucast::math::vec4f mat_spec(_current_material.specular.redF(), _current_material.specular.greenF(), _current_material.specular.blueF(), 1.0);
+
+  for (auto item : items) {
+
+    auto name = item->text().toStdString();
+
+    _glwindow->apply_material(name, mat_amb, mat_diff, mat_spec, _current_material.shininess, _current_material.opacity);
+  }
+
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 /* private */ void 
 mainwindow::_create_actions()
@@ -261,6 +363,9 @@ mainwindow::_create_actions()
   connect(_button_set_diffusemap,           SIGNAL( released() ), _glwindow,    SLOT( load_diffusemap() ));
   connect(_button_set_spheremap,            SIGNAL( released() ), _glwindow,    SLOT( load_spheremap() ));
 
+  connect(_addfile_button, SIGNAL(released()), this, SLOT(addfile()));
+  connect(_deletefile_button, SIGNAL(released()), this, SLOT(deletefiles()));
+
   connect(_checkbox_spheremap,              SIGNAL( stateChanged(int) ), _glwindow,    SLOT( spheremapping(int) ));
   connect(_checkbox_diffusemap,             SIGNAL( stateChanged(int) ), _glwindow,    SLOT( diffusemapping(int) ));
   connect(_checkbox_fxaa,                   SIGNAL( stateChanged(int) ), _glwindow,    SLOT( fxaa(int) ));
@@ -272,7 +377,6 @@ mainwindow::_create_actions()
   connect(_checkbox_holefilling,            SIGNAL(stateChanged(int)), _glwindow, SLOT(holefilling(int)));
   connect(_checkbox_conservative_rasterization, SIGNAL(stateChanged(int)), _glwindow, SLOT(conservative_rasterization(int)));
   
-
   connect(_combobox_antialiasing,           SIGNAL(currentIndexChanged(int)), this, SLOT(antialiasing()));
   connect(_combobox_trimming,               SIGNAL(currentIndexChanged(int)), this, SLOT(trimming()));
   connect(_combobox_rendering,              SIGNAL(currentIndexChanged(int)), this, SLOT(rendering()));
@@ -285,6 +389,14 @@ mainwindow::_create_actions()
   connect(_slider_tesselation_max_object_error, SIGNAL(valueChanged(float)),  _glwindow, SLOT(tesselation_max_geometric_error(float)));
   connect(_slider_raycasting_max_iterations,    SIGNAL(valueChanged(int)),    _glwindow, SLOT(raycasting_max_iterations(int)));
   connect(_slider_raycasting_error_tolerance,   SIGNAL(valueChanged(float)),  _glwindow, SLOT(raycasting_error_tolerance(float)));
+
+  connect(_current_specular, SIGNAL(released()), this, SLOT(set_specular()));
+  connect(_current_diffuse, SIGNAL(released()), this, SLOT(set_diffuse()));
+  connect(_current_ambient, SIGNAL(released()), this, SLOT(set_ambient()));
+  connect(_current_shininess, SIGNAL(valueChanged(float)), this, SLOT(set_shininess(float)));
+  connect(_current_opacity, SIGNAL(valueChanged(float)), this, SLOT(set_opacity(float)));
+
+  connect(_material_apply, SIGNAL(released()), this, SLOT(apply_material()));
 
   _file_menu->addSeparator();
   _file_menu->addAction   (_action_loadfile);
@@ -307,8 +419,8 @@ mainwindow::_create_widgets( int argc, char** argv )
   context_options.setRgba    ( true );
 
   _glwindow = new glwidget   ( argc, argv, context_options, this );
-
-  resize(_width+124, _height+41);
+  _glwindow->resize(_width, _height);
+  resize(_width, _height);
   setCentralWidget(_glwindow);
 }
 
@@ -317,19 +429,63 @@ mainwindow::_create_widgets( int argc, char** argv )
 /* private */ void 
 mainwindow::_create_menus()
 {
-  _file_menu = menuBar()->addMenu(tr("File"));
+  _shading_menu = new QMainWindow();
+  auto shading_layout = new QVBoxLayout;
+  shading_layout->setAlignment(Qt::AlignTop);
+
+  auto label_color_a = new QLabel("Ambient", _shading_menu);
+  auto label_color_d = new QLabel("Diffuse", _shading_menu);
+  auto label_color_s = new QLabel("Specular", _shading_menu);
+  auto label_color_sh = new QLabel("Shininess", _shading_menu);
+  auto label_color_o = new QLabel("Opacity", _shading_menu);
+
+  _addfile_button = new QPushButton("Add");
+  _deletefile_button = new QPushButton("Delete");
+  _material_apply = new QPushButton("Apply");
+
+  _current_specular = new QPushButton(" ");
+  _current_diffuse = new QPushButton(" ");
+  _current_ambient = new QPushButton(" ");
+  _current_shininess = new FloatSlidersGroup(Qt::Horizontal, tr("Shininess"), 0.0, 1.0f, _shading_menu);
+  _current_shininess->setValue(0.0);
+  _current_opacity = new FloatSlidersGroup(Qt::Horizontal, tr("Opacity"), 0.0, 1.0f, _shading_menu);
+  _current_opacity->setValue(1.0);
   
-  _menu = new QDockWidget(this);
+  _current_specular->setFixedSize(40, 40);
+  _current_diffuse->setFixedSize(40, 40);
+  _current_ambient->setFixedSize(40, 40);
 
-  auto widget = new QWidget { _menu };
-  _menu->setWidget(widget);
-  _menu->setFixedWidth(500);
-  //_menu->setFixedHeight(1400);
-  this->addDockWidget(Qt::RightDockWidgetArea, _menu);
+  shading_layout->addWidget(_addfile_button);
+  shading_layout->addWidget(_deletefile_button);
 
+  auto gridlayout = new QGridLayout();
+  auto color_widget = new QWidget();
+  color_widget->setLayout(gridlayout);
+
+  gridlayout->addWidget(label_color_s, 0, 0);
+  gridlayout->addWidget(_current_specular, 0, 1);
+
+  gridlayout->addWidget(label_color_d, 1, 0);
+  gridlayout->addWidget(_current_diffuse, 1, 1);
+
+  gridlayout->addWidget(label_color_a, 2, 0);
+  gridlayout->addWidget(_current_ambient, 2, 1);
+
+  _object_list = new QListWidget(_shading_menu);
+  _object_list->setSelectionMode(QAbstractItemView::MultiSelection);
+
+  shading_layout->addWidget(_object_list);
+  
+  shading_layout->addWidget(color_widget);
+  shading_layout->addWidget(_current_shininess);
+  shading_layout->addWidget(_current_opacity);
+
+  shading_layout->addWidget(_material_apply);
+  //////////////////////////////////////////////////
+
+
+  _menu = new QMainWindow();
   auto layout = new QVBoxLayout;
-  layout->setAlignment(Qt::AlignTop);
-  widget->setLayout(layout);
 
   _counting_result = new QLabel("", _menu);
   _fps_result = new QLabel("", _menu);
@@ -369,12 +525,12 @@ mainwindow::_create_menus()
   _combobox_trimming->setCurrentText(tr(_trimming_modes[gpucast::beziersurfaceobject::contour_kd_partition].c_str()));
   _combobox_preclassification->setCurrentText(tr(_preclassification_modes[8].c_str()));
 
-  _slider_trim_max_bisections = new SlidersGroup(Qt::Horizontal, tr("max. bisections"), 1, 32, this);
-  _slider_trim_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. error tolerance"), 0.0001f, 0.1f,  this);
-  _slider_tesselation_max_object_error = new FloatSlidersGroup(Qt::Horizontal, tr("max. object error"), 0.0001f, 1.0f, this);
-  _slider_tesselation_max_pixel_error = new FloatSlidersGroup(Qt::Horizontal,tr("max. pixel error"), 0.5f, 64.0f,  this);
-  _slider_raycasting_max_iterations = new SlidersGroup(Qt::Horizontal,tr("max. newton iterations"),  1, 16, this);
-  _slider_raycasting_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. raycasting error"), 0.0001f, 0.1f,  this);
+  _slider_trim_max_bisections = new SlidersGroup(Qt::Horizontal, tr("max. bisections"), 1, 32, _menu);
+  _slider_trim_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. error tolerance"), 0.0001f, 0.1f, _menu);
+  _slider_tesselation_max_object_error = new FloatSlidersGroup(Qt::Horizontal, tr("max. object error"), 0.0001f, 1.0f, _menu);
+  _slider_tesselation_max_pixel_error = new FloatSlidersGroup(Qt::Horizontal,tr("max. pixel error"), 0.5f, 64.0f, _menu);
+  _slider_raycasting_max_iterations = new SlidersGroup(Qt::Horizontal,tr("max. newton iterations"),  1, 16, _menu);
+  _slider_raycasting_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. raycasting error"), 0.0001f, 0.1f, _menu);
 
   // apply default values
   _slider_trim_max_bisections->setValue(gpucast::gl::bezierobject::default_render_configuration::trimming_max_bisections);
@@ -385,7 +541,7 @@ mainwindow::_create_menus()
   _slider_raycasting_error_tolerance->setValue(gpucast::gl::bezierobject::default_render_configuration::raycasting_error_tolerance);
 
   // apply widget into layout
-  QGroupBox* system_desc = new QGroupBox("System", this);
+  QGroupBox* system_desc = new QGroupBox("System", _menu);
   QVBoxLayout* system_desc_layout = new QVBoxLayout;
   system_desc_layout->addWidget(_button_recompile);
   system_desc_layout->addWidget(_checkbox_vsync);
@@ -396,7 +552,7 @@ mainwindow::_create_menus()
   system_desc->setLayout(system_desc_layout);
   layout->addWidget(system_desc);
 
-  QGroupBox* aa_desc = new QGroupBox("Anti-Aliasing", this);
+  QGroupBox* aa_desc = new QGroupBox("Anti-Aliasing", _menu);
   QVBoxLayout* aa_desc_layout = new QVBoxLayout;
   aa_desc_layout->addWidget(_checkbox_fxaa);
   aa_desc_layout->addWidget(_checkbox_holefilling);
@@ -405,7 +561,7 @@ mainwindow::_create_menus()
   aa_desc->setLayout(aa_desc_layout);
   layout->addWidget(aa_desc);
 
-  QGroupBox* trim_desc = new QGroupBox("Trimming", this);
+  QGroupBox* trim_desc = new QGroupBox("Trimming", _menu);
   QVBoxLayout* trim_desc_layout = new QVBoxLayout;
   trim_desc_layout->addWidget(_combobox_trimming);
   trim_desc_layout->addWidget(_combobox_preclassification);
@@ -414,7 +570,7 @@ mainwindow::_create_menus()
   trim_desc->setLayout(trim_desc_layout);
   layout->addWidget(trim_desc);
 
-  QGroupBox* rendering_desc = new QGroupBox("Rendering", this);
+  QGroupBox* rendering_desc = new QGroupBox("Rendering", _menu);
   QVBoxLayout* rendering_desc_layout = new QVBoxLayout;
   rendering_desc_layout->addWidget(_combobox_rendering);
   rendering_desc_layout->addWidget(_combobox_fillmode);
@@ -428,7 +584,7 @@ mainwindow::_create_menus()
   rendering_desc->setLayout(rendering_desc_layout);
   layout->addWidget(rendering_desc);
 
-  QGroupBox* shading_desc = new QGroupBox("Shading", this);
+  QGroupBox* shading_desc = new QGroupBox("Shading", _menu);
   QVBoxLayout* shading_desc_layout = new QVBoxLayout;
   shading_desc_layout->addWidget(_checkbox_spheremap);
   shading_desc_layout->addWidget(_button_set_spheremap);
@@ -437,6 +593,22 @@ mainwindow::_create_menus()
   shading_desc_layout->addWidget(_checkbox_sao);
   shading_desc->setLayout(shading_desc_layout);
   layout->addWidget(shading_desc);
+
+  layout->setAlignment(Qt::AlignTop);
+
+  auto param_body = new QWidget ();
+  param_body->setFixedWidth(800);
+  param_body->setLayout(layout);
+  _menu->setCentralWidget(param_body);
+  _menu->show();
+
+  auto shading_body = new QWidget();
+  shading_body->setLayout(shading_layout);
+  shading_body->setFixedWidth(800);
+  _shading_menu->setCentralWidget(shading_body);
+  _shading_menu->show();
+
+  _file_menu = _shading_menu->menuBar()->addMenu(tr("File"));
 }
 
 

@@ -14,6 +14,7 @@
 #include "gpucast/core/trimdomain_serializer_contour_map_kd.hpp"
 
 // header, system
+#include <boost/log/trivial.hpp>
 
 // header, project
 
@@ -82,11 +83,12 @@ namespace gpucast {
       input_domain->nurbsdomain().max[point_type::v]);
 
     assert(nodes.size() < std::numeric_limits<address_type>::max());
+     
     for (kdnode_ptr const& node : nodes)
     {
-      assert(node->overlapping_segments.size() < std::numeric_limits<char>::max());
-      assert(node->is_leaf() < std::numeric_limits<char>::max());
-      assert(node->split_direction < std::numeric_limits<char>::max());
+      assert(node->overlapping_segments.size() < unsigned(std::numeric_limits<unsigned char>::max()));
+      assert(node->is_leaf() < std::numeric_limits<unsigned char>::max());
+      assert(node->split_direction < std::numeric_limits<unsigned char>::max());
 
       address_type node_base_info = uint4ToUInt(unsigned(node->is_leaf()),
         node->parity,

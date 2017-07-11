@@ -78,7 +78,7 @@ uniformbuffer::unbind() const
 GLenum 
 uniformbuffer::target() const
 {
-  return GL_UNIFORM_BUFFER_EXT;
+  return GL_UNIFORM_BUFFER;
 }
 
 

@@ -59,6 +59,7 @@ public :
 
   void                    open                          ( std::list<std::string> const& );
   void                    add                           ( std::list<std::string> const& );
+  void                    remove                        (std::list<std::string> const&);
 
   std::pair<unsigned, double> surfaces_total_and_average_degree() const;
   std::pair<unsigned, double> curves_total_and_average_degree() const;
@@ -74,6 +75,7 @@ public Q_SLOTS :
   void                    fxaa                          ( int ); 
   void                    vsync                         ( int );
   void                    ambient_occlusion             ( int );
+  void                    apply_material(std::string const& name, gpucast::math::vec4f const& ambient, gpucast::math::vec4f const& diffuse, gpucast::math::vec4f const& specular, float shininess, float opacity);
 
   void                    conservative_rasterization    (int);
   void                    holefilling                   (int);
@@ -131,7 +133,7 @@ private : // attributes
   std::size_t                                                                 _width;
   std::size_t                                                                 _height;
 
-  std::vector<std::shared_ptr<gpucast::gl::bezierobject>>                     _objects;
+  std::unordered_map<std::string,std::shared_ptr<gpucast::gl::bezierobject>>  _objects;
   std::shared_ptr<gpucast::gl::trackball>                                     _trackball;
 
   gpucast::math::axis_aligned_boundingbox<gpucast::math::point3d>             _boundingbox;
@@ -140,10 +142,13 @@ private : // attributes
   bool                                                                        _ambient_occlusion;
   bool                                                                        _fxaa;
   
-  
   std::shared_ptr<gpucast::gl::timer_query>                                   _gputimer;
+  std::shared_ptr<gpucast::gl::timer_query>                                   _gputimer_postprocess;
   std::shared_ptr<gpucast::gl::timer>                                         _cputimer;
+
   unsigned                                                                    _frames;
+  unsigned                                                                    _frames_postprocess;
+
   double                                                                      _cputime = 0.0;
   double                                                                      _gputime = 0.0;
   double                                                                      _postprocess = 0.0;

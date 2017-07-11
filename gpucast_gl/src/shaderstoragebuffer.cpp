@@ -59,13 +59,6 @@ shaderstoragebuffer::bind() const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void 
-shaderstoragebuffer::bind_buffer_base(unsigned binding_point) const
-{
-  glBindBufferBase(target(), binding_point, id());
-}
-
-///////////////////////////////////////////////////////////////////////////////
 void            
 shaderstoragebuffer::unbind() const
 {

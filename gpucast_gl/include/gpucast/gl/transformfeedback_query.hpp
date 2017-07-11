@@ -27,8 +27,8 @@ namespace gpucast {
     {
     public: // methods
 
-      /*virtual*/ void begin() const override;
-      /*virtual*/ void end() const override;
+      /*virtual*/ void begin() override;
+      /*virtual*/ void end() override;
 
       long long primitives_written(bool wait = true) const; // in ms
 

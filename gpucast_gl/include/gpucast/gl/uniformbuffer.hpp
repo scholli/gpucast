@@ -33,7 +33,7 @@ public :
   ~uniformbuffer                 ( );
 
   uniformbuffer& operator=       ( uniformbuffer const& );
-  
+
   void            swap           ( uniformbuffer& );
 
 public : // methods

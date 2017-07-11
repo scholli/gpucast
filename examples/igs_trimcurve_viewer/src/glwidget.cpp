@@ -1236,16 +1236,9 @@ glwidget::paintGL()
         _loop_list_program->set_uniform1f("domain_zoom", _zoom);
         _loop_list_program->set_uniform1i("pixelsize", _pixel_size);
 
-        _loop_list_loops->bind_buffer_base(0);
         _loop_list_program->set_shaderstoragebuffer("loop_buffer", *_loop_list_loops, 0);
-
-        _loop_list_contours->bind_buffer_base(1);
         _loop_list_program->set_shaderstoragebuffer("contour_buffer", *_loop_list_contours, 1);
-
-        _loop_list_curves->bind_buffer_base(2);
         _loop_list_program->set_shaderstoragebuffer("curve_buffer", *_loop_list_curves, 2);
-
-        _loop_list_points->bind_buffer_base(3);
         _loop_list_program->set_shaderstoragebuffer("point_buffer", *_loop_list_points, 3);
 
         _bilinear_filter->bind(4);

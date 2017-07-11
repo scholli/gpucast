@@ -22,13 +22,24 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QListWidget>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QComboBox>
+#include <qcolor.h>
 #include <glwidget.hpp>
 
 #include <gpucast/math/interval.hpp>
 #include <slidergroup.hpp>
 
+
+struct material 
+{
+  QColor ambient;
+  QColor specular;
+  QColor diffuse;
+  float  shininess;
+  float  opacity;
+};
 
 template <typename map_type>
 typename map_type::key_type find_by_second(map_type const& map,
@@ -58,7 +69,8 @@ public: // c'tor / d'tor
   void show_fps                       ( double cputime, double gputime, double postprocess );
   void show_memory_usage              ( gpucast::beziersurfaceobject::memory_usage const& usage );
   void update_count                   ( unsigned triangles, unsigned fragments, unsigned culled_triangles, unsigned trimmed_fragments, unsigned estimate);
-
+  void set_button_color(QPushButton* button, QColor const& color);
+  
 protected:
 
   /* virtual */ void closeEvent       ( QCloseEvent* event );
@@ -68,12 +80,21 @@ private slots: // slot events
   void close_window                   ();
   void openfile                       ();
   void addfile                        ();
+  void deletefiles();
 
   void rendering();
   void fillmode();
   void trimming();
   void antialiasing();
   void preclassification();
+
+  void set_specular();
+  void set_diffuse();
+  void set_ambient();
+  void set_shininess(float);
+  void set_opacity(float);
+
+  void apply_material();
 
 private: // methods
 
@@ -129,6 +150,17 @@ private: // attributes
   QComboBox*            _combobox_trimming;
   QComboBox*            _combobox_preclassification;
 
+  QPushButton*            _addfile_button;
+  QPushButton*            _deletefile_button;
+
+  material              _current_material;
+  QPushButton*          _material_apply;
+  QPushButton*          _current_specular;
+  QPushButton*          _current_diffuse;
+  QPushButton*          _current_ambient;
+  FloatSlidersGroup*    _current_shininess;
+  FloatSlidersGroup*    _current_opacity;
+
   QPushButton*          _button_recompile;
   QPushButton*          _button_set_diffusemap;
   QPushButton*          _button_set_spheremap;
@@ -137,8 +169,10 @@ private: // attributes
   glwidget*             _glwindow;
 
   // menu and parameter manipulation
-  QDockWidget*          _menu;
+  QMainWindow*          _menu;
+  QMainWindow*          _shading_menu;
 
+  QListWidget*          _object_list;
 };
 
 #endif // NURBS_VIEW_MAINWINDOW_HPP

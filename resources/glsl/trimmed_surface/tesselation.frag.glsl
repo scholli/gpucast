@@ -45,20 +45,6 @@ uniform sampler2D   diffusemap;
 uniform int diffusemapping;
 uniform int spheremapping;
 
-uniform float shininess;
-uniform float opacity;
-
-#if 0
-  uniform vec3 mat_ambient;
-  uniform vec3 mat_diffuse;
-  uniform vec3 mat_specular;
-#else 
-  vec3 mat_ambient = vec3(0.0);
-  vec3 mat_diffuse = vec3(1.0);
-  vec3 mat_specular = vec3(0.0);
-#endif
-
-
 #include "./resources/glsl/trimmed_surface/shade_phong_fresnel.glsl.frag"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -169,17 +155,23 @@ void main()
                                   normalize(normal_world.xyz), 
                                   normalize(viewer.xyz),
                                   vec4(0.0, 0.0, 10000.0, 1.0),
-                                  mat_ambient, 
-                                  mat_diffuse, 
-                                  //vec3(float(tmp)/8.0),
-                                  mat_specular,
-                                  shininess,
-                                  opacity,
+                                  gpucast_material_ambient.rgb, 
+                                  gpucast_material_diffuse.rgb, 
+                                  gpucast_material_specular.rgb,
+                                  gpucast_shininess,
+                                  gpucast_opacity,
                                   bool(spheremapping),
                                   spheremap,
                                   bool(diffusemapping),
                                   diffusemap);
 
+    submit_fragment(gl_FragCoord.z,
+                    gpucast_opacity,
+                    gpucast_depth_buffer, 
+                    1.0, 1.0, 1.0,  // pbr
+                    out_color.rgb,  
+                    normal_world.rgb, 
+                    false);
 #endif
   
   /////////////////////////////////////////////////////////////////////////////
@@ -291,15 +283,16 @@ void main()
   vec4 viewer           = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
 
 #if 1
+  vec3 uv_color = vec3((uv_nurbs - nurbs_domain.xy) / domain_size, 0.0);
   out_color = shade_phong_fresnel(vec4(geometry_world_position, 1.0), 
                                  normalize(normal_world.xyz), 
                                  normalize(viewer.xyz),
                                  vec4(0.0, 0.0, 10000.0, 1.0),
-                                 mat_ambient, 
-                                 mat_diffuse, 
-                                 mat_specular,
-                                 shininess,
-                                 opacity,
+                                 gpucast_material_ambient.rgb, 
+                                 gpucast_material_diffuse.rgb, 
+                                 gpucast_material_specular.rgb,
+                                 gpucast_shininess,
+                                 gpucast_opacity,
                                  bool(spheremapping),
                                  spheremap,
                                  bool(diffusemapping),
@@ -307,7 +300,7 @@ void main()
 
 
   submit_fragment(gl_FragCoord.z,
-                  coverage,
+                  coverage * gpucast_opacity,
                   gpucast_depth_buffer, 
                   1.0, 1.0, 1.0,  // pbr
                   out_color.rgb,  
@@ -432,18 +425,18 @@ void main()
                                  normalize(normal_world.xyz), 
                                  normalize(viewer.xyz),
                                  vec4(0.0, 0.0, 10000.0, 1.0),
-                                 mat_ambient, 
-                                 mat_diffuse, 
-                                 mat_specular,
-                                 shininess,
-                                 opacity,
+                                 gpucast_material_ambient.rgb, 
+                                 gpucast_material_diffuse.rgb, 
+                                 gpucast_material_specular.rgb,
+                                 gpucast_shininess,
+                                 gpucast_opacity,
                                  bool(spheremapping),
                                  spheremap,
                                  bool(diffusemapping),
                                  diffusemap);
 
   submit_fragment(gl_FragDepth,
-                coverage,
+                coverage * gpucast_opacity,
                 gpucast_depth_buffer, 
                 1.0, 1.0, 1.0,  // pbr
                 out_color.rgb,  

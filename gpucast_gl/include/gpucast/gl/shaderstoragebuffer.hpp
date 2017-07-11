@@ -38,8 +38,6 @@ public : // methods
 
   /* virtual */ void    bind   ( ) const;
 
-  void bind_buffer_base(unsigned binding_point) const;
-
   /* virtual */ void    unbind ( ) const;
 
   /* virtual */ GLenum  target ( ) const;

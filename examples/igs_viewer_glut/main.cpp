@@ -53,7 +53,7 @@ private :
 
   std::vector<std::shared_ptr<gpucast::gl::cube>>   _obbs;
   std::shared_ptr<gpucast::gl::program>             _program;
-  bool                                              _show_obbs = true;
+  bool                                              _show_obbs = false;
 
   gpucast::gl::timer_query                          _query;
   gpucast::math::bbox3f                             _bbox;
@@ -231,7 +231,10 @@ public:
 
   void draw()
   {
-    _query.begin();
+    bool query_this_frame = _query.result_fetched();
+    if (query_this_frame) {
+      _query.begin();
+    }
 
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -286,9 +289,15 @@ public:
       }
     }
 
-    _query.end();
+    if (query_this_frame) {
+      _query.end();
+    }
 
-    std::cout << "fps: " << double(1000) / _query.time_in_ms() << "\r";
+    if (_query.is_available()) {
+      std::cout << "fps: " << double(1000) / _query.time_in_ms(false) << "\r";
+    }
+
+    
 #if 1
 
     if (_show_obbs) {

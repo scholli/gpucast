@@ -15,6 +15,7 @@
 #include <regex>
 
 #include <gpucast/gl/error.hpp>
+#include <gpucast/gl/util/timer.hpp>
 #include <gpucast/gl/shader.hpp>
 #include <gpucast/gl/util/resource_factory.hpp>
 #include <gpucast/gl/primitives/bezierobject_renderer.hpp>
@@ -47,7 +48,15 @@ namespace gpucast {
       _trimming(b.trim_approach()),
       _rendermode(tesselation)
     {
-      _material.randomize();
+      material m;
+      m.randomize();
+
+      _uniform_data.gpucast_material_ambient = m.ambient;
+      _uniform_data.gpucast_material_diffuse = m.diffuse;
+      _uniform_data.gpucast_material_specular = m.specular;
+
+      _uniform_data.gpucast_shininess = m.shininess;
+      _uniform_data.gpucast_opacity = m.opacity;
 
       _upload();
 
@@ -237,13 +246,22 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject::set_material(material const& m)
     {
-      _material = m;
+      _uniform_data.gpucast_material_ambient = m.ambient;
+      _uniform_data.gpucast_material_diffuse = m.diffuse;
+      _uniform_data.gpucast_material_specular = m.specular;
+
+      _uniform_data.gpucast_shininess = m.shininess;
+      _uniform_data.gpucast_opacity = m.opacity;
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    material const& bezierobject::get_material() const
+    material bezierobject::get_material() const
     {
-      return _material;
+      return material{ _uniform_data.gpucast_material_ambient ,
+        _uniform_data.gpucast_material_diffuse,
+        _uniform_data.gpucast_material_specular,
+        _uniform_data.gpucast_shininess,
+        _uniform_data.gpucast_opacity };
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -377,6 +395,27 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject::_apply_uniforms(program const& p, render_mode mode)
     {
+#if 1
+      _uniform_data.gpucast_enable_newton_iteration = _raycasting;
+      _uniform_data.gpucast_raycasting_iterations = _raycasting_max_iterations;
+      _uniform_data.gpucast_raycasting_error_tolerance = _raycasting_error_tolerance;
+      _uniform_data.gpucast_tesselation_max_pixel_error = _tesselation_max_pixel_error;
+
+      _uniform_data.gpucast_max_pre_tesselation = _tesselation_max_pretesselation;
+      _uniform_data.gpucast_max_geometric_error = _tesselation_max_geometric_error;
+      _uniform_data.gpucast_shadow_mode = _rendermode;
+      _uniform_data.gpucast_trimming_max_bisections = _trimming_max_bisections;
+
+      _uniform_data.gpucast_trimming_error_tolerance = _trimming_error_tolerance;
+      _uniform_data.gpucast_trimming_method = _trimming;
+
+      auto memptr = _uniform_block.map(GL_WRITE_ONLY);
+      memcpy(memptr, (void*)&_uniform_data, sizeof(bezierobject_uniformbuffer_layout));
+      _uniform_block.unmap();
+
+      p.set_uniformbuffer("gpucast_object_uniforms", _uniform_block, gpucast::gl::bezierobject_renderer::GPUCAST_OBJECT_UBO_BINDINGPOINT);
+#else
+
       // render parameters
       p.set_uniform1i("gpucast_enable_newton_iteration", _raycasting);
       p.set_uniform1i("gpucast_raycasting_iterations", _raycasting_max_iterations);
@@ -385,18 +424,17 @@ namespace gpucast {
       p.set_uniform1f("gpucast_max_pre_tesselation", _tesselation_max_pretesselation);
       p.set_uniform1f("gpucast_max_geometric_error", _tesselation_max_geometric_error);
       p.set_uniform1i("gpucast_shadow_mode", _rendermode);
-
       p.set_uniform1i("gpucast_trimming_max_bisections", _trimming_max_bisections);
-      p.set_uniform1f("gpucast_trimmig_error_tolerance", _trimming_error_tolerance);
+      p.set_uniform1f("gpucast_trimming_error_tolerance", _trimming_error_tolerance);
       p.set_uniform1i("gpucast_trimming_method", int(_trimming));
 
       // material properties
-      p.set_uniform3f("mat_ambient", _material.ambient[0], _material.ambient[1], _material.ambient[2]);
-      p.set_uniform3f("mat_diffuse", _material.diffuse[0], _material.diffuse[1], _material.diffuse[2]);
-      p.set_uniform3f("mat_specular", _material.specular[0], _material.specular[1], _material.specular[2]);
-      p.set_uniform1f("shininess", _material.shininess);
-      p.set_uniform1f("opacity", _material.opacity);
-
+      p.set_uniform4f("gpucast_material_ambient", _material.ambient[0], _material.ambient[1], _material.ambient[2], 1.0);
+      p.set_uniform4f("gpucast_material_diffuse", _material.diffuse[0], _material.diffuse[1], _material.diffuse[2], 1.0);
+      p.set_uniform4f("gpucast_material_specular", _material.specular[0], _material.specular[1], _material.specular[2], 1.0);
+      p.set_uniform1f("gpucast_shininess", _material.shininess);
+      p.set_uniform1f("gpucast_opacity", _material.opacity);
+#endif
       // data uniforms
       auto renderer = bezierobject_renderer::instance();
       switch (mode)
@@ -456,6 +494,8 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject::_upload()
     {
+      _uniform_block.bufferdata(sizeof(bezierobject_uniformbuffer_layout), (void*)&_uniform_data, GL_DYNAMIC_DRAW);
+
       _upload_trimming_buffers();
       _upload_controlpoint_buffer();
       _upload_raycasting_buffers();

@@ -38,7 +38,9 @@
 
 
 
-namespace gpucast { namespace gl {
+namespace gpucast { 
+
+  namespace gl {
 
 ///////////////////////////////////////////////////////////////////////////////
 class GPUCAST_GL bezierobject_renderer : public singleton<bezierobject_renderer>
@@ -57,6 +59,9 @@ public: // enums, typedefs
   static const unsigned GPUCAST_ABUFFER_FRAGMENT_LIST_BUFFER_BINDING = 6;
   static const unsigned GPUCAST_ABUFFER_FRAGMENT_DATA_BUFFER_BINDING = 7;
 
+  static const unsigned GPUCAST_OBJECT_UBO_BINDINGPOINT = 0;
+  static const unsigned GPUCAST_CAMERA_UBO_BINDINGPOINT = 1;
+
   static const unsigned GPUCAST_ANTI_ALIASING_MODE                   = bezierobject::anti_aliasing_mode::disabled;
 
   struct debug_counter {
@@ -65,6 +70,35 @@ public: // enums, typedefs
     unsigned culled_triangles;
     unsigned trimmed_fragments;
   };
+
+  struct matrix_uniform_buffer_layout
+  {
+    gpucast::math::matrix4f gpucast_model_matrix; // used
+    gpucast::math::matrix4f gpucast_model_inverse_matrix;
+
+    gpucast::math::matrix4f gpucast_model_view_matrix; // used
+    gpucast::math::matrix4f gpucast_model_view_inverse_matrix;
+
+    gpucast::math::matrix4f gpucast_model_view_projection_matrix; // used
+    gpucast::math::matrix4f gpucast_model_view_projection_inverse_matrix;
+
+    gpucast::math::matrix4f gpucast_normal_matrix;  // used
+
+    gpucast::math::matrix4f gpucast_view_matrix;
+    gpucast::math::matrix4f gpucast_view_inverse_matrix; // used
+
+    gpucast::math::matrix4f gpucast_projection_matrix;
+    gpucast::math::matrix4f gpucast_projection_inverse_matrix;
+
+    gpucast::math::matrix4f gpucast_projection_view_matrix;
+    gpucast::math::matrix4f gpucast_projection_view_inverse_matrix;
+
+    gpucast::math::vec2i    gpucast_resolution;
+
+    float                   gpucast_clip_near;
+    float                   gpucast_clip_far;
+  };
+
 
 public: // c'tor / d'tor
 
@@ -142,34 +176,13 @@ private : // methods
 
 private: // attributes
 
-  float                                 _nearplane;
-  float                                 _farplane;
-
   bool                                  _conservative_rasterization = false;
   bool                                  _enable_holefilling = false;
   bool                                  _enable_count = false;
   bool                                  _enable_triangular_tesselation = false;
 
   bezierobject::anti_aliasing_mode      _antialiasing;
-
-  gpucast::math::vec2i                  _resolution;
-                                        
-  gpucast::math::matrix4f               _modelmatrix;
-  gpucast::math::matrix4f               _modelmatrixinverse;
-                                        
-  gpucast::math::matrix4f               _viewmatrix;
-  gpucast::math::matrix4f               _viewmatrixinverse;
-                                        
-  gpucast::math::matrix4f               _modelviewmatrix;
-  gpucast::math::matrix4f               _modelviewmatrixinverse;
-                                        
-  gpucast::math::matrix4f               _projectionmatrix;
-  gpucast::math::matrix4f               _projectionmatrixinverse;
-                                        
-  gpucast::math::matrix4f               _normalmatrix;
-  gpucast::math::matrix4f               _modelviewprojectionmatrix;
-  gpucast::math::matrix4f               _modelviewprojectionmatrixinverse;
-                              
+                      
   std::shared_ptr<shaderstoragebuffer>  _hullvertexmap;
   std::set<std::string>                 _pathlist;
   gpucast::math::vec3f                  _background;
@@ -212,12 +225,14 @@ private: // attributes
   std::shared_ptr<gpucast::gl::shaderstoragebuffer> _abuffer_fragment_list;
   std::shared_ptr<gpucast::gl::shaderstoragebuffer> _abuffer_fragment_data;
 
+  matrix_uniform_buffer_layout                      _camera_ubo_data;
+  std::shared_ptr<gpucast::gl::uniformbuffer>       _camera_ubo;
+
   struct {
     GLint                                             _polygonmode;
     bool                                              _conservative_rasterization_enabled;
   } _glstate_backup;
   
-
 };
 
 

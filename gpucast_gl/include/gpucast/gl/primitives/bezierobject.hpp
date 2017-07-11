@@ -27,6 +27,7 @@
 #include <gpucast/gl/texturebuffer.hpp>
 #include <gpucast/gl/transformfeedback.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
+#include <gpucast/gl/uniformbuffer.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>
 
 
@@ -47,6 +48,28 @@ public:
     static const float    tesselation_max_pixel_error;     // default set to 4.0 pixel
     static const float    tesselation_max_pretesselation;  // default set to 64.0f
     static const float    tesselation_max_geometric_error; // default set to 0.0001f = 0.1 mm
+  };
+
+  struct bezierobject_uniformbuffer_layout 
+  {
+    int gpucast_enable_newton_iteration;
+    int gpucast_raycasting_iterations;
+    float gpucast_raycasting_error_tolerance;
+    float gpucast_tesselation_max_pixel_error;
+
+    float gpucast_max_pre_tesselation;
+    float gpucast_max_geometric_error;
+    int gpucast_shadow_mode;
+    int gpucast_trimming_max_bisections;
+
+    float gpucast_trimming_error_tolerance;
+    int gpucast_trimming_method;
+    float gpucast_shininess;
+    float gpucast_opacity;
+
+    gpucast::math::vec4f gpucast_material_ambient;
+    gpucast::math::vec4f gpucast_material_diffuse;
+    gpucast::math::vec4f gpucast_material_specular;
   };
 
   enum anti_aliasing_mode {
@@ -122,7 +145,7 @@ public:
   fill_mode           fillmode() const;
 
   void                set_material(material const& m);
-  material const&     get_material() const;
+  material            get_material() const;
 
 private :
 
@@ -149,13 +172,10 @@ private :
   bool                                  _culling                 = false;
   bool                                  _raycasting              = true;
 
-  render_mode                           _rendermode    = raycasting;
+  render_mode                           _rendermode    = tesselation;
   beziersurfaceobject::trim_approach_t  _trimming      = beziersurfaceobject::contour_kd_partition;
     
   beziersurfaceobject                   _object;
-
-  // object properties
-  material                              _material;
 
   // gpu ressources : ray casting 
   std::size_t                           _size;
@@ -210,6 +230,10 @@ private :
   gpucast::gl::shaderstoragebuffer      _loop_list_curves;
   gpucast::gl::shaderstoragebuffer      _loop_list_points;
   gpucast::gl::texturebuffer            _loop_list_preclassification;
+
+  gpucast::gl::uniformbuffer            _uniform_block;
+  bezierobject_uniformbuffer_layout     _uniform_data;
+
 };
 
 typedef std::shared_ptr<bezierobject> bezierobject_ptr;

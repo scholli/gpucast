@@ -81,6 +81,9 @@ namespace gpucast {
       _colorattachment_multisample = std::make_shared<renderbuffer>();
       _depthattachment_multisample = std::make_shared<renderbuffer>();
 
+      _camera_ubo = std::make_shared<uniformbuffer>();
+      _camera_ubo->bufferdata(sizeof(matrix_uniform_buffer_layout), 0, GL_DYNAMIC_DRAW);
+
       // fullscreen pass geometry
       _fullscreen_quad = std::make_shared<gpucast::gl::plane>(0, -1, 1);
       //_fullscreen_quad->size(1.0, 1.0);
@@ -140,41 +143,41 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::current_viewmatrix(gpucast::math::matrix4f const& m)
     {
-      _viewmatrix = m;
-      _viewmatrixinverse = gpucast::math::inverse(_viewmatrix);
+      _camera_ubo_data.gpucast_view_matrix = m;
+      _camera_ubo_data.gpucast_view_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_view_matrix);
 
       // update other matrices
-      _modelviewmatrix = _viewmatrix * _modelmatrix;
-      _modelviewmatrixinverse = gpucast::math::inverse(_modelviewmatrix);
+      _camera_ubo_data.gpucast_model_view_matrix = _camera_ubo_data.gpucast_view_matrix * _camera_ubo_data.gpucast_model_matrix;
+      _camera_ubo_data.gpucast_model_view_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_model_view_matrix);
 
-      _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
-      _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
+      _camera_ubo_data.gpucast_model_view_projection_matrix = _camera_ubo_data.gpucast_projection_matrix * _camera_ubo_data.gpucast_model_view_matrix;
+      _camera_ubo_data.gpucast_model_view_projection_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_model_view_projection_matrix);
     }
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::current_modelmatrix(gpucast::math::matrix4f const& m)
     {
-      _modelmatrix = m;
-      _modelmatrixinverse = gpucast::math::inverse(_modelmatrix);
+      _camera_ubo_data.gpucast_model_matrix = m;
+      _camera_ubo_data.gpucast_model_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_model_matrix);
 
       // update other matrices
-      _modelviewmatrix = _viewmatrix * _modelmatrix;
-      _modelviewmatrixinverse = gpucast::math::inverse(_modelviewmatrix);
+      _camera_ubo_data.gpucast_model_view_matrix = _camera_ubo_data.gpucast_view_matrix * _camera_ubo_data.gpucast_model_matrix;
+      _camera_ubo_data.gpucast_model_view_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_model_view_matrix);
 
-      _normalmatrix = _modelmatrix.normalmatrix();
+      _camera_ubo_data.gpucast_normal_matrix = _camera_ubo_data.gpucast_model_matrix.normalmatrix();
 
-      _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
-      _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
+      _camera_ubo_data.gpucast_model_view_projection_matrix = _camera_ubo_data.gpucast_projection_matrix * _camera_ubo_data.gpucast_model_view_matrix;
+      _camera_ubo_data.gpucast_model_view_projection_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_model_view_projection_matrix);
     }
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::current_projectionmatrix(gpucast::math::matrix4f const& m)
     {
-      _projectionmatrix = m;
-      _projectionmatrixinverse = gpucast::math::inverse(_projectionmatrix);
+      _camera_ubo_data.gpucast_projection_matrix = m;
+      _camera_ubo_data.gpucast_projection_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_projection_matrix);
 
-      _modelviewprojectionmatrix = _projectionmatrix * _modelviewmatrix;
-      _modelviewprojectionmatrixinverse = gpucast::math::inverse(_modelviewprojectionmatrix);
+      _camera_ubo_data.gpucast_model_view_projection_matrix = _camera_ubo_data.gpucast_projection_matrix * _camera_ubo_data.gpucast_model_view_matrix;
+      _camera_ubo_data.gpucast_model_view_projection_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_model_view_projection_matrix);
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -190,33 +193,33 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::set_nearfar(float near, float far)
     {
-      _nearplane = near;
-      _farplane = far;
-      current_projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _nearplane, _farplane));
+      _camera_ubo_data.gpucast_clip_near = near;
+      _camera_ubo_data.gpucast_clip_far = far;
+      current_projectionmatrix(gpucast::math::frustum(-1.0f, 1.0f, -1.0f, 1.0f, _camera_ubo_data.gpucast_clip_near, _camera_ubo_data.gpucast_clip_far));
     }
 
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::set_resolution(unsigned width, unsigned height)
     {
-      if (width == _resolution[0] && height == _resolution[1]) {
+      if (width == _camera_ubo_data.gpucast_resolution[0] && height == _camera_ubo_data.gpucast_resolution[1]) {
         return;
       }
       else {
 
         // recreate offscreen targets with new textures
-        _resolution = gpucast::math::vec2i(width, height);
+        _camera_ubo_data.gpucast_resolution = gpucast::math::vec2i(width, height);
 
         // resize fbo textures
-        _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_resolution[0]), GLsizei(_resolution[1]), 0, GL_RGBA, GL_FLOAT, 0);
-        _depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_resolution[0]), GLsizei(_resolution[1]), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+        _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]), 0, GL_RGBA, GL_FLOAT, 0);
+        _depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-        _gbuffer_colorattachment->teximage(0, GL_RGBA32F, GLsizei(_resolution[0]), GLsizei(_resolution[1]), 0, GL_RGBA, GL_FLOAT, 0);
-        _gbuffer_depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_resolution[0]), GLsizei(_resolution[1]), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+        _gbuffer_colorattachment->teximage(0, GL_RGBA32F, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]), 0, GL_RGBA, GL_FLOAT, 0);
+        _gbuffer_depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
         // resize multisample textures
         const int nsamples = 8;
-        _colorattachment_multisample->set(8, GL_RGBA8, GLsizei(_resolution[0]), GLsizei(_resolution[1]));
-        _depthattachment_multisample->set(nsamples, GL_DEPTH32F_STENCIL8, GLsizei(_resolution[0]), GLsizei(_resolution[1]));
+        _colorattachment_multisample->set(8, GL_RGBA8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
+        _depthattachment_multisample->set(nsamples, GL_DEPTH32F_STENCIL8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
 
         // update FBOs 
         create_fbo();
@@ -294,7 +297,7 @@ namespace gpucast {
         _gbuffer->unbind();
 
         glBlitNamedFramebuffer(_fbo_multisample->id(), _gbuffer->id(),
-          0, 0, _resolution[0], _resolution[1], 0, 0, _resolution[0], _resolution[1],
+          0, 0, _camera_ubo_data.gpucast_resolution[0], _camera_ubo_data.gpucast_resolution[1], 0, 0, _camera_ubo_data.gpucast_resolution[0], _camera_ubo_data.gpucast_resolution[1],
           GL_COLOR_BUFFER_BIT, GL_NEAREST);
       }
       else {
@@ -319,7 +322,7 @@ namespace gpucast {
 
       begin_program(_resolve_program);
       {
-        _resolve_program->set_uniform2i("gpucast_resolution", _resolution[0], _resolution[1]);
+        _resolve_program->set_uniformbuffer("gpucast_matrix_uniforms", *_camera_ubo, GPUCAST_CAMERA_UBO_BINDINGPOINT);
 
         _resolve_program->set_texture2d("gpucast_gbuffer_color", *_gbuffer_colorattachment, 1);
         _nearest_sampler->bind(1);
@@ -338,7 +341,7 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     gpucast::math::vec2i const& bezierobject_renderer::get_resolution() const
     {
-      return _resolution;
+      return _camera_ubo_data.gpucast_resolution;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -382,7 +385,7 @@ namespace gpucast {
 
       // compute planes
       std::array<gpucast::math::vec4f, 6> planes;
-      auto projection_view = _projectionmatrix * _viewmatrix * _modelmatrix;
+      auto projection_view = _camera_ubo_data.gpucast_projection_matrix * _camera_ubo_data.gpucast_view_matrix;// *_camera_ubo_data.gpucast_model_matrix;
 
       //left plane
       planes[0] = gpucast::math::vec4f(projection_view[3] + projection_view[0],
@@ -469,10 +472,6 @@ namespace gpucast {
     void bezierobject_renderer::apply_uniforms(std::shared_ptr<program> const& p)
     {
       // view parameters
-      p->set_uniform1f("gpucast_clip_near", _nearplane);
-      p->set_uniform1f("gpucast_clip_far", _farplane);
-
-      p->set_uniform2i("gpucast_resolution", _resolution[0], _resolution[1]);
       if (p == _tesselation_program || p == _pretesselation_program) {
         p->set_shaderstoragebuffer("gpucast_hullvertexmap_ssbo", *_hullvertexmap, GPUCAST_HULLVERTEXMAP_SSBO_BINDING);
       }
@@ -483,22 +482,11 @@ namespace gpucast {
         p->set_shaderstoragebuffer("gpucast_feedback_buffer", *_feedbackbuffer, GPUCAST_FEEDBACK_BUFFER_BINDING);
       }
 
-      // camera block
-      p->set_uniform_matrix4fv("gpucast_projection_matrix", 1, false, &_projectionmatrix[0]);
-      p->set_uniform_matrix4fv("gpucast_projection_inverse_matrix", 1, false, &_projectionmatrixinverse[0]);
-
-      p->set_uniform_matrix4fv("gpucast_model_matrix", 1, false, &_modelmatrix[0]);
-      p->set_uniform_matrix4fv("gpucast_model_inverse_matrix", 1, false, &_modelmatrixinverse[0]);
-
-      p->set_uniform_matrix4fv("gpucast_view_matrix", 1, false, &_viewmatrix[0]);
-      p->set_uniform_matrix4fv("gpucast_view_inverse_matrix", 1, false, &_viewmatrixinverse[0]);
-
-      p->set_uniform_matrix4fv("gpucast_normal_matrix", 1, false, &_normalmatrix[0]);
-      p->set_uniform_matrix4fv("gpucast_model_view_matrix", 1, false, &_modelviewmatrix[0]);
-      p->set_uniform_matrix4fv("gpucast_model_view_inverse_matrix", 1, false, &_modelviewmatrixinverse[0]);
-
-      p->set_uniform_matrix4fv("gpucast_model_view_projection_matrix", 1, false, &_modelviewprojectionmatrix[0]);
-      p->set_uniform_matrix4fv("gpucast_model_view_projection_inverse_matrix", 1, false, &_modelviewprojectionmatrixinverse[0]);
+      // update and bind UBO
+      auto hostmem = _camera_ubo->map(GL_WRITE_ONLY);
+      std::memcpy(hostmem, &_camera_ubo_data, sizeof(matrix_uniform_buffer_layout));
+      _camera_ubo->unmap();
+      p->set_uniformbuffer("gpucast_matrix_uniforms", *_camera_ubo, GPUCAST_CAMERA_UBO_BINDINGPOINT);
 
       if (_antialiasing != gpucast::gl::bezierobject::msaa) {
         auto depthtex_unit = next_texunit();
@@ -516,8 +504,10 @@ namespace gpucast {
       }
 
       if (_spheremap) {
+        auto unit = next_texunit();
         p->set_uniform1i("spheremapping", 1);
-        p->set_texture2d("spheremap", *_spheremap, next_texunit());
+        p->set_texture2d("spheremap", *_spheremap, unit);
+        _linear_sampler->bind(unit);
       } else {
         p->set_uniform1i("spheremapping", 0);
       }

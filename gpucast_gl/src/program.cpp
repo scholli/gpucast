@@ -16,6 +16,7 @@
 #include <gpucast/gl/atomicbuffer.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
 #include <gpucast/gl/shaderstoragebuffer.hpp>
+#include <gpucast/gl/uniformbuffer.hpp>
 #include <gpucast/gl/texture1d.hpp>
 #include <gpucast/gl/texture2d.hpp>
 #include <gpucast/gl/texture3d.hpp>
@@ -584,8 +585,23 @@ program::set_shaderstoragebuffer(char const* varname, shaderstoragebuffer& ssbo,
     BOOST_LOG_TRIVIAL(warning) << "program::set_shaderstoragebuffer(): " << varname << "not found in program.\n" << std::endl;
   }
   else {
-    ssbo.bind_buffer_base(binding_point);
+    ssbo.bind_base(binding_point);
     glShaderStorageBlockBinding(id_, location, binding_point);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void program::set_uniformbuffer(char const* varname, uniformbuffer& ubo, unsigned binding_point) const
+{
+
+  GLuint location = get_uniform_blockindex(varname);
+
+  if (location == GL_INVALID_INDEX) {
+    BOOST_LOG_TRIVIAL(warning) << "program::set_uniformbuffer(): " << varname << "not found in program.\n" << std::endl;
+  }
+  else {
+    ubo.bind_base(binding_point);
+    glUniformBlockBinding(id_, location, binding_point);
   }
 }
 

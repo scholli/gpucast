@@ -21,12 +21,12 @@ namespace gpucast {
   namespace gl {
 
     ////////////////////////////////////////////////////////////////////////////////
-    void transformfeedback_query::begin() const {
+    void transformfeedback_query::begin() {
       glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, id());
     }
 
     ////////////////////////////////////////////////////////////////////////////////
-    void transformfeedback_query::end() const {
+    void transformfeedback_query::end() {
       glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
     }
 

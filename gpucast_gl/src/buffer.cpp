@@ -22,6 +22,7 @@
 // header project
 #include <gpucast/math/vec4.hpp>
 #include <gpucast/gl/error.hpp>
+#include <boost/log/trivial.hpp>
 
 namespace gpucast { namespace gl {
 
@@ -43,24 +44,13 @@ buffer::buffer( std::size_t bytes, GLenum usage )
 {
   glGenBuffers( 1, &_id );
   bufferdata  ( bytes, 0 );
+  BOOST_LOG_TRIVIAL(error) << _id << std::endl;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 buffer::~buffer()
 {
-#if 0
-  BOOST_LOG_TRIVIAL(info) << "entering buffer::~buffer( )" << std::endl;
-  error("gl error? : ");
-
-  BOOST_LOG_TRIVIAL(info) << "Buffer ID ? : " << _id << std::endl;
-  BOOST_LOG_TRIVIAL(info) << "glIsBuffer? : " << (glIsBuffer(_id) == GL_TRUE) << std::endl;
-
-  BOOST_LOG_TRIVIAL(info) << "access ? : " << parameter( GL_BUFFER_ACCESS ) << std::endl;
-  BOOST_LOG_TRIVIAL(info) << "mapped ? : " << parameter( GL_BUFFER_MAPPED ) << std::endl;
-  BOOST_LOG_TRIVIAL(info) << "size ?   : " << parameter( GL_BUFFER_SIZE ) << std::endl;
-  BOOST_LOG_TRIVIAL(info) << "usage ?  : " << parameter( GL_BUFFER_USAGE )<< std::endl;
-#endif
   glDeleteBuffers(1, &_id);
 }
 
@@ -222,15 +212,18 @@ void buffer::bind_range(unsigned in_index, std::size_t in_offset, std::size_t in
   if (0 < in_size) {
     glBindBufferRange(target(), in_index, id(), in_offset, in_size);
   }
-  else {
-    glBindBufferBase(target(), in_index, id());
-  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void buffer::unbind_range(unsigned in_index)
+void buffer::unbind(unsigned binding_point)
 {
-  glBindBufferBase(target(), in_index, 0);
+  glBindBufferBase(target(), binding_point, 0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void buffer::bind_base(unsigned binding_point) const
+{
+  glBindBufferBase(target(), binding_point, id());
 }
 
 ///////////////////////////////////////////////////////////////////////////////

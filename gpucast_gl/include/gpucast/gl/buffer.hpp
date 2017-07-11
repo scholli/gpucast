@@ -77,8 +77,9 @@ public : // methods
 
   void            make_resident   ( ) const;
 
-  void            bind_range      (unsigned in_index, std::size_t in_offset, std::size_t in_size);
-  void            unbind_range    (unsigned in_index);
+  void            bind_base       (unsigned binding_point) const;
+  void            bind_range      (unsigned binding_point, std::size_t in_offset, std::size_t in_size);
+  void            unbind          (unsigned binding_point);
 
   void            clear_data      (GLenum internal_format, GLenum format, GLenum type, void* data);
   void            clear_subdata   (GLenum internal_format, unsigned offset, unsigned size, GLenum format, GLenum type, void* data);
@@ -100,7 +101,7 @@ typedef std::shared_ptr<buffer>         buffer_ptr;
   void buffer::update ( iterator_type begin, iterator_type end)
   {
     typedef typename std::iterator_traits<iterator_type>::value_type value_type;
-    std::size_t const growth   = 2;
+    std::size_t const growth   = 1.2;
 
     std::size_t elemsize = sizeof(value_type);
     std::size_t elements = std::distance(begin, end);
@@ -109,7 +110,7 @@ typedef std::shared_ptr<buffer>         buffer_ptr;
 
     if ( elemsize * elements > _capacity)  // reallocate new memory 
     {
-      _capacity = elemsize * elements * growth;
+      _capacity = std::size_t(elemsize * elements * growth);
       bufferdata(_capacity, 0);
     }
 
