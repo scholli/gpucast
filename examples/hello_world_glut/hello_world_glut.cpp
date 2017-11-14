@@ -158,7 +158,7 @@ public :
 
 int main(int argc, char** argv)
 {
-  gpucast::gl::glutwindow::init(argc, argv, 1024, 1024, 0, 0, 4, 2, true);
+  gpucast::gl::glutwindow::init(argc, argv, 1024, 1024, 0, 0, 4, 4, true);
 
   glewExperimental = true;
   glewInit();

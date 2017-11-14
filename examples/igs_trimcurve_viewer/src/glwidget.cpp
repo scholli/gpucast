@@ -62,6 +62,8 @@
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_kd.hpp>
 #include <gpucast/math/parametric/domain/partition/double_binary/partition.hpp>
 
+#include <gpucast/gl/primitives/bezierobject_renderer.hpp>
+
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////////
@@ -1491,7 +1493,24 @@ glwidget::_init()
 void 
 glwidget::_initialize_shader()  
 {
+  gpucast::gl::bezierobject_renderer renderer;
+
   gpucast::gl::resource_factory program_factory;
+
+  program_factory.add_substitution("GPUCAST_MAX_FEEDBACK_BUFFER_INDICES_INPUT", std::to_string(gpucast::gl::bezierobject_renderer::MAX_FEEDBACK_BUFFER_INDICES));
+  program_factory.add_substitution("GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION_INPUT", std::to_string(renderer.enable_triangular_tesselation()));
+  program_factory.add_substitution("GPUCAST_WRITE_DEBUG_COUNTER_INPUT", std::to_string(renderer.enable_counting()));
+  program_factory.add_substitution("GPUCAST_ANTI_ALIASING_MODE_INPUT", std::to_string(renderer.antialiasing()));
+
+  program_factory.add_substitution("GPUCAST_HULLVERTEXMAP_SSBO_BINDING_INPUT", std::to_string(gpucast::gl::bezierobject_renderer::GPUCAST_HULLVERTEXMAP_SSBO_BINDING));
+  program_factory.add_substitution("GPUCAST_ATTRIBUTE_SSBO_BINDING_INPUT", std::to_string(gpucast::gl::bezierobject_renderer::GPUCAST_ATTRIBUTE_SSBO_BINDING));
+  program_factory.add_substitution("GPUCAST_ATOMIC_COUNTER_BINDING_INPUT", std::to_string(gpucast::gl::bezierobject_renderer::GPUCAST_ATOMIC_COUNTER_BINDING));
+  program_factory.add_substitution("GPUCAST_FEEDBACK_BUFFER_BINDING_INPUT", std::to_string(gpucast::gl::bezierobject_renderer::GPUCAST_FEEDBACK_BUFFER_BINDING));
+  program_factory.add_substitution("GPUCAST_HOLE_FILLING_INPUT", std::to_string(renderer.enable_holefilling()));
+
+  program_factory.add_substitution("GPUCAST_ABUFFER_ATOMIC_BUFFER_BINDING_INPUT", std::to_string(gpucast::gl::bezierobject_renderer::GPUCAST_ABUFFER_ATOMIC_BUFFER_BINDING));
+  program_factory.add_substitution("GPUCAST_ABUFFER_FRAGMENT_LIST_BUFFER_BINDING_INPUT", std::to_string(gpucast::gl::bezierobject_renderer::GPUCAST_ABUFFER_FRAGMENT_LIST_BUFFER_BINDING));
+  program_factory.add_substitution("GPUCAST_ABUFFER_FRAGMENT_DATA_BUFFER_BINDING_INPUT", std::to_string(gpucast::gl::bezierobject_renderer::GPUCAST_ABUFFER_FRAGMENT_DATA_BUFFER_BINDING));
 
   _partition_program = program_factory.create_program({ 
     { gpucast::gl::vertex_stage, "./shader/partition.vert.glsl"}, 

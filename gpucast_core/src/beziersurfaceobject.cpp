@@ -702,11 +702,11 @@ void beziersurfaceobject::_serialize_adaptive_tesselation_data(surface_ptr const
   p.bbox_min = math::vec4f(surface->bbox().min[0],
     surface->bbox().min[1],
     surface->bbox().min[2],
-    (float) 0.0f);
+    (float)0);
   p.bbox_max = math::vec4f(surface->bbox().max[0],
     surface->bbox().max[1],
     surface->bbox().max[2],
-    (float) 0.0f);
+    (float)0);
   //p.distance = math::vec4f(std::fabs(edge_dist[0]), std::fabs(edge_dist[1]), std::fabs(edge_dist[2]), std::fabs(edge_dist[3]));
   
   p.edge_length_u = surface->max_edge_length_u();

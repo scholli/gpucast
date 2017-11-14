@@ -20,8 +20,7 @@
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
-#include <gpucast/gl/fragmentshader.hpp>
-#include <gpucast/gl/vertexshader.hpp>
+#include <gpucast/gl/shader.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/get_nearfar.hpp>
 #include <gpucast/gl/util/timer.hpp>

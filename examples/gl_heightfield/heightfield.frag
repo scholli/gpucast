@@ -8,6 +8,9 @@ uniform sampler2D bumptex;
 uniform vec4 lightpos;
 uniform int mode;
 
+uniform int texture_width;
+uniform int texture_height;
+
 uniform mat4 normalmatrix;
 
 in vec4 frag_texcoord;
@@ -43,14 +46,14 @@ void main(void)
   vec2 ray_tex = vec2(dx, dy);
   
   bool  hit       = false;
-  float texsize   = 256.0;
-  vec2  stepwidth = vec2(1.0/texsize, 1.0/texsize);
+  
+  vec2  stepwidth = vec2(1.0/texture_width, 1.0/texture_width);
   int   iters     = 0;
   float depth     = 1.0;
   vec2  current_texcoord = frag_texcoord.st;
   float scale     = 0.6;
 	
-  while (hit != true && iters < texsize)
+  while (hit != true && iters < texture_width)
   {
     // get height for current sample
     vec4 sample = texture2D(bumptex, current_texcoord);
@@ -71,7 +74,7 @@ void main(void)
     
     // do iteration
     current_texcoord += stepwidth * ray_tex;
-    depth -= ((1.0 - dot(FN, ray_world)) / texsize) / scale;
+    depth -= ((1.0 - dot(FN, ray_world)) / texture_width) / scale;
     ++iters;
   }
 	

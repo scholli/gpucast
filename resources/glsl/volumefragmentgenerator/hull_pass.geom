@@ -9,7 +9,6 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_EXT_geometry_shader4: enable
 
 /********************************************************************************
@@ -54,7 +53,7 @@ flat out uvec4  volume_info;   // surface_uid, volume_uid, contains_isosurface, 
 /********************************************************************************
 * functions
 ********************************************************************************/
-#include "./libgpucast/glsl/isosurface/target_function.frag"
+#include "resources/glsl/isosurface/target_function.frag"
 
 /********************************************************************************
 * pass only triangles that match minmax range of iso value

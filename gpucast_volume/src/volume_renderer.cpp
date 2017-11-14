@@ -24,14 +24,13 @@
 #include <boost/tokenizer.hpp>
 #include <boost/filesystem.hpp>
 
-#include <gpucast/gl/fragmentshader.hpp>
-#include <gpucast/gl/vertexshader.hpp>
-#include <gpucast/gl/geometryshader.hpp>
+#include <gpucast/gl/shader.hpp>
 
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/transferfunction.hpp>
 
 // header, project
+#include <gpucast/gl/util/resource_factory.hpp>
 #include <gpucast/volume/nurbsvolumeobject.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
 #include <gpucast/volume/uid.hpp>
@@ -463,7 +462,11 @@ namespace gpucast {
   {
     if ( !_base_program ) 
     {
-      init_program( _base_program, "/base/base.vert", "/base/base.frag" );
+      gpucast::gl::resource_factory program_factory;
+      _base_program = program_factory.create_program({
+        { gpucast::gl::vertex_stage,   "resources/glsl/base/base.vert" },
+        { gpucast::gl::fragment_stage, "resources/glsl/base/base.frag" }
+      });
     }
   }
 
@@ -577,82 +580,5 @@ namespace gpucast {
       return max_perf_device;
     }
 
-  /////////////////////////////////////////////////////////////////////////////
-  void
-    volume_renderer::init_program(std::shared_ptr<gpucast::gl::program>&  p,
-    std::string const&                 vertexshader_filename,
-    std::string const&                 fragmentshader_filename,
-    std::string const&                 geometryshader_filename)
-  {
-      try {
-        gpucast::gl::vertexshader     vs;
-        gpucast::gl::fragmentshader   fs;
-        gpucast::gl::geometryshader   gs;
-
-        p.reset(new gpucast::gl::program);
-
-        std::pair<bool, std::string> vspath = _path_to_file(vertexshader_filename);
-        std::pair<bool, std::string> fspath = _path_to_file(fragmentshader_filename);
-        std::pair<bool, std::string> gspath = _path_to_file(geometryshader_filename);
-
-        if (vspath.first)
-        {
-          vs.set_source(vspath.second.c_str());
-          vs.compile();
-          if (!vs.log().empty()) {
-            std::fstream ostr(boost::filesystem::basename(vertexshader_filename) + ".vert.log", std::ios::out);
-            ostr << vs.log() << std::endl;
-            ostr.close();
-          }
-          p->add(&vs);
-        }
-        else {
-          throw std::runtime_error("renderer::_init_shader (): Couldn't open file " + vertexshader_filename);
-        }
-
-        if (fspath.first)
-        {
-          fs.set_source(fspath.second.c_str());
-          fs.compile();
-
-          if (!fs.log().empty()) {
-            std::fstream ostr(boost::filesystem::basename(fragmentshader_filename) + ".frag.log", std::ios::out);
-            ostr << vs.log() << std::endl;
-            ostr.close();
-          }
-          p->add(&fs);
-        }
-        else {
-          throw std::runtime_error("renderer::_init_shader (): Couldn't open file " + fragmentshader_filename);
-        }
-
-        if (!gspath.first || geometryshader_filename.empty())
-        {
-          // do nothing 
-        }
-        else {
-          gs.set_source(gspath.second.c_str());
-          gs.compile();
-          if (!gs.log().empty()) {
-            std::fstream ostr(boost::filesystem::basename(geometryshader_filename) + ".geom.log", std::ios::out);
-            ostr << vs.log() << std::endl;
-            ostr.close();
-          }
-          p->add(&gs);
-        }
-
-        // link all shaders
-        p->link();
-
-        if (!p->log().empty())
-        {
-          // stream log to std output
-          std::cout << " program log : " << p->log() << std::endl;
-        }
-      }
-      catch (std::exception& e) {
-        std::cerr << "renderer::init_program(): failed to init program : " << vertexshader_filename << ", " << fragmentshader_filename << "( " << e.what() << ")\n";
-      }
-    }
 
 } // namespace gpucast

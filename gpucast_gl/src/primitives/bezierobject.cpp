@@ -78,6 +78,9 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject::draw()
     {
+      //gpucast::gl::timer cputimer;
+      //cputimer.start();
+
       switch (_rendermode)
       {
       case raycasting:
@@ -89,6 +92,13 @@ namespace gpucast {
         _draw_by_tesselation();
         break;
       }
+
+      glFinish();
+      glFlush();
+
+      //cputimer.stop();
+      //auto k = cputimer.result();
+      //std::cout << "Object draw time : " << k.as_seconds() * 1000.0 << std::endl;
     }
 
     /////////////////////////////////////////////////////////////////////////////

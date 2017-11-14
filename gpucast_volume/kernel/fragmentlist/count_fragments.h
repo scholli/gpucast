@@ -21,6 +21,11 @@ count_fragments ( uint4*   indexlist,
     ++fragments;
     next_entry  = entry.x;
     entry       = indexlist[next_entry]; 
+
+    // critical abort
+    if (fragments > 100) {
+      break;
+    }
   }
 
   return fragments;

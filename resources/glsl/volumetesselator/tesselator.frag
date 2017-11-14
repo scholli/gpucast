@@ -9,7 +9,6 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_NV_gpu_shader5 : enable
 
 /********************************************************************************
@@ -45,8 +44,8 @@ layout (location = 0) out vec4 out_color;
 /********************************************************************************
 * functions
 ********************************************************************************/
-#include "./libgpucast/glsl/isosurface/target_function.frag"
-#include "./libgpucast/glsl/base/faceforward.frag"
+#include "resources/glsl/isosurface/target_function.frag"
+#include "resources/glsl/base/faceforward.frag"
 
 
 ///////////////////////////////////////////////////////////////////////////////

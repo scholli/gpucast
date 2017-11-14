@@ -1,7 +1,7 @@
 #ifndef GPUCAST_CAST_CONFIG
 #define GPUCAST_CAST_CONFIG
 
-#define GPUCAST_COUNT_TEXEL_FETCHES 1
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"      
 
 #if GPUCAST_COUNT_TEXEL_FETCHES
 

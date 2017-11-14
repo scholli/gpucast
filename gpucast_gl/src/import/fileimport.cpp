@@ -98,7 +98,7 @@ namespace gpucast { namespace gl {
     } 
     catch (std::exception const& e)
     {
-      BOOST_LOG_TRIVIAL(error) << e.what() << std::endl;
+      BOOST_LOG_TRIVIAL(error) << "fileimport::load() error : " << e.what() << std::endl;
       return std::shared_ptr<node> (new group);
     }
   }

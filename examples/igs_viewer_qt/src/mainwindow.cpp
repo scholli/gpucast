@@ -129,10 +129,6 @@ mainwindow::update_interface ( )
   set_button_color(_current_diffuse, _current_material.diffuse);
   set_button_color(_current_specular, _current_material.specular);
 
-  std::cout << _current_material.ambient.redF() << _current_material.ambient.greenF() << _current_material.ambient.blueF() << std::endl;
-  std::cout << _current_material.diffuse.redF() << _current_material.diffuse.greenF() << _current_material.diffuse.blueF() << std::endl;
-  std::cout << _current_material.specular.redF() << _current_material.specular.greenF() << _current_material.specular.blueF() << std::endl;
-
   // update window
   QMainWindow::update();
 }
@@ -158,14 +154,27 @@ mainwindow::show_fps ( double cputime, double gputime, double postprocess )
 ///////////////////////////////////////////////////////////////////////////////
 void mainwindow::show_memory_usage(gpucast::beziersurfaceobject::memory_usage const& usage)
 {
-  auto surface_info = _glwindow->surfaces_total_and_average_degree();
-  auto curve_info = _glwindow->curves_total_and_average_degree();
+  auto surface_info = _glwindow->surfaces_by_degree();
+  auto curve_info = _glwindow->curves_by_degree();
+  unsigned surfaces_total = 0;
+  unsigned curves_total = 0;
+  for (auto i : surface_info) {
+    surfaces_total += i.second;
+  }
+  for (auto i : curve_info) {
+    curves_total += i.second;
+  }
 
   QString message = "";
-  message.append(QString("Surfaces                   : %1 \n").arg(surface_info.first));
-  message.append(QString("Trimming Curves            : %1 \n").arg(curve_info.first));
-  message.append(QString("Surfaces Average Degree    : %1 \n").arg(surface_info.second));
-  message.append(QString("Trimming Curves Avg. Deg   : %1 \n").arg(curve_info.second));
+  message.append(QString("Surfaces total             : %1\n").arg(surfaces_total));
+  for (auto i : surface_info) {
+    message.append(QString("  Surfaces by degree %1 : %2\n").arg(i.first).arg(i.second));
+  }
+  message.append(QString("Trim Curves total          : %1\n").arg(curves_total));
+  for (auto i : curve_info) {
+    message.append(QString(  "Trim Curves by degree %1 : %2\n").arg(i.first).arg(i.second));
+  }
+
   message.append(QString("Control point data         : %1 kb\n").arg(usage.surface_control_point_data / 1024));
   message.append(QString("Trim point data            : %1 kb\n").arg(usage.trimcurve_control_point_data / 1024));
 
@@ -430,6 +439,7 @@ mainwindow::_create_widgets( int argc, char** argv )
 mainwindow::_create_menus()
 {
   _shading_menu = new QMainWindow();
+  _info_menu = new QMainWindow();
   auto shading_layout = new QVBoxLayout;
   shading_layout->setAlignment(Qt::AlignTop);
 
@@ -527,7 +537,7 @@ mainwindow::_create_menus()
 
   _slider_trim_max_bisections = new SlidersGroup(Qt::Horizontal, tr("max. bisections"), 1, 32, _menu);
   _slider_trim_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. error tolerance"), 0.0001f, 0.1f, _menu);
-  _slider_tesselation_max_object_error = new FloatSlidersGroup(Qt::Horizontal, tr("max. object error"), 0.0001f, 1.0f, _menu);
+  _slider_tesselation_max_object_error = new FloatSlidersGroup(Qt::Horizontal, tr("max. object error"), 0.0001f, 10.0f, _menu);
   _slider_tesselation_max_pixel_error = new FloatSlidersGroup(Qt::Horizontal,tr("max. pixel error"), 0.5f, 64.0f, _menu);
   _slider_raycasting_max_iterations = new SlidersGroup(Qt::Horizontal,tr("max. newton iterations"),  1, 16, _menu);
   _slider_raycasting_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. raycasting error"), 0.0001f, 0.1f, _menu);
@@ -546,9 +556,6 @@ mainwindow::_create_menus()
   system_desc_layout->addWidget(_button_recompile);
   system_desc_layout->addWidget(_checkbox_vsync);
   system_desc_layout->addWidget(_checkbox_counting);
-  system_desc_layout->addWidget(_counting_result);
-  //system_desc_layout->addWidget(_fps_result);
-  system_desc_layout->addWidget(_memory_usage);
   system_desc->setLayout(system_desc_layout);
   layout->addWidget(system_desc);
 
@@ -608,6 +615,15 @@ mainwindow::_create_menus()
   _shading_menu->setCentralWidget(shading_body);
   _shading_menu->show();
 
+  auto info_body = new QWidget();
+  QVBoxLayout* info_layout = new QVBoxLayout;
+  info_layout->addWidget(_memory_usage);
+  info_layout->addWidget(_fps_result);
+  info_layout->addWidget(_counting_result);
+  info_body->setLayout(info_layout);
+  _info_menu->setCentralWidget(info_body);
+  _info_menu->show();
+
   _file_menu = _shading_menu->menuBar()->addMenu(tr("File"));
 }
 
@@ -616,8 +632,4 @@ mainwindow::_create_menus()
 /* private */ void 
 mainwindow::_create_statusbar()
 {}
-
-
-
-
 

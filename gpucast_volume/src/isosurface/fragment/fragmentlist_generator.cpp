@@ -17,6 +17,7 @@
 #include <GL/glew.h>
 
 #include <gpucast/gl/util/contextinfo.hpp>
+#include <gpucast/gl/util/resource_factory.hpp>
 
 //// header, project
 
@@ -95,6 +96,10 @@ namespace gpucast {
     // clear old frame
     _clear_images();
 
+    unsigned* buf = (unsigned*)_atomic_counter->map(GL_MAP_INVALIDATE_BUFFER_BIT);
+    *buf = 0;
+    _atomic_counter->unmap();
+
     glFinish();
 
     // backup state
@@ -136,7 +141,7 @@ namespace gpucast {
 
     if ( _enable_sorting )
     {
-      _sort_fragmentlists();
+      //_sort_fragmentlists();
     }
 
     // restore state
@@ -457,6 +462,8 @@ namespace gpucast {
     _indextexture.reset     ( new gpucast::gl::texture2d );
     _semaphoretexture.reset ( new gpucast::gl::texture2d );
     _fragmentcount.reset    ( new gpucast::gl::texture2d );
+    _atomic_counter.reset   ( new gpucast::gl::atomicbuffer );
+    _atomic_counter->bufferdata ( sizeof(unsigned), 0, GL_DYNAMIC_DRAW );
 
     _allocation_grid.reset  ( new gpucast::gl::texturebuffer( _allocation_grid_width * _allocation_grid_height * sizeof(unsigned), GL_DYNAMIC_COPY, GL_R32UI ) );
     _indexlist.reset        ( new gpucast::gl::texturebuffer( _maxsize_fragmentbuffer, GL_DYNAMIC_COPY, GL_RGBA32UI ) );
@@ -475,9 +482,29 @@ namespace gpucast {
   {
     volume_renderer::_init_shader();
 
-    if ( !_clean_pass) init_program ( _clean_pass,   "/volumefragmentgenerator/clean_pass.vert", "/volumefragmentgenerator/clean_pass.frag" );
-    if ( !_hull_pass)  init_program ( _hull_pass,    "/volumefragmentgenerator/hull_pass.vert",  "/volumefragmentgenerator/hull_pass.frag", "/volumefragmentgenerator/hull_pass.geom" );
-    if ( !_sort_pass)  init_program ( _sort_pass,    "/volumefragmentgenerator/sort_pass.vert",  "/volumefragmentgenerator/sort_pass.frag" );
+    gpucast::gl::resource_factory program_factory;
+
+    if (!_clean_pass) {
+      _clean_pass = program_factory.create_program({
+        { gpucast::gl::vertex_stage,   "resources/glsl/volumefragmentgenerator/clean_pass.vert" },
+        { gpucast::gl::fragment_stage, "resources/glsl/volumefragmentgenerator/clean_pass.frag" }
+      });
+    }
+      
+    if (!_hull_pass) {
+      _hull_pass = program_factory.create_program({
+        { gpucast::gl::vertex_stage,   "resources/glsl/volumefragmentgenerator/hull_pass.vert" },
+        { gpucast::gl::geometry_stage, "resources/glsl/volumefragmentgenerator/hull_pass.geom" },
+        { gpucast::gl::fragment_stage, "resources/glsl/volumefragmentgenerator/hull_pass.frag" }
+      });
+    }
+      
+    if (!_sort_pass) {
+      _sort_pass = program_factory.create_program({
+        { gpucast::gl::vertex_stage,   "resources/glsl/volumefragmentgenerator/sort_pass.vert" },
+        { gpucast::gl::fragment_stage, "resources/glsl/volumefragmentgenerator/sort_pass.frag" }
+      });
+    }
   } 
 
 
@@ -485,6 +512,8 @@ namespace gpucast {
   void                                
   fragmentlist_generator::_clear_images ()
   {
+    _indexlist->clear_subdata(GL_RGBA32UI, 0, _maxsize_fragmentbuffer, GL_RGBA, GL_UNSIGNED_INT, 0);
+      
     // clear index buffer
     _clean_pass->begin();
     {
@@ -522,6 +551,8 @@ namespace gpucast {
   void                                
   fragmentlist_generator::_generate_fragmentlists ()
   {
+    _atomic_counter->bind_buffer_base(ATOMIC_COUNTER_BINDING_POINT);
+
     _hull_pass->begin();
     {
       _hull_pass->set_uniform1f         ("nearplane",                            _nearplane );
@@ -596,14 +627,14 @@ namespace gpucast {
             //glDrawElements            ( GL_TRIANGLES, count, GL_UNSIGNED_INT, (GLvoid*)(base*sizeof(unsigned)) );
             glDrawRangeElements       ( GL_TRIANGLES, inner_base, inner_base+inner_count, inner_count, GL_UNSIGNED_INT, (GLvoid*)(inner_base*sizeof(unsigned)) );
           }
-
-          std::cout << "tris drawn : " << (inner_count + outer_count)/3 << " ";
         }
         _drawable->indexarray.unbind();
       }
       _drawable->vao.unbind();
     }
     _hull_pass->end();
+
+    _atomic_counter->unbind();
   }
 
 

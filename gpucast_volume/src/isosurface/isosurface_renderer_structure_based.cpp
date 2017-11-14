@@ -22,6 +22,7 @@
 #include <gpucast/gl/primitives/plane.hpp>
 #include <gpucast/gl/primitives/cube.hpp>
 #include <gpucast/gl/renderbuffer.hpp>
+#include <gpucast/gl/util/resource_factory.hpp>
 
 // header, project
 #include <gpucast/volume/beziervolumeobject.hpp>
@@ -171,7 +172,7 @@ namespace gpucast {
         invoke_external_passthrough ( _width, _height, _cuda_output_color, _cuda_output_depth, _cuda_external_color_depth );
       }
     } else {
-      // get octree dimensions
+      // get octree  
       float attribute_minimum = _global_attribute_bounds.minimum();
       float attribute_maximum = _global_attribute_bounds.maximum();
       float attribute_range   = attribute_maximum - attribute_minimum;
@@ -402,8 +403,18 @@ namespace gpucast {
   {
     volume_renderer::_init_shader();
 
-    init_program ( _raygeneration_program,  "/octree/raygeneration.vert",                         "/octree/raygeneration.frag" );
-    init_program ( _map_quad_program,       "/volumefraglistraycasting/fraglist_raycasting.vert", "/volumefraglistraycasting/draw_from_textures.frag" );
+    gpucast::gl::resource_factory program_factory;
+
+    _raygeneration_program = program_factory.create_program({
+      { gpucast::gl::vertex_stage,   "resources/glsl/octree/raygeneration.vert" },
+      { gpucast::gl::fragment_stage, "resources/glsl/octree/raygeneration.frag" }
+    });
+
+    _map_quad_program = program_factory.create_program({
+      { gpucast::gl::vertex_stage,   "resources/glsl/volumefraglistraycasting/fraglist_raycasting.vert" },
+      { gpucast::gl::fragment_stage, "resources/glsl/volumefraglistraycasting/draw_from_textures.frag" }
+    });
+
   }
 
 

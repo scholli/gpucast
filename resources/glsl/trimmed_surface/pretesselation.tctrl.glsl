@@ -24,7 +24,8 @@ uniform samplerBuffer gpucast_control_point_buffer;
 uniform samplerBuffer gpcuast_attribute_buffer;              
 uniform samplerBuffer gpucast_obb_buffer;
 
-#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"                                                                            
+#include "./resources/glsl/trimmed_surface/parametrization_uniforms.glsl"     
+#include "./resources/glsl/trimming/trimming_uniforms.glsl"                                                                       
 #include "./resources/glsl/common/camera_uniforms.glsl"       
 
 layout(std430, binding = GPUCAST_FEEDBACK_BUFFER_BINDING) buffer gpucast_feedback_buffer {
@@ -177,13 +178,43 @@ void main()
 
   // derive desired tesselation based on projected area estimate
   float total_tess_level = sqrt(area_pixels) / gpucast_tesselation_max_pixel_error;
+  
+#if GPUCAST_SCALE_TEXXELLATION_FACTOR_TO_TRIM_RATIO
+  int trim_index    = retrieve_trim_index(int(control_index[gl_InvocationID]));
+
+  vec4 trim_domain  = texelFetch(gpucast_kd_partition, trim_index+1);
+  vec4 nurbs_domain = texelFetch(gpucast_kd_partition, trim_index+2);
+
+  float trim_size   = (trim_domain[1] - trim_domain[0]) * (trim_domain[3] - trim_domain[2]);
+  float domain_size = (nurbs_domain[1] - nurbs_domain[0]) * (nurbs_domain[3] - nurbs_domain[2]);
+
+  total_tess_level *= clamp(trim_size / domain_size, 0.0, 1.0);
+#endif
+
+#if 1
+  // limit tessellation level by geometric size
+  vec4 obb_max = texelFetch(gpucast_obb_buffer, obb_index + 11 + 6);
+
+  vec3 obb_size = abs(obb_max.xyz) / 10.0;
+
+  // assuming 180 degree turn -> twice maximum outer surface
+  float approximate_area = max(max(obb_size.x * obb_size.y, obb_size.x * obb_size.z), obb_size.z * obb_size.y);
+  float tessellation_geometric_limit = (approximate_area * approximate_area) / (gpucast_max_geometric_error * gpucast_max_geometric_error);
+
+  total_tess_level = clamp(total_tess_level, 0.0, tessellation_geometric_limit);
+
+#endif
 
   // assume final tesselation performs 64 subdivisions
-  float pre_tess_level = total_tess_level / 64.0; 
+  float pre_tess_level = total_tess_level / GPUCAST_HARDWARE_TESSELATION_LIMIT; 
 
   // clamp remaining pretesselations to max
   pre_tess_level = clamp(pre_tess_level, 1.0, gpucast_max_pre_tesselation);
   float final_tess_level = total_tess_level / pre_tess_level;
+
+#if GPUCAST_SKIP_PRETESSELATION
+  pre_tess_level = 1.0;
+#endif
 
   // in low-quality shadow mode - don't bother with much tesselation
   if ( gpucast_shadow_mode == 2 ) {
@@ -196,7 +227,7 @@ void main()
     pre_tess_level = 1.0;
     final_tess_level = total_tess_level / 4.0;
   }
-  
+
   gl_TessLevelInner[0] = pre_tess_level;
   gl_TessLevelOuter[1] = pre_tess_level;
   gl_TessLevelOuter[3] = pre_tess_level;

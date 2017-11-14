@@ -165,6 +165,11 @@ void main()
                                   bool(diffusemapping),
                                   diffusemap);
 
+#if GPUCAST_TEXTURE_UV_COORDINATES
+  vec2 uv = (uv_nurbs - nurbs_domain.xy) / domain_size.xy;
+  out_color = vec4(uv, 0.0, 1.0); 
+#endif
+
     submit_fragment(gl_FragCoord.z,
                     gpucast_opacity,
                     gpucast_depth_buffer, 
@@ -279,7 +284,11 @@ void main()
     is_trimmed = false;
   }
 
+#if 0
   vec4 normal_world     = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
+#else
+  vec4 normal_world     = gpucast_model_matrix * vec4(geometry_normal, 0.0);
+#endif  
   vec4 viewer           = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
 
 #if 1
@@ -298,6 +307,13 @@ void main()
                                  bool(diffusemapping),
                                  diffusemap);
 
+#if GPUCAST_TEXTURE_UV_COORDINATES
+  vec2 uv = (uv_nurbs - nurbs_domain.xy) / domain_size.xy;
+  out_color = vec4(uv, 0.0, 1.0); 
+#endif
+
+  //vec4 normal_view     = gpucast_view_matrix * gpucast_model_matrix * vec4(geometry_normal, 0.0);
+  //out_color = vec4(normal_view.xyz, 1.0); 
 
   submit_fragment(gl_FragCoord.z,
                   coverage * gpucast_opacity,
@@ -434,6 +450,11 @@ void main()
                                  spheremap,
                                  bool(diffusemapping),
                                  diffusemap);
+
+#if GPUCAST_TEXTURE_UV_COORDINATES
+  vec2 uv = (uv_nurbs - nurbs_domain.xy) / domain_size.xy;
+  out_color = vec4(uv, 0.0, 1.0); 
+#endif
 
   submit_fragment(gl_FragDepth,
                 coverage * gpucast_opacity,

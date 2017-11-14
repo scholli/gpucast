@@ -10,7 +10,7 @@
 /////////////////////////////////////////////////////////////////////
 #define GPUCAST_ABUFFER_MAX_FRAGMENTS 300
 #define GPUCAST_BLENDING_TERMINATION_THRESHOLD 0.99
-#define GPUCAST_ABUFFER_ZFIGHTING_THRESHOLD 0.000001
+#define GPUCAST_ABUFFER_ZFIGHTING_THRESHOLD 0.00001
 
 // helper macros
 #define UINT24_MAX           0xFFFFFF

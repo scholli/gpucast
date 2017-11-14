@@ -24,8 +24,7 @@
 #include <cctype>
 #include <typeinfo>
 
-#include <gpucast/gl/fragmentshader.hpp>
-#include <gpucast/gl/vertexshader.hpp>
+#include <gpucast/gl/shader.hpp>
 #include <gpucast/gl/util/timer.hpp>
 #include <gpucast/gl/util/vsync.hpp>
 #include <gpucast/gl/util/init_glew.hpp>
@@ -35,6 +34,7 @@
 #include <gpucast/gl/test/dynamic_rotation.hpp>
 #include <gpucast/gl/test/dynamic_scaling.hpp> 
 #include <gpucast/gl/test/dynamic_translation.hpp>
+#include <gpucast/gl/util/resource_factory.hpp>
 
 #include <gpucast/math/parametric/point.hpp>
 #include <gpucast/math/parametric/beziercurve.hpp>
@@ -713,7 +713,21 @@ void
 glwidget::_init_shader()
 {
   gpucast::isosurface_renderer_interval_sampling tmp(_argc, _argv);
-  tmp.init_program ( _base_program,       "/base/base.vert", "/base/base.frag" );
-  tmp.init_program ( _fbo_program,        "/base/render_from_texture.vert", "/base/render_from_texture.frag" );
-  tmp.init_program ( _depth_copy_program, "/base/render_from_texture.vert", "/base/copy_depth.frag" );
+  gpucast::gl::resource_factory program_factory;
+
+  _base_program = program_factory.create_program({
+    { gpucast::gl::vertex_stage,   "resources/glsl/base/base.vert" },
+    { gpucast::gl::fragment_stage, "resources/glsl/base/base.frag" }
+  });
+
+  _fbo_program = program_factory.create_program({
+    { gpucast::gl::vertex_stage,   "resources/glsl/base/render_from_texture.vert" },
+    { gpucast::gl::fragment_stage, "resources/glsl/base/render_from_texture.frag" }
+  });
+    
+  _depth_copy_program = program_factory.create_program({
+    { gpucast::gl::vertex_stage,   "resources/glsl/base/render_from_texture.vert" },
+    { gpucast::gl::fragment_stage, "resources/glsl/base/copy_depth.frag" }
+  });
+
 }

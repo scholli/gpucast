@@ -48,7 +48,7 @@ class GPUCAST_GL bezierobject_renderer : public singleton<bezierobject_renderer>
 public: // enums, typedefs
   
   static const unsigned MAX_XFB_BUFFER_SIZE_IN_BYTES                 = 1024000000; // reserve GB transform feedback buffer
-  static const unsigned MAX_FEEDBACK_BUFFER_INDICES                  = 1024;
+  static const unsigned MAX_FEEDBACK_BUFFER_INDICES                  = 1024000;
   static const unsigned GPUCAST_HULLVERTEXMAP_SSBO_BINDING           = 1;
   static const unsigned GPUCAST_ATTRIBUTE_SSBO_BINDING               = 2;
   static const unsigned GPUCAST_ATOMIC_COUNTER_BINDING               = 3;
@@ -109,6 +109,9 @@ public: // methods
 
   int                           next_texunit();
 
+  void                          set_custom_transform_feedback_size(std::size_t bytes);
+  void                          set_abuffer_size(std::size_t max_fragments);
+
   std::shared_ptr<program> const& get_raycasting_program() const;
   std::shared_ptr<program> const& get_pretesselation_program() const;
   std::shared_ptr<program> const& get_tesselation_program() const;
@@ -129,9 +132,14 @@ public: // methods
   void           set_background(gpucast::math::vec3f const& color);
   void           add_search_path(std::string const& path);
 
+  void           spheremapping(bool);
   void           spheremap(std::string const& filepath);
-                 
+  void           diffusemapping(bool);
   void           diffusemap(std::string const& filepath);
+
+  void           view_setup(gpucast::math::matrix4f const& view, 
+                            gpucast::math::matrix4f const& model, 
+                            gpucast::math::matrix4f const& projection);
 
   void           current_viewmatrix(gpucast::math::matrix4f const& m);
   void           current_modelmatrix(gpucast::math::matrix4f const& m);
@@ -176,6 +184,10 @@ private : // methods
 
 private: // attributes
 
+  std::size_t                           _abuffer_max_fragment = GPUCAST_ABUFFER_MAX_FRAGMENTS;
+  std::size_t                           _xfb_budget_bytes     = MAX_XFB_BUFFER_SIZE_IN_BYTES;
+
+
   bool                                  _conservative_rasterization = false;
   bool                                  _enable_holefilling = false;
   bool                                  _enable_count = false;
@@ -200,6 +212,8 @@ private: // attributes
   std::shared_ptr<atomicbuffer>         _counter;
   std::shared_ptr<shaderstoragebuffer>  _feedbackbuffer;
 
+  bool                                  _enable_spheremap = false;
+  bool                                  _enable_diffusemap = false;
   std::shared_ptr<texture2d>            _spheremap;
   std::shared_ptr<texture2d>            _diffusemap;
                                         
@@ -239,3 +253,4 @@ private: // attributes
 } } // namespace gpucast / namespace gl
 
 #endif // GPUCAST_GL_BEZIEROBJECT_HPP
+

@@ -100,8 +100,8 @@ namespace gpucast {
       _linear_sampler->parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       _linear_sampler->parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-      const unsigned abuffer_list_size = GPUCAST_ABUFFER_MAX_FRAGMENTS * 2 * sizeof(unsigned);
-      const unsigned abuffer_data_size = GPUCAST_ABUFFER_MAX_FRAGMENTS * sizeof(gpucast::math::vec4u);
+      const unsigned abuffer_list_size = _abuffer_max_fragment * 2 * sizeof(unsigned);
+      const unsigned abuffer_data_size = _abuffer_max_fragment * sizeof(gpucast::math::vec4u);
 
       BOOST_LOG_TRIVIAL(info) << "bezierobject_renderer::bezierobject_renderer() : Allocating " << (abuffer_list_size + abuffer_data_size) / (1024 * 1024) << "MB for A-Buffer storage.";
 
@@ -116,10 +116,30 @@ namespace gpucast {
     bezierobject_renderer::~bezierobject_renderer()
     {}
 
-    /////////////////////////////////////////////////////////////////////////////
+    ////////////////////////// ///////////////////////////////////////////////////
     int bezierobject_renderer::next_texunit()
     {
       return _texunit++;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::set_custom_transform_feedback_size(std::size_t bytes) {
+      auto tfbuffer = singleton<transform_feedback_buffer>::instance();
+      tfbuffer->feedback.reset();
+      _init_transform_feedback();
+    }
+
+    void bezierobject_renderer::set_abuffer_size(std::size_t max_fragments)
+    {
+      _abuffer_max_fragment = max_fragments;
+
+      const unsigned abuffer_list_size = max_fragments * 2 * sizeof(unsigned);
+      const unsigned abuffer_data_size = max_fragments * sizeof(gpucast::math::vec4u);
+
+      BOOST_LOG_TRIVIAL(info) << "bezierobject_renderer::bezierobject_renderer() : Allocating " << abuffer_list_size + abuffer_data_size << "bytes for A-Buffer storage.";
+
+      _abuffer_fragment_list = std::make_shared<shaderstoragebuffer>(abuffer_list_size, GL_DYNAMIC_DRAW);
+      _abuffer_fragment_data = std::make_shared<shaderstoragebuffer>(abuffer_data_size, GL_DYNAMIC_DRAW);
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -138,6 +158,21 @@ namespace gpucast {
     std::shared_ptr<program> const& bezierobject_renderer::get_tesselation_program() const
     {
       return _tesselation_program;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::view_setup(gpucast::math::matrix4f const& view, gpucast::math::matrix4f const& model, gpucast::math::matrix4f const& projection)
+    {
+      _camera_ubo_data.gpucast_view_matrix = view;
+      _camera_ubo_data.gpucast_model_matrix = model;
+      _camera_ubo_data.gpucast_projection_matrix = projection;
+
+      _camera_ubo_data.gpucast_view_inverse_matrix = gpucast::math::inverse(_camera_ubo_data.gpucast_view_matrix);
+
+      _camera_ubo_data.gpucast_normal_matrix = _camera_ubo_data.gpucast_model_matrix.normalmatrix();
+
+      _camera_ubo_data.gpucast_model_view_matrix = _camera_ubo_data.gpucast_view_matrix * _camera_ubo_data.gpucast_model_matrix;
+      _camera_ubo_data.gpucast_model_view_projection_matrix = _camera_ubo_data.gpucast_projection_matrix  * _camera_ubo_data.gpucast_model_view_matrix;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -314,7 +349,6 @@ namespace gpucast {
       
       glEnable(GL_DEPTH_TEST);
       glClearDepth(1.0f);
-      glClearColor(_background[0], _background[1], _background[2], 1.0f);
 
       // resolve into FBO
       _fbo->bind();
@@ -358,10 +392,22 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::spheremapping(bool b)
+    {
+      _enable_spheremap = b;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::spheremap(std::string const& filepath)
     {
       _spheremap = std::make_shared<texture2d>();
       _spheremap->load(filepath);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::diffusemapping(bool b)
+    {
+      _enable_diffusemap = b;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -476,7 +522,7 @@ namespace gpucast {
         p->set_shaderstoragebuffer("gpucast_hullvertexmap_ssbo", *_hullvertexmap, GPUCAST_HULLVERTEXMAP_SSBO_BINDING);
       }
 
-      if (_enable_count)
+      if (_enable_count && p == _pretesselation_program)
       {
         _counter->bind_buffer_base(bezierobject_renderer::GPUCAST_ATOMIC_COUNTER_BINDING);
         p->set_shaderstoragebuffer("gpucast_feedback_buffer", *_feedbackbuffer, GPUCAST_FEEDBACK_BUFFER_BINDING);
@@ -505,7 +551,7 @@ namespace gpucast {
 
       if (_spheremap) {
         auto unit = next_texunit();
-        p->set_uniform1i("spheremapping", 1);
+        p->set_uniform1i("spheremapping", int(_enable_spheremap));
         p->set_texture2d("spheremap", *_spheremap, unit);
         _linear_sampler->bind(unit);
       } else {
@@ -513,7 +559,7 @@ namespace gpucast {
       }
       
       if (_diffusemap) {
-        p->set_uniform1i("diffusemapping", 1);
+        p->set_uniform1i("diffusemapping", int(_enable_diffusemap));
         p->set_texture2d("diffusemap", *_diffusemap, next_texunit());
       } else {
         p->set_uniform1i("diffusemapping", 0);
@@ -618,8 +664,10 @@ namespace gpucast {
       std::vector<unsigned> feedback(MAX_FEEDBACK_BUFFER_INDICES);
       _feedbackbuffer->bind();
       unsigned* mapped_mem_read = (unsigned*)_feedbackbuffer->map_range(0, sizeof(unsigned), GL_MAP_READ_BIT);
-      for (auto i = 0; i != MAX_FEEDBACK_BUFFER_INDICES; ++i) {
-        feedback[i] = mapped_mem_read[i];
+      if (mapped_mem_read) {
+        for (auto i = 0; i != MAX_FEEDBACK_BUFFER_INDICES; ++i) {
+          feedback[i] = mapped_mem_read[i];
+        }
       }
       _feedbackbuffer->unmap();
       _feedbackbuffer->unbind();
@@ -663,8 +711,8 @@ namespace gpucast {
 #endif
 
 #if 1
-      const unsigned abuffer_list_size = GPUCAST_ABUFFER_MAX_FRAGMENTS * 2 * sizeof(unsigned);
-      const unsigned abuffer_data_size = GPUCAST_ABUFFER_MAX_FRAGMENTS * sizeof(gpucast::math::vec4u);
+      const unsigned abuffer_list_size = _abuffer_max_fragment * 2 * sizeof(unsigned);
+      const unsigned abuffer_data_size = _abuffer_max_fragment * sizeof(gpucast::math::vec4u);
 
       _abuffer_fragment_list->clear_subdata(GL_RG32UI, 0u, abuffer_list_size, GL_RGB, GL_UNSIGNED_INT, 0);
       _abuffer_fragment_data->clear_subdata(GL_RG32UI, 0u, abuffer_data_size, GL_RGB, GL_UNSIGNED_INT, 0);
@@ -765,7 +813,7 @@ namespace gpucast {
     /////////////////////////////////////////////////////////////////////////////
     void bezierobject_renderer::_init_transform_feedback()
     {
-      BOOST_LOG_TRIVIAL(info) << "bezierobject_renderer::_init_transform_feedback(): Reserved memory = " << MAX_XFB_BUFFER_SIZE_IN_BYTES/(1024*1024) << " MBytes." << std::endl;
+      BOOST_LOG_TRIVIAL(info) << "bezierobject_renderer::_init_transform_feedback(): Reserved memory = " << _xfb_budget_bytes /(1024*1024) << " MBytes." << std::endl;
 
       auto tfbuffer = singleton<transform_feedback_buffer>::instance();
 
@@ -774,7 +822,7 @@ namespace gpucast {
         // initialize objects
         tfbuffer->feedback = std::make_shared<gpucast::gl::transform_feedback>();
         tfbuffer->vertex_array_object = std::make_shared<gpucast::gl::vertexarrayobject>();
-        tfbuffer->buffer = std::make_shared<gpucast::gl::arraybuffer>(MAX_XFB_BUFFER_SIZE_IN_BYTES, GL_STATIC_DRAW);
+        tfbuffer->buffer = std::make_shared<gpucast::gl::arraybuffer>(_xfb_budget_bytes, GL_DYNAMIC_DRAW);
 
         // bind array buffer as target to transform feedback
         tfbuffer->feedback->bind();

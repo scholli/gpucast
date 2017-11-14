@@ -453,7 +453,7 @@ namespace gpucast { namespace math {
   {
     if (a.overlap(b)) 
     {
-      std::array<std::vector<point_t::value_type>, point_t::coordinates> candidates;
+      std::array<std::vector<typename point_t::value_type>, point_t::coordinates> candidates;
 
       // gather split candidates
       for (unsigned i = 0; i != point_t::coordinates; ++i)

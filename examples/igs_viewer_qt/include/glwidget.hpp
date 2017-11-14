@@ -61,8 +61,8 @@ public :
   void                    add                           ( std::list<std::string> const& );
   void                    remove                        (std::list<std::string> const&);
 
-  std::pair<unsigned, double> surfaces_total_and_average_degree() const;
-  std::pair<unsigned, double> curves_total_and_average_degree() const;
+  std::map<unsigned, double> surfaces_by_degree() const;
+  std::map<unsigned, double> curves_by_degree() const;
   
 
 public Q_SLOTS : 

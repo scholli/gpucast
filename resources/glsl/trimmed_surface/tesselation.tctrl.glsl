@@ -95,7 +95,7 @@ void compute_screenspace_vertices(out vec4 umin_vmin,
                   surface_order_v,                                
                   vertex_tessCoord[gl_InvocationID], vertices[int(umax) + 2*int(vmax)]);
   
-  barrier();
+  //barrier();
 
   umin_vmin = vertices[0];
   umax_vmin = vertices[1];
@@ -150,7 +150,6 @@ void adjust_tesselation_by_edge_lengths(in float final_tesselation_estimate,
  #endif          
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -161,13 +160,12 @@ void main()
 
   // retrieve tesselation data
   float final_tess_level       = vertex_final_tesselation[gl_InvocationID].x;
-  vec2 final_tess_edges        = vertex_final_tesselation[gl_InvocationID].yz;
 
   barrier();
 
   uvec2 u_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[gl_InvocationID].y)); 
   uvec2 v_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[gl_InvocationID].z));
-  
+
   vec2 inner_tessel_level = vec2(final_tess_level);
   vec4 outer_tessel_level = vec4(final_tess_level);
 
@@ -175,19 +173,31 @@ void main()
   adjust_tesselation_by_edge_lengths(final_tess_level, inner_tessel_level, outer_tessel_level);
 
   // adjust by patch ratio 
-#if 1
+#if GPUCAST_USE_PATCH_RATIO_TO_SCALE_TESSELATION_FACTORS
+
   float ratio = retrieve_patch_ratio_uv(int(vertex_index[gl_InvocationID]));
 
-  inner_tessel_level[0] *= ratio;
-  inner_tessel_level[1] /= ratio;
+  inner_tessel_level[0] *= ratio;  // u
+  inner_tessel_level[1] /= ratio;  // v
 
-  outer_tessel_level[0] /= ratio;
-  outer_tessel_level[1] *= ratio;
-  outer_tessel_level[2] /= ratio;                                                                                                                
-  outer_tessel_level[3] *= ratio;
+  outer_tessel_level[0] /= ratio;  // v
+  outer_tessel_level[1] *= ratio;  // u
+  outer_tessel_level[2] /= ratio;  // v                                                                                                           
+  outer_tessel_level[3] *= ratio;  // u
 
   clamp(outer_tessel_level, 1, 64);
   clamp(inner_tessel_level, 1, 64);
+
+#endif
+
+// DEBUG ONLY -> SIMPLE TESSELLATION
+#if 0
+  inner_tessel_level[0] = 4.0;
+  inner_tessel_level[1] = 4.0;
+  outer_tessel_level[0] = 4.0;
+  outer_tessel_level[1] = 4.0;
+  outer_tessel_level[2] = 4.0;
+  outer_tessel_level[3] = 4.0;
 #endif
 
 #if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION

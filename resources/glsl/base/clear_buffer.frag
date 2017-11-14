@@ -9,7 +9,6 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_EXT_shader_image_load_store : enable
 

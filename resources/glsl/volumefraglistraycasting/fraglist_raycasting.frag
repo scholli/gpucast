@@ -9,7 +9,6 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_EXT_shader_image_load_store : enable
 
@@ -83,23 +82,23 @@ layout (location = 0) out vec4 out_color;
 /********************************************************************************
 * functions
 ********************************************************************************/
-#include "./libgpucast/glsl/base/compute_depth.frag"
-#include "./libgpucast/glsl/base/faceforward.frag"
-#include "./libgpucast/glsl/base/phong.frag"
-#include "./libgpucast/glsl/base/parameter_on_boundary.frag"
-#include "./libgpucast/glsl/base/conversion.frag"
+#include "resources/glsl/base/compute_depth.frag"
+#include "resources/glsl/base/faceforward.frag"
+#include "resources/glsl/base/phong.frag"
+#include "resources/glsl/base/parameter_on_boundary.frag"
+#include "resources/glsl/base/conversion.glsl"
 
-#include "./libgpucast/glsl/math/raygeneration.glsl.frag"
-#include "./libgpucast/glsl/math/adjoint.glsl.frag"
-#include "./libgpucast/glsl/math/euclidian_space.glsl.frag"
-#include "./libgpucast/glsl/math/horner_surface.glsl.frag"
-#include "./libgpucast/glsl/math/horner_surface_derivatives.glsl.frag"
-#include "./libgpucast/glsl/math/newton_surface.glsl.frag"
+#include "resources/glsl/math/raygeneration.glsl.frag"
+#include "resources/glsl/math/adjoint.glsl.frag"
+#include "resources/glsl/math/euclidian_space.glsl.frag"
+#include "resources/glsl/math/horner_surface.glsl.frag"
+#include "resources/glsl/math/horner_surface_derivatives.glsl.frag"
+#include "resources/glsl/math/newton_surface.glsl.frag"
 
-#include "./libgpucast/glsl/isosurface/clip_ray_at_nearplane.frag"
-#include "./libgpucast/glsl/isosurface/target_function.frag"
-#include "./libgpucast/glsl/isosurface/in_bezier_domain.frag"
-#include "./libgpucast/glsl/isosurface/point_ray_distance.frag"
+#include "resources/glsl/isosurface/clip_ray_at_nearplane.frag"
+#include "resources/glsl/isosurface/target_function.frag"
+#include "resources/glsl/isosurface/in_bezier_domain.frag"
+#include "resources/glsl/isosurface/point_ray_distance.frag"
 
 ///////////////////////////////////////////////////////////////////////////////
 int get_fragment_count ( in int start_index )

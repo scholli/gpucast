@@ -21,6 +21,7 @@
 #include <gpucast/gl/primitives/plane.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/texturebuffer.hpp>
+#include <gpucast/gl/atomicbuffer.hpp>
 
 // header, project
 #include <gpucast/volume/gpucast.hpp>
@@ -74,6 +75,8 @@ public : // enums, typedefs
                     parallipiped = 1, 
                     count = 2
                   };
+
+  static const unsigned ATOMIC_COUNTER_BINDING_POINT = 3;
 
 public : // c'tor / d'tor
 
@@ -209,6 +212,7 @@ protected : // attributes
   std::shared_ptr<gpucast::gl::texture2d>              _semaphoretexture;
   std::shared_ptr<gpucast::gl::texture2d>              _fragmentcount;
 
+  std::shared_ptr<gpucast::gl::atomicbuffer>           _atomic_counter;
   std::shared_ptr<gpucast::gl::texturebuffer>          _allocation_grid;
   std::shared_ptr<gpucast::gl::texturebuffer>          _indexlist;
   std::shared_ptr<gpucast::gl::texturebuffer>          _master_counter;
@@ -239,3 +243,4 @@ protected : // attributes
 } // namespace gpucast
 
 #endif // GPUCAST_fragmentlist_generator_HPP
+

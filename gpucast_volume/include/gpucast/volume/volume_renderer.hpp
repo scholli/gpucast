@@ -176,11 +176,6 @@ public : // methods
   bool                          detect_implicit_extremum   () const;
   virtual void                  detect_implicit_extremum   ( bool enable );
 
-  void                          init_program             ( std::shared_ptr<gpucast::gl::program>&  p,
-                                                           std::string const& vertexshader_filename,
-                                                           std::string const& fragmentshader_filename,
-                                                           std::string const& geometryshader_filename = "");
-                                                         
   visualization_properties const& visualization_props    () const;
   virtual void                    visualization_props    ( visualization_properties const& props );
 

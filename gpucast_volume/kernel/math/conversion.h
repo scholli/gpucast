@@ -1,6 +1,8 @@
 #ifndef LIBGPUCAST_CONVERSION_H
 #define LIBGPUCAST_CONVERSION_H
 
+#include <cuda_fp16.h>
+
 ///////////////////////////////////////////////////////////////////////////////
 __device__ inline
 int floatBitsToInt( float floatVal )
@@ -88,7 +90,7 @@ float2 unpack_uv ( unsigned int uv_as_int )
   unsigned short v_short;
 
   unpack2short ( uv_as_int, &u_short, &v_short );
-
+  
   float2 uv = float2_t ( __half2float(u_short), __half2float(v_short) );
   return uv;
 }

@@ -68,9 +68,26 @@ vec4 shade_phong_fresnel ( in vec4        p_world,
   /* spheremap for reflection */
   if ( spheremapping )
   {
+  #if 0
     float R_phi    = shininess + (1.0f - shininess) * pow(1.0 - dot(n_world, V), 5);
     vec4 color_reflective = R_phi * vec4(matspecular, opacity) * texture(spheremap, spherecoords_R);
     result += color_reflective;
+  #else
+    float R_phi    = shininess + (1.0f - shininess) * pow(1.0 - dot(n_world, V), 5);
+    vec4 cam_world = vec4(0.0, 0.0, 0.0, 1.0) * gpucast_view_inverse_matrix;
+    vec4 view_dir_world = cam_world - p_world;
+    view_dir_world.w =0.0;
+    view_dir_world = normalize(view_dir_world);
+    vec3 reflected_view_dir = reflect(view_dir_world.xyz, n_world);
+    
+    float tu = asin(reflected_view_dir.x)/ 3.14159265359  + 0.5;
+    float tv = asin(reflected_view_dir.y)/ 3.14159265359  + 0.5;
+
+  	vec2 texcoord = vec2(tu, tv);
+    vec4 color_reflective = R_phi * vec4(matspecular, opacity) * texture(spheremap, texcoord);
+    result += color_reflective;
+    
+  #endif
   } else {
     result += specular;
   }

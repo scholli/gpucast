@@ -21,6 +21,7 @@
 #include <gpucast/gl/program.hpp>
 #include <gpucast/gl/util/vsync.hpp>
 #include <gpucast/gl/shader.hpp>
+#include <gpucast/gl/util/timer.hpp>
 #include <gpucast/gl/primitives/cube.hpp>
 #include <gpucast/gl/util/trackball.hpp>
 #include <gpucast/math/matrix4x4.hpp>
@@ -111,6 +112,10 @@ public:
 
   void draw()
   {
+    if (_frames % 100 == 0) {
+      _cputimer.start();
+    }
+
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -135,6 +140,14 @@ public:
     _cube->draw();
 
     _program->end();
+
+    glFinish();
+
+    if (_frames % 100 == 0) {
+      _cputimer.stop();
+      std::cout << "FPS=" << 1.0 / _cputimer.result().as_seconds() << std::endl;
+    }
+    ++_frames;
   }
 
   void resize(int w, int h)
@@ -173,6 +186,9 @@ public :
 
   int _currentx;
   int _currenty;
+
+  unsigned _frames = 0;
+  gpucast::gl::timer _cputimer;
 
   std::shared_ptr<gpucast::gl::program>   _program;
   std::shared_ptr<gpucast::gl::cube>      _cube;

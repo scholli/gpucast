@@ -9,7 +9,6 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_NV_gpu_shader5 : enable
 
 in vec4 color;

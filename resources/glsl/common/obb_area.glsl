@@ -47,7 +47,7 @@ float calculate_obb_area(in mat4           modelview_projection,
                          in mat4           modelview_inverse,
                          in samplerBuffer  obb_data,
                          in int            obb_base_index,
-                         in bool           clamp_to_screen )
+                         in bool           clamp_to_screen)
 {
   vec4 obb_center;
   mat4 obb_orientation;
@@ -62,6 +62,16 @@ float calculate_obb_area(in mat4           modelview_projection,
 
   // identify in which quadrant the eye is located
   float sum = 0.0;
+
+  // view point is inside bounding radius
+#if 1
+  vec4 bbox_center = (bbox[0] + bbox[6]) / 2.0;
+  float bbox_radius = length((bbox_center - bbox[0]).xyz);
+  if (length(eye_obb_space.xyz - bbox_center.xyz) < bbox_radius) {
+    return 1.0;
+  }
+#endif
+
 
   int pos = (int(eye_obb_space.x < bbox[0].x))        //  1 = left   |  compute 6-bit
           + (int(eye_obb_space.x > bbox[6].x) << 1)   //  2 = right  |        code to
@@ -95,15 +105,18 @@ float calculate_obb_area(in mat4           modelview_projection,
   // determine culling
   bvec4 culling = bvec4(true);
   bool  near_clipped = true;
+  bool  far_clipped = true;
   for (int i = 0; i != n_visible_vertices; ++i) {
-    culling[0]   = culling[0] && (dst[i].x >= 1.0);
-    culling[1]   = culling[1] && (dst[i].x <= -1.0);
-    culling[2]   = culling[2] && (dst[i].y >= 1.0);
-    culling[3]   = culling[3] && (dst[i].y <= -1.0); 
-    near_clipped = near_clipped && (depths[i] < 0.0);
+    culling[0]   = culling[0] && (dst[i].x >= 1.0); // right
+    culling[1]   = culling[1] && (dst[i].x <= -1.0); // left 
+    culling[2]   = culling[2] && (dst[i].y >= 1.0); // upper 
+    culling[3]   = culling[3] && (dst[i].y <= -1.0); // lower
+
+    near_clipped = near_clipped && (depths[i] < -1.0); // near clip 
+    far_clipped  = far_clipped && (depths[i] > 1.0); // far clip 
   }
 
-  if (culling[0] || culling[1] || culling[2] || culling [3] || near_clipped) {
+  if (culling[0] || culling[1] || culling[2] || culling [3] || near_clipped || far_clipped) {
 #if GPUCAST_WRITE_DEBUG_COUNTER
     atomicCounterIncrement(culled_triangles_counter);
 #endif
@@ -116,7 +129,7 @@ float calculate_obb_area(in mat4           modelview_projection,
   }
 
   // return area
-  //return abs(sum) / 2.0; // original
+  // return abs(sum) / 2.0; // original
   return clamp(abs(sum) / 8.0, 0.0, 1.0); // this differs from original, but testet with extra application and should be correct
   //return abs(sum) / 8.0; // this differs from original, but testet with extra application and should be correct
 }

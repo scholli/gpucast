@@ -74,7 +74,7 @@ namespace gpucast {
       unsigned_bits_as_float(kdtree.pre_classification().width()),
       unsigned_bits_as_float(kdtree.pre_classification().height())); // base entry
     // second entry is size of partition
-    serialization.partition[partition_base_index + 1] = math::vec4f(umin, umax, vmin, vmax);
+    serialization.partition[partition_base_index + 1] = math::vec4f(umin, umax, vmin, vmax); // bounds of trim curves!!!
 
     // third entry is size of domain
     serialization.partition[partition_base_index + 2] = math::vec4f(input_domain->nurbsdomain().min[point_type::u],

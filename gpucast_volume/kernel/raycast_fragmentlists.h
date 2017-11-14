@@ -163,6 +163,11 @@ void raycast_fragmentlists ( int                      threadidx,
     }
     return;
   }
+  else {
+    float4 color = make_float4(float(nfragments)/8.0, 1.0 - float(nfragments) / 8.0, 0.0, 1.0);
+    surf2Dwrite(color, colortexture, coords.x*sizeof(float4), coords.y);
+    return;
+  }
 
   /********************************************************************************
   * init memory for matrices

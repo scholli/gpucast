@@ -132,7 +132,7 @@ void main(void)
   if (fill_available) 
   {
     color = fill_color;
-    depth = fill_depth;// - GPUCAST_HOLE_FILLING_THRESHOLD;
+    depth = fill_depth - GPUCAST_HOLE_FILLING_THRESHOLD;
   }
 
   //////////////////////////
@@ -141,7 +141,7 @@ void main(void)
   #if 1
   bool pixel_is_color_hole = examine_color_pinhole(fill_color, GPUCAST_HOLE_FILLING_THRESHOLD, 0.4);
   if (pixel_is_color_hole) {
-    color = fill_color;
+     color = fill_color;
   }
   #endif
 
@@ -149,8 +149,7 @@ void main(void)
 
 #if 1
   vec4 blended_color = vec4(0.0);
-  if (has_alpha )
-  { 
+  if (has_alpha) {
     float emissivity = 1.0;
     bool saturated = abuffer_blend(color, blended_color, emissivity, depth, 1.0);
     color = vec4(blended_color);

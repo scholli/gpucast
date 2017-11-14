@@ -9,7 +9,6 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_EXT_shader_image_load_store : enable
 
@@ -58,6 +57,7 @@ layout (location = 0) out vec4 color;
 ********************************************************************************/
 void main(void)
 {
+#if 0
   ivec2 coords          = ivec2(gl_FragCoord.xy);
 
   ivec2 resolution      = ivec2(width, height);
@@ -94,6 +94,15 @@ void main(void)
     imageStore ( master_counter, 0, uvec4(0U) );
     imageStore ( master_counter, 1, uvec4(0U) );
   }
+#endif
+
+#else
+  ivec2 coords          = ivec2(gl_FragCoord.xy);
+
+  imageStore ( index_image,     coords, uvec4(0U) );
+  imageStore ( semaphore_image, coords, uvec4(0U) );
+  imageStore ( fragmentcount,   coords, uvec4(0U) );
+  
 #endif
 
   discard; // do not write into framebuffer

@@ -10,6 +10,7 @@
 *
 ********************************************************************************/
 #include <cmath>
+#include <algorithm>
 
 namespace gpucast { namespace math {
 

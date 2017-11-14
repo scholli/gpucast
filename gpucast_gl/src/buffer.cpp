@@ -44,7 +44,6 @@ buffer::buffer( std::size_t bytes, GLenum usage )
 {
   glGenBuffers( 1, &_id );
   bufferdata  ( bytes, 0 );
-  BOOST_LOG_TRIVIAL(error) << _id << std::endl;
 }
 
 

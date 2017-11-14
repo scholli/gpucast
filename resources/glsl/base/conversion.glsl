@@ -7,7 +7,7 @@
 *
 *********************************************************************************
 *
-*  module     : conversion.frag
+*  module     : conversion.glsl
 *  project    : gpucast
 *  description:
 *

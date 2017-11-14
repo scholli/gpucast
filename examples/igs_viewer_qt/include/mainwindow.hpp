@@ -171,6 +171,7 @@ private: // attributes
   // menu and parameter manipulation
   QMainWindow*          _menu;
   QMainWindow*          _shading_menu;
+  QMainWindow*          _info_menu;
 
   QListWidget*          _object_list;
 };

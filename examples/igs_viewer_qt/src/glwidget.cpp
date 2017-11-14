@@ -132,35 +132,31 @@ void glwidget::remove(std::list<std::string> const& files)
 }
 
 ///////////////////////////////////////////////////////////////////////
-std::pair<unsigned, double> glwidget::surfaces_total_and_average_degree() const
+std::map<unsigned, double> glwidget::surfaces_by_degree() const
 {
-  unsigned surfaces_total = 0;
-  double surfaces_accumulated_degree = 0.0;
+  std::map<unsigned, double> result;
 
   for (auto const& o : _objects) {
     for (auto const& surface_pair : o.second->object().order_surfaces()) {
-      surfaces_total += surface_pair.second;
-      surfaces_accumulated_degree += surface_pair.second * surface_pair.first;
+      result[surface_pair.first] += surface_pair.second;
     }
   }
 
-  return std::make_pair(surfaces_total, surfaces_accumulated_degree / surfaces_total);
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////
-std::pair<unsigned, double> glwidget::curves_total_and_average_degree() const
+std::map<unsigned, double> glwidget::curves_by_degree() const
 {
-  unsigned curves_total = 0;
-  double curves_accumulated_degree = 0.0;
+  std::map<unsigned, double> result;
 
   for (auto const& o : _objects) {
     for (auto const& curve_pair : o.second->object().order_trimcurves()) {
-      curves_total += curve_pair.second;
-      curves_accumulated_degree += curve_pair.first * curve_pair.second;
+      result[curve_pair.first] += curve_pair.second;
     }
   }
 
-  return std::make_pair(curves_total, curves_accumulated_degree / curves_total);
+  return result;
 }
 
 
@@ -248,13 +244,17 @@ glwidget::paintGL()
     }
   }
 
+  //////////////////////////////////////////////
+  // measure timing
+  //////////////////////////////////////////////
   if (!_gputimer) _gputimer = std::make_shared<gpucast::gl::timer_query>();
   if (!_gputimer_postprocess) _gputimer_postprocess = std::make_shared<gpucast::gl::timer_query>();
   if (!_cputimer) _cputimer = std::make_shared<gpucast::gl::timer>();
 
-  bool query_this_frame = _gputimer->result_fetched();
-
+  gpucast::gl::timer total_frame_timer;
+  total_frame_timer.start();
   _cputimer->start();
+  bool query_this_frame = _gputimer->result_fetched();
 
   if (query_this_frame) {
     ++_frames;
@@ -302,15 +302,30 @@ glwidget::paintGL()
   renderer->current_viewmatrix(view);
   renderer->current_projectionmatrix(proj);
 
-  renderer->begin_draw();
+  _cputimer->stop();
+  if (_frames%100==0) std::cout << "Initialization time : " << _cputimer->result().as_seconds() * 1000.0 << std::endl;
 
+  _cputimer->start();
+  renderer->begin_draw();
+  glFinish();
+  _cputimer->stop();
+  if (_frames % 100 == 0) std::cout << "Predraw time : " << _cputimer->result().as_seconds() * 1000.0 << std::endl;
+
+  _cputimer->start();
   for (auto const& o : _objects) {
     o.second->draw();
   }
+  glFinish();
+  _cputimer->stop();
+  if (_frames % 100 == 0) std::cout << "Object draw time : " << _cputimer->result().as_seconds() * 1000.0 << std::endl;
 
+  _cputimer->start();
   renderer->end_draw();
+  glFinish();
+  _cputimer->stop();
+  if (_frames % 100 == 0) std::cout << "postdraw time : " << _cputimer->result().as_seconds() * 1000.0 << std::endl;
 
-
+  _cputimer->start();
   //////////////////////////////////////////////
   // readback debug info if enabled
   //////////////////////////////////////////////
@@ -324,12 +339,16 @@ glwidget::paintGL()
       mainwin->update_count(debug_info.triangles, debug_info.fragments, debug_info.culled_triangles, debug_info.trimmed_fragments, estimate_total);
     }
   }
-
+  glFinish();
+  _cputimer->stop();
+  if (_frames % 100 == 0) std::cout << "readback time : " << _cputimer->result().as_seconds() * 1000.0 << std::endl;
  
 
   //////////////////////////////////////////////
   // pass fps to GUI window
   //////////////////////////////////////////////
+  _cputimer->start();
+
   if (query_this_frame) {
     _gputimer->end();
   }
@@ -381,10 +400,9 @@ glwidget::paintGL()
     _postprocess += _gputimer_postprocess->time_in_ms(false);
   }
 
+  glFinish();
   _cputimer->stop();
-  gpucast::gl::time_duration cpu_elapsed = _cputimer->result();
-  double cputime_seconds = cpu_elapsed.fractional_seconds + cpu_elapsed.seconds; // discard minutes
-  _cputime += cputime_seconds;
+  if (_frames % 100 == 0) std::cout << "Frame blit/FXAA time : " << _cputimer->result().as_seconds() * 1000.0 << std::endl;
 
   // show message and reset counter if more than 1s passed
   if (_gputime > 500 || _frames > 10)
@@ -400,10 +418,14 @@ glwidget::paintGL()
     _gputime = 0.0;
   }
 
+  total_frame_timer.stop();
+  if (_frames % 100 == 0) std::cout << "Total frame time : " << total_frame_timer.result().as_seconds() * 1000.0 << std::endl;
 
-
-  // redraw
+  total_frame_timer.start();
   this->update();
+
+  total_frame_timer.stop();
+  if (_frames % 100 == 0) std::cout << "GUI update : " << total_frame_timer.result().as_seconds() * 1000.0 << std::endl;
 }
 
 

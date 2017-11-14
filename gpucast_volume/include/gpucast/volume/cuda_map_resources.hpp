@@ -32,7 +32,7 @@ inline void register_image ( struct cudaGraphicsResource **resource, GLuint imag
       std::cerr << " cudaGraphicsGLRegisterImage failed ... " << std::endl;
     }
   } else {
-    //std::cerr << " CudaRessource already registered ... " << std::endl;
+    std::cerr << " CudaRessource already registered ... " << std::endl;
   }
 }
 
@@ -46,7 +46,8 @@ inline void register_buffer( struct cudaGraphicsResource **resource, gpucast::gl
       std::cerr << " cudaGraphicsGLRegisterImage failed ... " << std::endl;
     }
   } else {
-    //std::cerr << " CudaRessource already registered or Buffer empty " << std::endl;
+    if (*resource) std::cerr << " Cannot register_buffer. CudaRessource already registered." << std::endl;
+    if (buffer.capacity() == 0) std::cerr << " Cannot register_buffer. Buffer empty." << std::endl;
   }
 }
 
@@ -149,10 +150,21 @@ bind_mapped_resource_to_surface ( struct cudaGraphicsResource* resource, surface
     std::cout << "Get Image Format failed. " << cudaGetErrorString(err) << std::endl;
   }
 
-  err = cudaBindSurfaceToArray(image, resource_array, &desc);
+  std::cout << image << std::endl;
+
+  //err = cudaBindSurfaceToArray(image, resource_array, &desc);
   if ( err != cudaSuccess )
   {
-    std::cout << "Bind Surface to Array failed. " << cudaGetErrorString(err) << std::endl;
+    switch (err)
+    {
+      case cudaErrorInvalidValue : 
+        std::cout << "Bind Surface to Array failed. cudaErrorInvalidValue. " << cudaGetErrorString(err) << std::endl;
+      break;
+      case cudaErrorInvalidSurface :
+        std::cout << "Bind Surface to Array failed. cudaErrorInvalidSurface. " << cudaGetErrorString(err) << std::endl;
+        break;
+    };
+    
   }
 }
 

@@ -40,9 +40,16 @@ public :
 public :
 
   application(int argc, char* argv[])
-    : _colortex (new gpucast::gl::texture2d("./data/map_diffuse.jpg")),
+    :
+#if 1
+      _colortex (new gpucast::gl::texture2d("./data/map_diffuse.jpg")),
       _bumptex  (new gpucast::gl::texture2d("./data/map_height.jpg")),
       _normaltex(new gpucast::gl::texture2d("./data/map_normal.jpg")),
+#else
+      _colortex (new gpucast::gl::texture2d("./ps_texture_16k.png")),
+      _bumptex  (new gpucast::gl::texture2d("./ps_height_16k.png")),
+      _normaltex(new gpucast::gl::texture2d("./map_normal.png")),
+#endif
       _sampler  (new gpucast::gl::sampler),
       _program  (new gpucast::gl::program),
       _cube     (new gpucast::gl::cube(0, -1, 2, 1)),
@@ -111,6 +118,8 @@ public :
     _program->set_texture2d("bumptex", *_bumptex.get(),     1 );
     _program->set_texture2d("normaltex", *_normaltex.get(), 2 );
     _program->set_uniform4f("lightpos", 0.0f, 0.0f, 0.0f, 1.0f );
+    _program->set_uniform1i("texture_height", _colortex->height());
+    _program->set_uniform1i("texture_width", _colortex->width());
 
     _program->set_uniform_matrix4fv("modelviewprojectionmatrix", 1, false, &mvp[0]);
     _program->set_uniform_matrix4fv("modelviewmatrix", 1, false, &mv[0]);

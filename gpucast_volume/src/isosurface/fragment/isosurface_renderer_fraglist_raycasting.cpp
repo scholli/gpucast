@@ -16,6 +16,7 @@
 // header, system
 #include <gpucast/gl/util/timer.hpp>
 #include <gpucast/gl/error.hpp>
+#include <gpucast/gl/util/resource_factory.hpp>
 
 //// header, project
 #include <gpucast/volume/cuda_map_resources.hpp>
@@ -129,6 +130,11 @@ namespace gpucast {
     unregister_resource ( &_cuda_headpointer );
     unregister_resource ( &_cuda_fragmentcount );
 
+    std::cout << "_cuda_colorbuffer: " << _cuda_colorbuffer << std::endl;
+    std::cout << "_cuda_depthbuffer: " << _cuda_depthbuffer << std::endl;
+    std::cout << "_cuda_headpointer: " << _cuda_headpointer << std::endl;
+    std::cout << "_cuda_fragmentcount : " << _cuda_fragmentcount << std::endl;
+
     _init_glresources ();
     _init_cuda        ();
 
@@ -137,6 +143,11 @@ namespace gpucast {
     
     // remap resources
     register_cuda_resources();
+
+    std::cout << "_cuda_colorbuffer: " << _cuda_colorbuffer << std::endl;
+    std::cout << "_cuda_depthbuffer: " << _cuda_depthbuffer << std::endl;
+    std::cout << "_cuda_headpointer: " << _cuda_headpointer << std::endl;
+    std::cout << "_cuda_fragmentcount : " << _cuda_fragmentcount << std::endl;
 
     std::cout << "end isosurface_renderer_fraglist_raycasting::resize" << std::endl;
   }
@@ -287,15 +298,22 @@ namespace gpucast {
     // init fragment generator shaders
     basetype::_init_shader();
 
+    gpucast::gl::resource_factory program_factory;
+
     // init glsl programs
     if ( !_quad_pass ) {
-      init_program  ( _quad_pass,               "/volumefraglistraycasting/fraglist_raycasting.vert", "/volumefraglistraycasting/draw_from_textures.frag" );
+      _quad_pass = program_factory.create_program({
+        { gpucast::gl::vertex_stage,   "resources/glsl/volumefraglistraycasting/fraglist_raycasting.vert" },
+        { gpucast::gl::fragment_stage, "resources/glsl/volumefraglistraycasting/draw_from_textures.frag" }
+      });
     }
 
     if ( !_intersect_surface_pass) {
       std::cout << "Initializing Shaders ..." << std::endl;
-
-      init_program  ( _intersect_surface_pass,  "/volumefraglistraycasting/fraglist_raycasting.vert", "/volumefraglistraycasting/fraglist_raycasting.frag" );
+      _intersect_surface_pass = program_factory.create_program({
+        { gpucast::gl::vertex_stage,   "resources/glsl/volumefraglistraycasting/fraglist_raycasting.vert" },
+        { gpucast::gl::fragment_stage, "resources/glsl/volumefraglistraycasting/fraglist_raycasting.frag" }
+      });
     }
 
     // cuda kernels are linked anyway

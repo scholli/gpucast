@@ -17,12 +17,49 @@ void main(void)
 {
   vec4 lookup = texture(prefilter_texture, uv_coord.xy);
 
-  //float intensity = pow(lookup.r,2);
   float intensity = lookup.r;
-  outcolor = vec4(intensity, intensity, intensity, 1.0);
-  //outcolor = vec4(uv_coord.xy, 0.0, 1.0);
 
-  if (uv_coord.x > 1)  outcolor = vec4(1.0, 0.0, 0.0, 1.0);
-  if (uv_coord.y > 1)  outcolor = vec4(1.0, 0.0, 0.0, 1.0);
+#if 0
+  vec4 vlow = vec4(1.0, 0.0, 1.0, 1.0);
+  vec4 low = vec4(0.0, 0.0, 1.0, 1.0);
+  vec4 medium = vec4(0.0, 1.0, 0.0, 1.0);
+  vec4 high = vec4(1.0, 0.0, 0.0, 1.0);
+  vec4 vhigh = vec4(1.0, 1.0, 0.0, 1.0);
+
+  float break1 = 0.2;
+  float break2 = 0.5;
+  float break3 = 0.8;
+
+  if (intensity <break1)
+    outcolor = mix(vlow, low, (intensity - 0.0)/ (break1 - 0.0) );
+
+  if (intensity >= break1 && intensity < break2)
+    outcolor = mix(low, medium, (intensity - break1) / (break2 - break1));
+
+  if (intensity >= break2 && intensity < break3)
+    outcolor = mix(medium, high, (intensity - break2) / (break3- break2));
+
+  if (intensity >= break3)
+    outcolor = mix(high, vhigh, (intensity - break3) / (1.0 - break3));
+#else 
+
+  vec4 vlow = vec4(0.0, 0.0, 1.0, 1.0);
+  vec4 low = vec4(0.0, 1.0, 0.0, 1.0);
+  vec4 medium = vec4(1.0, 1.0, 0.0, 1.0);
+  vec4 high = vec4(1.0, 0.0, 0.0, 1.0);
+
+  float break1 = 0.2;
+  float break2 = 0.8;
+
+  if (intensity <break1)
+    outcolor = mix(vlow, low, (intensity - 0.0) / (break1 - 0.0));
+
+  if (intensity >= break1 && intensity < break2)
+    outcolor = mix(low, medium, (intensity - break1) / (break2 - break1));
+
+  if (intensity >= break2)
+    outcolor = mix(medium, high, (intensity - break2) / (1.0 - break2));
+
+#endif
 }
   

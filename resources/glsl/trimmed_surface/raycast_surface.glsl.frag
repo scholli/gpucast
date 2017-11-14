@@ -121,6 +121,9 @@ void main(void)
    *********************************************************************/
   
   // transform in NURBS parameter coordinates
+#if GPUCAST_TEXTURE_UV_COORDINATES
+  vec2 bezier_uv = uv.xy;
+#endif
   uv[0] = uvrange[0] + uv[0] * (uvrange[1] - uvrange[0]);
   uv[1] = uvrange[2] + uv[1] * (uvrange[3] - uvrange[2]);
   int trim_iterations = 0;
@@ -229,6 +232,10 @@ void main(void)
   } else {
     out_color = vec4(frag_texcoord.xy, 0.0, 1.0);
   }
+
+#if GPUCAST_TEXTURE_UV_COORDINATES
+  out_color = vec4(bezier_uv, 0.0, 1.0);
+#endif
 
   submit_fragment(corrected_depth,
                   gpucast_opacity,

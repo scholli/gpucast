@@ -9,7 +9,6 @@
 *  description:
 *
 ********************************************************************************/
-#version 420 core
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_EXT_shader_image_load_store : enable
 #extension GL_EXT_bindable_uniform : enable
@@ -46,6 +45,8 @@ layout (size1x32) coherent uniform uimageBuffer  master_counter;
 layout (size4x32) coherent uniform imageBuffer   fraglist;
 layout (size4x32) coherent uniform uimageBuffer  indexlist;
 
+layout(binding = 3, offset = 0) uniform atomic_uint counter;
+
 /********************************************************************************
 * input
 ********************************************************************************/
@@ -63,8 +64,8 @@ layout (location = 0) out vec4 color;
 /********************************************************************************
 * functions
 ********************************************************************************/
-#include "./libgpucast/glsl/base/compute_depth.frag"
-#include "./libgpucast/glsl/base/conversion.frag"
+#include "resources/glsl/base/compute_depth.frag"
+#include "resources/glsl/base/conversion.glsl"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -100,6 +101,7 @@ void main(void)
   // increase fragment count for fragment
   //uint fragnumber = imageAtomicAdd ( fragmentcount, coords, 1U );
 
+#if 0
   while ( !loop_abort )
   {
     if ( semaphore_acquire ( coords ) )
@@ -165,6 +167,22 @@ void main(void)
 			semaphore_release ( coords );
     }
   }
+#else
+
+  uint current_headpointer = imageLoad(index_image, coords).x;
+
+  if (current_headpointer == 0) {
+    current_headpointer = atomicCounterIncrement(counter);
+  }
+
+  uint next_headpointer    = atomicCounterIncrement(counter);
+
+  imageStore ( index_image, coords, uvec4(next_headpointer) );
+
+  imageStore ( indexlist, int(next_headpointer), uvec4(current_headpointer, packHalf2x16(parameter.xy), surface_info.x, floatBitsToUint(fdepth) ) );
+#endif
+
+
   //memoryBarrier();
   discard;
 }

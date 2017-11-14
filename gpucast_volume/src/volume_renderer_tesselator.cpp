@@ -17,10 +17,10 @@
 #include <gpucast/gl/arraybuffer.hpp>
 #include <gpucast/gl/elementarraybuffer.hpp>
 #include <gpucast/gl/vertexarrayobject.hpp>
-#include <gpucast/gl/fragmentshader.hpp>
-#include <gpucast/gl/vertexshader.hpp>
+#include <gpucast/gl/shader.hpp>
 #include <gpucast/gl/error.hpp>
 #include <gpucast/gl/util/transferfunction.hpp>
+#include <gpucast/gl/util/resource_factory.hpp>
 
 // header, project
 #include <gpucast/volume/beziervolumeobject.hpp>
@@ -272,7 +272,14 @@ struct volume_renderer_tesselator::drawable_ressource_impl
   volume_renderer_tesselator::_init_shader ()
   {
     volume_renderer::_init_shader();
-    init_program ( _render_pass, "/volumetesselator/tesselator.vert", "/volumetesselator/tesselator.frag" );
+
+    gpucast::gl::resource_factory program_factory;
+
+    _render_pass = program_factory.create_program({
+      { gpucast::gl::vertex_stage,   "resources/glsl/volumetesselator/tesselator.vert" },
+      { gpucast::gl::fragment_stage, "resources/glsl/volumetesselator/tesselator.frag" }
+    });
+    
   }
 
 
