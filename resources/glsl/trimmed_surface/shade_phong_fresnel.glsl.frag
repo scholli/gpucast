@@ -52,18 +52,10 @@ vec4 shade_phong_fresnel ( in vec4        p_world,
   color_non_reflective += vec4(diffuse.xyz,  opacity);
   color_non_reflective += vec4(specular.xyz, opacity);
 
+  result += color_non_reflective;
+
   vec2 spherecoords_N = env_long_lat(N);
   vec2 spherecoords_R = env_long_lat(R);
-
-  if ( diffusemapping )
-  {
-    vec4 diffuse_in     = texture(diffusemap, spherecoords_N);
-    vec4 color_diffuse  = vec4(matdiffuse, opacity) * diffuse_in;
-    result              = color_diffuse;
-  } else {
-    result              = ambient;
-    result             += diffuse;
-  }
 
   /* spheremap for reflection */
   if ( spheremapping )
@@ -74,6 +66,7 @@ vec4 shade_phong_fresnel ( in vec4        p_world,
     result += color_reflective;
   #else
     float R_phi    = shininess + (1.0f - shininess) * pow(1.0 - dot(n_world, V), 5);
+
     vec4 cam_world = vec4(0.0, 0.0, 0.0, 1.0) * gpucast_view_inverse_matrix;
     vec4 view_dir_world = cam_world - p_world;
     view_dir_world.w =0.0;
@@ -84,7 +77,7 @@ vec4 shade_phong_fresnel ( in vec4        p_world,
     float tv = asin(reflected_view_dir.y)/ 3.14159265359  + 0.5;
 
   	vec2 texcoord = vec2(tu, tv);
-    vec4 color_reflective = R_phi * vec4(matspecular, opacity) * texture(spheremap, texcoord);
+    vec4 color_reflective = clamp(R_phi, 0.0, 1.0) * vec4(matspecular, opacity) * texture(spheremap, texcoord);
     result += color_reflective;
     
   #endif

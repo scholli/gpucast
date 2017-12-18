@@ -61,6 +61,8 @@ void main()
   vec3 c_view_space = (gpucast_model_view_matrix * tePosition[2]).xyz;
 
   vec3 normal_view_space = cross(normalize(b_view_space - a_view_space), normalize(c_view_space - b_view_space));
+  vec4 normal_model_space = gpucast_model_view_inverse_matrix * vec4(normal_view_space, 0.0);
+  //vec4 normal_model_space = vec4(cross(normalize(tePosition[1].xyz - tePosition[0].xyz), normalize(tePosition[2].xyz - tePosition[1].xyz)), 0.0);
 
   int vertex_id_first = 0;
   int vertex_id_last  = 3;
@@ -122,7 +124,13 @@ void main()
     // write built-in input for material
     ///////////////////////////////////////////////////////
     geometry_world_position   = (gpucast_model_matrix * tePosition[i]).xyz;
-    geometry_normal           = float(increment) * teNormal[i].xyz; // invert normal if necessary
+
+#if GPUCAST_USE_PER_TRIANGLE_NORMAL
+    geometry_normal = float(increment) * normal_model_space.xyz; 
+#else
+    geometry_normal = float(increment) * teNormal[i].xyz; // invert normal if necessary
+#endif
+
 #if GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION
     geometry_texcoords        = teTessCoord[i];
 #else

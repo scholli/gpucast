@@ -80,12 +80,21 @@ void main()
   vec2 uv;                                                             
                                                                                
   uv = clamp(mix(p1, p2, gl_TessCoord.y), 0.0, 1.0);                   
-                                                                               
+            
+#if GPUCAST_USE_PER_TRIANGLE_NORMAL
+  evaluateSurface(gpucast_control_point_buffer,
+    surface_index,
+    surface_order_u,
+    surface_order_v,
+    uv, p);
+#else 
   evaluateSurface(gpucast_control_point_buffer,                                   
                   surface_index,                                  
                   surface_order_u,                                
                   surface_order_v,                                
-                  uv, p, du, dv);                                      
+                  uv, p, du, dv);   
+#endif
+
                                                                                
   tePosition  = vec4(p.xyz, 1.0);                                                                     
   teIndex     = tcIndex[0];                                            

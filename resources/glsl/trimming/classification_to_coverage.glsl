@@ -54,7 +54,8 @@ classification_to_coverage(vec2 uv,
                            sampler2D prefilter)
 {
   // if pixel center too far away from curve, return center coverage
-  const float max_pixel_distance = length(duvdx + duvdy)/2.0;
+  const float max_pixel_distance = length(duvdx + duvdy)/4.0;
+
   if (max_pixel_distance < length(p_curve-uv)) {
     return float(uv_covered);
   }

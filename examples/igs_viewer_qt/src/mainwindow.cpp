@@ -60,16 +60,18 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
   _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling3x3, "Multisampling(3x3)"));
   _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling4x4, "Multisampling(4x4)"));
   _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::multisampling8x8, "Multisampling(8x8)"));
-  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::msaa, "MSAA"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::csaa4, "CSAA4"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::csaa8, "CSAA8"));
+  _antialiasing_modes.insert(std::make_pair(gpucast::gl::bezierobject::csaa16, "CSAA16"));
 
   /////////////////////////////////////
   // trimming modes
   /////////////////////////////////////
   _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::no_trimming, "No Trimming"));
-  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::curve_binary_partition, "Classic double binary partition"));
-  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_binary_partition, "Contour binary-partition"));
-  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_kd_partition, "Contour kd-partition"));
-  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_list, "Contour loop-list"));
+  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::curve_binary_partition, "Double Binary (SF2009)"));
+  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_binary_partition, "Curve Sets BSP (Undocumented)"));
+  _trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_kd_partition, "Kd-optimized Curve Sets (SF2017)"));
+  //_trimming_modes.insert(std::make_pair(gpucast::beziersurfaceobject::contour_list, "Contour loop-list"));
 
   /////////////////////////////////////
   // preclassification modes
@@ -100,6 +102,16 @@ mainwindow::mainwindow(int argc, char** argv, unsigned width, unsigned height)
 mainwindow::~mainwindow()
 {}
 
+///////////////////////////////////////////////////////////////////////////////
+void mainwindow::set_defaults()
+{
+  _combobox_antialiasing->setCurrentText("Prefiltered Edge Estimation");
+  _checkbox_fxaa->setChecked(true);
+  _checkbox_holefilling->setChecked(true);
+
+  _object_list->addItem("data/body.igs");
+  _glwindow->add({ "data/body.igs" });
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
@@ -114,7 +126,6 @@ mainwindow::close_window()
   hide();
   close();
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 void 
@@ -369,17 +380,15 @@ mainwindow::_create_actions()
   connect(_action_addfile,                  SIGNAL( triggered()), this,         SLOT( addfile() ));
 
   connect(_button_recompile,                SIGNAL( released() ), _glwindow,    SLOT( recompile() ));
-  connect(_button_set_diffusemap,           SIGNAL( released() ), _glwindow,    SLOT( load_diffusemap() ));
   connect(_button_set_spheremap,            SIGNAL( released() ), _glwindow,    SLOT( load_spheremap() ));
 
   connect(_addfile_button, SIGNAL(released()), this, SLOT(addfile()));
   connect(_deletefile_button, SIGNAL(released()), this, SLOT(deletefiles()));
 
   connect(_checkbox_spheremap,              SIGNAL( stateChanged(int) ), _glwindow,    SLOT( spheremapping(int) ));
-  connect(_checkbox_diffusemap,             SIGNAL( stateChanged(int) ), _glwindow,    SLOT( diffusemapping(int) ));
   connect(_checkbox_fxaa,                   SIGNAL( stateChanged(int) ), _glwindow,    SLOT( fxaa(int) ));
+  
   connect(_checkbox_vsync,                  SIGNAL( stateChanged(int) ), _glwindow,    SLOT( vsync(int) ));
-  connect(_checkbox_sao,                    SIGNAL( stateChanged(int) ), _glwindow,    SLOT( ambient_occlusion(int) ));
   connect(_checkbox_culling,                SIGNAL(stateChanged(int)),   _glwindow,    SLOT( backface_culling(int)));
   connect(_checkbox_counting,               SIGNAL(stateChanged(int)),   _glwindow,    SLOT( enable_counter(int)));
   connect(_checkbox_tritesselation,         SIGNAL(stateChanged(int)), _glwindow, SLOT(enable_triangular_tesselation(int)));
@@ -504,14 +513,11 @@ mainwindow::_create_menus()
   // init buttons
   _button_recompile      = new QPushButton("Recompile Shaders", _menu);
   _button_set_spheremap  = new QPushButton("Choose Spheremap", _menu);
-  _button_set_diffusemap = new QPushButton("Choose Diffusemap", _menu);
 
   // init check boxes
   _checkbox_spheremap    = new QCheckBox("Enable Spheremapping", _menu);
-  _checkbox_diffusemap   = new QCheckBox("Enable Diffusemapping", _menu);
   _checkbox_fxaa         = new QCheckBox("Enable screen-space FXAA", _menu);
   _checkbox_vsync        = new QCheckBox("Enable VSync", _menu);
-  _checkbox_sao          = new QCheckBox("Enable Ambient Occlusion", _menu);
   _checkbox_culling      = new QCheckBox("Backface Culling", _menu);
   _checkbox_counting     = new QCheckBox("Enable Triangle/Fragment Counter", _menu);
   _checkbox_tritesselation = new QCheckBox("Enable Triangular Tesselation", _menu);
@@ -535,12 +541,12 @@ mainwindow::_create_menus()
   _combobox_trimming->setCurrentText(tr(_trimming_modes[gpucast::beziersurfaceobject::contour_kd_partition].c_str()));
   _combobox_preclassification->setCurrentText(tr(_preclassification_modes[8].c_str()));
 
-  _slider_trim_max_bisections = new SlidersGroup(Qt::Horizontal, tr("max. bisections"), 1, 32, _menu);
-  _slider_trim_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. error tolerance"), 0.0001f, 0.1f, _menu);
-  _slider_tesselation_max_object_error = new FloatSlidersGroup(Qt::Horizontal, tr("max. object error"), 0.0001f, 10.0f, _menu);
-  _slider_tesselation_max_pixel_error = new FloatSlidersGroup(Qt::Horizontal,tr("max. pixel error"), 0.5f, 64.0f, _menu);
-  _slider_raycasting_max_iterations = new SlidersGroup(Qt::Horizontal,tr("max. newton iterations"),  1, 16, _menu);
-  _slider_raycasting_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("max. raycasting error"), 0.0001f, 0.1f, _menu);
+  _slider_trim_max_bisections = new SlidersGroup(Qt::Horizontal, tr("Max. bisections"), 1, 32, _menu);
+  _slider_trim_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("Max. error tolerance"), 0.0001f, 0.1f, _menu);
+  _slider_tesselation_max_object_error = new FloatSlidersGroup(Qt::Horizontal, tr("Tessellation: max. object error"), 0.0001f, 10.0f, _menu);
+  _slider_tesselation_max_pixel_error = new FloatSlidersGroup(Qt::Horizontal,tr("Tessellation: max. pixel error"), 0.5f, 64.0f, _menu);
+  _slider_raycasting_max_iterations = new SlidersGroup(Qt::Horizontal,tr("Raycasting: Newton iterations"),  1, 16, _menu);
+  _slider_raycasting_error_tolerance = new FloatSlidersGroup(Qt::Horizontal, tr("Raycasting: error tolerance"), 0.0001f, 0.1f, _menu);
 
   // apply default values
   _slider_trim_max_bisections->setValue(gpucast::gl::bezierobject::default_render_configuration::trimming_max_bisections);
@@ -562,7 +568,6 @@ mainwindow::_create_menus()
   QGroupBox* aa_desc = new QGroupBox("Anti-Aliasing", _menu);
   QVBoxLayout* aa_desc_layout = new QVBoxLayout;
   aa_desc_layout->addWidget(_checkbox_fxaa);
-  aa_desc_layout->addWidget(_checkbox_holefilling);
   aa_desc_layout->addWidget(new QLabel("Shader-based anti-aliasing"));
   aa_desc_layout->addWidget(_combobox_antialiasing);
   aa_desc->setLayout(aa_desc_layout);
@@ -581,6 +586,7 @@ mainwindow::_create_menus()
   QVBoxLayout* rendering_desc_layout = new QVBoxLayout;
   rendering_desc_layout->addWidget(_combobox_rendering);
   rendering_desc_layout->addWidget(_combobox_fillmode);
+  rendering_desc_layout->addWidget(_checkbox_holefilling);
   rendering_desc_layout->addWidget(_checkbox_culling);
   rendering_desc_layout->addWidget(_checkbox_tritesselation);
   rendering_desc_layout->addWidget(_checkbox_conservative_rasterization);
@@ -595,9 +601,6 @@ mainwindow::_create_menus()
   QVBoxLayout* shading_desc_layout = new QVBoxLayout;
   shading_desc_layout->addWidget(_checkbox_spheremap);
   shading_desc_layout->addWidget(_button_set_spheremap);
-  shading_desc_layout->addWidget(_checkbox_diffusemap);
-  shading_desc_layout->addWidget(_button_set_diffusemap);
-  shading_desc_layout->addWidget(_checkbox_sao);
   shading_desc->setLayout(shading_desc_layout);
   layout->addWidget(shading_desc);
 
@@ -607,12 +610,14 @@ mainwindow::_create_menus()
   param_body->setFixedWidth(800);
   param_body->setLayout(layout);
   _menu->setCentralWidget(param_body);
+  _menu->setWindowTitle("Rendering Parameters");
   _menu->show();
 
   auto shading_body = new QWidget();
   shading_body->setLayout(shading_layout);
   shading_body->setFixedWidth(800);
   _shading_menu->setCentralWidget(shading_body);
+  _shading_menu->setWindowTitle("File Management and Materials");
   _shading_menu->show();
 
   auto info_body = new QWidget();
@@ -622,6 +627,7 @@ mainwindow::_create_menus()
   info_layout->addWidget(_counting_result);
   info_body->setLayout(info_layout);
   _info_menu->setCentralWidget(info_body);
+  _info_menu->setWindowTitle("Rendering Information");
   _info_menu->show();
 
   _file_menu = _shading_menu->menuBar()->addMenu(tr("File"));

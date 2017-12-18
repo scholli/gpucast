@@ -62,9 +62,10 @@ class mainwindow : public QMainWindow
 
 public: // c'tor / d'tor
 
-  mainwindow            ( int argc, char** argv, unsigned width, unsigned height );
+  mainwindow            ( int argc, char** argv, unsigned width, unsigned height );  
   ~mainwindow           ();
 
+  void set_defaults();
   void update_interface               ();
   void show_fps                       ( double cputime, double gputime, double postprocess );
   void show_memory_usage              ( gpucast::beziersurfaceobject::memory_usage const& usage );
@@ -123,11 +124,10 @@ private: // attributes
   QAction*              _action_addfile;
 
   QCheckBox*            _checkbox_fxaa;
+  QCheckBox*            _checkbox_ssao;
   QCheckBox*            _checkbox_holefilling;
   QCheckBox*            _checkbox_conservative_rasterization;
   QCheckBox*            _checkbox_vsync;
-  QCheckBox*            _checkbox_sao;
-  QCheckBox*            _checkbox_diffusemap;
   QCheckBox*            _checkbox_spheremap;
   QCheckBox*            _checkbox_culling;
   QCheckBox*            _checkbox_counting;
@@ -162,7 +162,6 @@ private: // attributes
   FloatSlidersGroup*    _current_opacity;
 
   QPushButton*          _button_recompile;
-  QPushButton*          _button_set_diffusemap;
   QPushButton*          _button_set_spheremap;
 
   // menu and parameter manipulation

@@ -19,10 +19,13 @@
 * uniforms
 ********************************************************************************/
 uniform sampler2D colorbuffer;
+uniform sampler2D depthbuffer;
+uniform sampler2D ssao_texture;
 
 uniform int       width;
 uniform int       height;
 uniform int       fxaa_mode;
+uniform int       ssao_mode;
 
 //   1.00 - upper limit (softer)
 //   0.75 - default amount of filtering
@@ -60,6 +63,7 @@ layout (location=0) out vec4 out_color;
 #include "resources/glsl/common/fxaa_lotthes.glsl"
 #include "resources/glsl/common/fxaa_simple.glsl"
 
+
 /********************************************************************************
 * clean pass cleans index image texture
 ********************************************************************************/
@@ -85,5 +89,22 @@ void main(void)
     break;
   }
 
+  if (ssao_mode != 0) {
 
+    // blur ao
+    float ao = 0.0;
+    float sample_weight = 0.0;
+
+    const int kernelsize = 1;
+    for (int i = -kernelsize; i <= kernelsize; ++i ) {
+      for (int j = -kernelsize; j <= kernelsize; ++j ) {
+        float weight = 1.0 / clamp(sqrt(abs(i*j)), 1, 20);
+        float v = texture(ssao_texture, frag_texcoord.xy + vec2(i*inverse_resolution.x, j*inverse_resolution.y)).x;
+        sample_weight += weight;
+        ao += weight * v;
+      }
+    }
+    ao /= sample_weight;
+    out_color *= vec4(ao, ao, ao, 1.0);
+  }
 }

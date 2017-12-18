@@ -69,9 +69,7 @@ public Q_SLOTS :
 
   void                    recompile                     ();
   void                    load_spheremap                ( );
-  void                    load_diffusemap               ( );
   void                    spheremapping                 ( int ); 
-  void                    diffusemapping                ( int );
   void                    fxaa                          ( int ); 
   void                    vsync                         ( int );
   void                    ambient_occlusion             ( int );
@@ -159,10 +157,14 @@ private : // attributes
 
   std::shared_ptr<gpucast::gl::program>                                       _fxaa_program;
   std::shared_ptr<gpucast::gl::program>                                       _ssao_program;
-
+  
   std::shared_ptr<gpucast::gl::sampler>                                       _sample_linear;
   std::shared_ptr<gpucast::gl::texture2d>                                     _depthattachment;
   std::shared_ptr<gpucast::gl::texture2d>                                     _colorattachment;
+
+  std::shared_ptr<gpucast::gl::framebufferobject>                             _ssao_fbo;
+  std::shared_ptr<gpucast::gl::texture2d>                                     _ssao_attachment;
+  std::shared_ptr<gpucast::gl::renderbuffer>                                  _ssao_depth;
 
   float                                                                       _aoradius;
   unsigned                                                                    _aosamples;

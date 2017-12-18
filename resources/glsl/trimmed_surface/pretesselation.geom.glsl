@@ -51,7 +51,8 @@ uniform samplerBuffer gpucast_control_point_buffer;
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void main()                                                                          
-{            
+{          
+
 #if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION     
     for ( int i = 0; i != 3; ++i )                                                   
     {                                                                                                                                  

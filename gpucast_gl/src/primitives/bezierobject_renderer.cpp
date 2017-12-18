@@ -251,16 +251,41 @@ namespace gpucast {
         _gbuffer_colorattachment->teximage(0, GL_RGBA32F, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]), 0, GL_RGBA, GL_FLOAT, 0);
         _gbuffer_depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-        // resize multisample textures
-        const int nsamples = 8;
-        _colorattachment_multisample->set(8, GL_RGBA8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
-        _depthattachment_multisample->set(nsamples, GL_DEPTH32F_STENCIL8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
+        allocate_multisample_textures();
 
         // update FBOs 
         create_fbo();
-        create_multisample_fbo();
         create_gbuffer();
       }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::allocate_multisample_textures()
+    {
+      // resize multisample textures
+      switch (_antialiasing) {
+      case gpucast::gl::bezierobject::csaa4:
+      {
+        _colorattachment_multisample->set(4, GL_RGBA8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
+        _depthattachment_multisample->set(4, GL_DEPTH32F_STENCIL8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
+        break;
+      }
+      case gpucast::gl::bezierobject::csaa8:
+      {
+        _colorattachment_multisample->set(8, GL_RGBA8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
+        _depthattachment_multisample->set(8, GL_DEPTH32F_STENCIL8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
+        break;
+      }
+      case gpucast::gl::bezierobject::csaa16:
+      {
+        _colorattachment_multisample->set(16, GL_RGBA8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
+        _depthattachment_multisample->set(16, GL_DEPTH32F_STENCIL8, GLsizei(_camera_ubo_data.gpucast_resolution[0]), GLsizei(_camera_ubo_data.gpucast_resolution[1]));
+        break;
+      }
+
+      };
+
+      create_multisample_fbo();
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -302,7 +327,7 @@ namespace gpucast {
       // first clear abuffer
       _abuffer_clear();
 
-      if (_antialiasing == gpucast::gl::bezierobject::msaa) {
+      if (_antialiasing == gpucast::gl::bezierobject::csaa4 || _antialiasing == gpucast::gl::bezierobject::csaa8 || _antialiasing == gpucast::gl::bezierobject::csaa16) {
         _fbo_multisample->bind(); 
       } else {
         _gbuffer->bind();
@@ -323,7 +348,7 @@ namespace gpucast {
     void bezierobject_renderer::end_draw() 
     {
       // blit FBO if MSAA is enabled 
-      if (_antialiasing == gpucast::gl::bezierobject::msaa) 
+      if (_antialiasing == gpucast::gl::bezierobject::csaa4 || _antialiasing == gpucast::gl::bezierobject::csaa8 || _antialiasing == gpucast::gl::bezierobject::csaa16)
       {
         _fbo_multisample->unbind();
 
@@ -534,7 +559,7 @@ namespace gpucast {
       _camera_ubo->unmap();
       p->set_uniformbuffer("gpucast_matrix_uniforms", *_camera_ubo, GPUCAST_CAMERA_UBO_BINDINGPOINT);
 
-      if (_antialiasing != gpucast::gl::bezierobject::msaa) {
+      if (_antialiasing != gpucast::gl::bezierobject::csaa4 && _antialiasing != gpucast::gl::bezierobject::csaa8 && _antialiasing != gpucast::gl::bezierobject::csaa16) {
         auto depthtex_unit = next_texunit();
         p->set_texture2d("gpucast_depth_buffer", *_depthattachment, depthtex_unit);
         _nearest_sampler->bind(depthtex_unit);
@@ -577,6 +602,7 @@ namespace gpucast {
       _antialiasing = m;
       _program_factory.add_substitution("GPUCAST_ANTI_ALIASING_MODE_INPUT", std::to_string(_antialiasing));
       recompile();
+      allocate_multisample_textures();
     }
 
     /////////////////////////////////////////////////////////////////////////////

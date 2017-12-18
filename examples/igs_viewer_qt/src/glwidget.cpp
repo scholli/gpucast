@@ -174,7 +174,7 @@ glwidget::recompile ( )
   });
 
   _ssao_program = program_factory.create_program({
-    { gpucast::gl::vertex_stage,   "resources/glsl/base/render_from_texture_sao.vert" },
+    { gpucast::gl::vertex_stage,   "resources/glsl/base/render_from_texture.vert" },
     { gpucast::gl::fragment_stage, "resources/glsl/base/render_from_texture_sao.frag" }
   });
 }
@@ -217,6 +217,29 @@ glwidget::resizeGL(int width, int height)
   renderer->attach_custom_textures(_colorattachment, _depthattachment);
 
   _generate_random_texture();
+
+  // update SSAO texture
+  if (!_ssao_attachment) {
+    _ssao_attachment.reset(new gpucast::gl::texture2d);
+  }
+  _ssao_attachment->teximage(0, GL_RGB32F, GLsizei(_width), GLsizei(_height), 0, GL_RGB, GL_FLOAT, 0);
+
+  if (!_ssao_depth) {
+    _ssao_depth.reset(new gpucast::gl::renderbuffer);
+  }
+  _ssao_depth->set(GL_DEPTH32F_STENCIL8, GLsizei(_width), GLsizei(_height));
+
+  // create FBO
+  if (!_ssao_fbo) {
+    _ssao_fbo.reset(new gpucast::gl::framebufferobject);
+  }
+  
+  _ssao_fbo->attach_renderbuffer(*_ssao_depth, GL_DEPTH_STENCIL_ATTACHMENT);
+  _ssao_fbo->attach_texture(*_ssao_attachment, GL_COLOR_ATTACHMENT0_EXT);
+
+  _ssao_fbo->bind();
+  _ssao_fbo->status();
+  _ssao_fbo->unbind();
 }
 
 
@@ -239,6 +262,7 @@ glwidget::paintGL()
     mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
     if (mainwin) {
       mainwin->update_interface();
+      mainwin->set_defaults();
     } else {
       std::cerr << "glwidget::paintGL(): Could not cast to mainwindow widget" << std::endl;
     }
@@ -257,7 +281,6 @@ glwidget::paintGL()
   bool query_this_frame = _gputimer->result_fetched();
 
   if (query_this_frame) {
-    ++_frames;
     _gputimer->begin();
   }
 
@@ -354,12 +377,15 @@ glwidget::paintGL()
   }
 
   if (_gputimer->is_available()) {
+    ++_frames;
     _gputime += _gputimer->time_in_ms(false);
+
   }
 #if 1
 
 
-  gpucast::math::matrix4f mvp = proj * view * model;
+  gpucast::math::matrix4f mv = view * model;
+  gpucast::math::matrix4f mvp = proj * mv;
   gpucast::math::matrix4f mvpi = gpucast::math::inverse(mvp);
 
   query_this_frame = _gputimer_postprocess->result_fetched();
@@ -368,7 +394,41 @@ glwidget::paintGL()
     _gputimer_postprocess->begin();
   }
 
+  //////////////////////////////////////////////
+  // SSAO
+  //////////////////////////////////////////////
+
+  if (_ambient_occlusion) {
+    _ssao_fbo->bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    _ssao_program->begin();
+    { 
+      // setting uniforms
+      _ssao_program->set_texture2d("depthbuffer", *_depthattachment, 5);
+      _sample_linear->bind(5);
+
+      _ssao_program->set_texture2d("randomtexture", *_aorandom_texture, 6);
+      _sample_linear->bind(6);
+
+      _ssao_program->set_uniform_matrix4fv("modelviewprojectioninverse", 1, false, &mvpi[0]);
+      _fxaa_program->set_uniform_matrix4fv("modelview", 1, false, &mv[0]);
+
+      _ssao_program->set_uniform1i("width", GLsizei(_width));
+      _ssao_program->set_uniform1i("height", GLsizei(_height));
+
+      _ssao_program->set_uniform1f("nearclip", nearplane);
+      _ssao_program->set_uniform1f("farclip", farplane);
+
+      // draw
+      _quad->draw();
+    }
+    _ssao_program->end();
+
+    _ssao_fbo->unbind();
+  }
+  //////////////////////////////////////////////
   // render into drawbuffer
+  //////////////////////////////////////////////
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glClearColor(_background[0], _background[1], _background[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -379,11 +439,14 @@ glwidget::paintGL()
 
   _fxaa_program->set_texture2d("colorbuffer", *_colorattachment, 1);
   _fxaa_program->set_texture2d("depthbuffer", *_depthattachment, 2);
+  _fxaa_program->set_texture2d("ssao_texture", *_ssao_attachment, 3);
 
   _sample_linear->bind(1);
   _sample_linear->bind(2);
+  _sample_linear->bind(3);
 
   _fxaa_program->set_uniform1i("fxaa_mode", int(_fxaa));
+  _fxaa_program->set_uniform1i("ssao_mode", int(_ambient_occlusion));
   _fxaa_program->set_uniform1i("width", GLsizei(_width));
   _fxaa_program->set_uniform1i("height", GLsizei(_height));
   _quad->draw();
@@ -554,21 +617,10 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
 
 
   ///////////////////////////////////////////////////////////////////////
-  void                    
-  glwidget::load_diffusemap               ( )
+  void glwidget::spheremapping(int i)
   {
-    QString in_image_path = QFileDialog::getOpenFileName(this, tr("Open Image"), ".", tr("Image Files (*.jpg *.jpeg *.hdr *.bmp *.png *.tiff *.tif)"));
-    gpucast::gl::bezierobject_renderer::instance()->diffusemap(in_image_path.toStdString());
+    gpucast::gl::bezierobject_renderer::instance()->spheremapping(i);
   }
-
-
-  ///////////////////////////////////////////////////////////////////////
-  void glwidget::spheremapping(int)
-  {}
-
-  ///////////////////////////////////////////////////////////////////////
-  void glwidget::diffusemapping(int)
-  {}
 
   ///////////////////////////////////////////////////////////////////////
   void                      
@@ -668,6 +720,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
     for (auto o : _objects) {
       o.second->trimming(t);
     }
+    if (_initialized) recompile();
   }
 
   ///////////////////////////////////////////////////////////////////////
@@ -779,7 +832,8 @@ glwidget::_init()
 void                    
 glwidget::_generate_ao_sampletexture ()
 {
-  std::vector<float> offsets(4 * TOTAL_RANDOM_SAMPLES); // 8 x random_access, 4 elements per offset * samples
+  const int size = 512;
+  std::vector<float> offsets(2 * size * size); // 8 x random_access, 4 elements per offset * samples
   gpucast::gl::time_duration t0;
   gpucast::gl::timer t;
   t.time(t0);
@@ -787,7 +841,7 @@ glwidget::_generate_ao_sampletexture ()
   
   std::generate(offsets.begin(), offsets.end(), [&] () { return 2.0f * (std::rand()/float(RAND_MAX) - 0.5f); } );
   _aosample_offsets->update(offsets.begin(), offsets.end());
-  _aosample_offsets->format(GL_RGBA32F);
+  _aosample_offsets->format(GL_RG32F);
 }
 
 
@@ -795,9 +849,10 @@ glwidget::_generate_ao_sampletexture ()
 void
 glwidget::_generate_random_texture()
 {
-  std::vector<unsigned> random_values ( _width * _height );
+  const int size = 512;
+  std::vector<unsigned> random_values (size * size);
   std::generate (random_values.begin(), random_values.end(), [&] () { return std::rand()%(TOTAL_RANDOM_SAMPLES - _aosamples); } );
-  _aorandom_texture->teximage(0, GL_R32I, int(_width), int(_height), 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &random_values[0]);
+  _aorandom_texture->teximage(0, GL_R32I, int(size), int(size), 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &random_values[0]);
 }
 
 

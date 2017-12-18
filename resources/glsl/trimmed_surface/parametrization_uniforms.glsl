@@ -25,6 +25,9 @@
 #define GPUCAST_TEXTURE_UV_COORDINATES                       0
 #define GPUCAST_COUNT_TEXEL_FETCHES                          0
 #define GPUCAST_SCALE_TEXXELLATION_FACTOR_TO_TRIM_RATIO      0
+#define GPUCAST_USE_PER_TRIANGLE_NORMAL                      0
+
+float gpucast_texel_fetches;
 
 layout (std140) uniform gpucast_object_uniforms
 { 

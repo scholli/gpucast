@@ -127,6 +127,7 @@ public: // methods
 
   void           set_nearfar(float near, float far);
   void           set_resolution(unsigned width, unsigned height);
+  void           allocate_multisample_textures();
   gpucast::math::vec2i const& get_resolution() const;
 
   void           set_background(gpucast::math::vec3f const& color);

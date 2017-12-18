@@ -79,7 +79,9 @@ public:
     multisampling3x3            = 0x03,
     multisampling4x4            = 0x04,
     multisampling8x8            = 0x05,
-    msaa                        = 0x06
+    csaa4                       = 0x06,
+    csaa8                       = 0x07,
+    csaa16                      = 0x08,
   };
 
   enum fill_mode

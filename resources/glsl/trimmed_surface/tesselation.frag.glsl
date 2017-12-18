@@ -66,7 +66,6 @@ uniform int spheremapping;
 ///////////////////////////////////////////////////////////////////////////////
 void main()
 {
-
   // retrieve NURBS patch information
   vec4 nurbs_domain = retrieve_patch_domain(int(gIndex));
   int trim_index    = retrieve_trim_index(int(gIndex));
@@ -75,9 +74,9 @@ void main()
   vec2 domain_size  = vec2(nurbs_domain.z - nurbs_domain.x, nurbs_domain.w - nurbs_domain.y);
 
   /////////////////////////////////////////////////////////////////////////////
-  // no anti-aliasing or MSAA
+  // no anti-aliasing 
   /////////////////////////////////////////////////////////////////////////////
-#if GPUCAST_ANTI_ALIASING_MODE == 0 || GPUCAST_ANTI_ALIASING_MODE == 6
+#if GPUCAST_ANTI_ALIASING_MODE == 0 
 
 #if GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION
   vec2 uv_nurbs     = geometry_texcoords.xy * domain_size + nurbs_domain.xy;
@@ -143,6 +142,15 @@ void main()
     is_trimmed = trimming_loop_list(uv_nurbs, trim_index, gpucast_preclassification);
   }
 
+#if GPUCAST_WRITE_DEBUG_COUNTER
+  if (!is_trimmed) {
+    atomicCounterIncrement(fragment_counter);
+  }
+  else {
+    atomicCounterIncrement(trimmed_fragments_counter);
+  }
+#endif
+
   if ( is_trimmed )
   {
     discard;
@@ -177,6 +185,131 @@ void main()
                     out_color.rgb,  
                     normal_world.rgb, 
                     false);
+#endif
+
+    /////////////////////////////////////////////////////////////////////////////
+    // CSAA
+    /////////////////////////////////////////////////////////////////////////////
+#if GPUCAST_ANTI_ALIASING_MODE == 6 || GPUCAST_ANTI_ALIASING_MODE == 7 || GPUCAST_ANTI_ALIASING_MODE == 8
+
+#if GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION
+    vec2 uv = geometry_texcoords.xy;
+    vec2 uv_nurbs = uv * domain_size + nurbs_domain.xy;
+
+    vec2 duv_dx = dFdx(geometry_texcoords.xy);
+    vec2 duv_dy = dFdy(geometry_texcoords.xy);
+
+    duv_dx *= domain_size;
+    duv_dy *= domain_size;
+#else
+    vec2 uv_nurbs = geometry_texcoords.xy;
+    vec2 duv_dx = dFdx(geometry_texcoords.xy);
+    vec2 duv_dy = dFdy(geometry_texcoords.xy);
+#endif
+
+    uv_nurbs += (gl_SamplePosition.x - 0.5) * duv_dx;
+    uv_nurbs += (gl_SamplePosition.y - 0.5) * duv_dy;
+
+    bool is_trimmed = false;
+    int trim_type = retrieve_trim_type(int(gIndex));
+    int tmp = 0;
+
+    if (gpucast_trimming_method == 0)
+    {
+      is_trimmed = false;
+    }
+
+    if (gpucast_trimming_method == 1)
+    {
+      is_trimmed = trimming_double_binary(gpucast_bp_trimdata,
+        gpucast_bp_celldata,
+        gpucast_bp_curvelist,
+        gpucast_bp_curvedata,
+        gpucast_preclassification,
+        uv_nurbs,
+        trim_index,
+        trim_type,
+        tmp,
+        gpucast_trimming_error_tolerance,
+        gpucast_trimming_max_bisections);
+    }
+
+    if (gpucast_trimming_method == 2) {
+      is_trimmed = trimming_contour_double_binary(gpucast_cmb_partition,
+        gpucast_cmb_contourlist,
+        gpucast_cmb_curvelist,
+        gpucast_cmb_curvedata,
+        gpucast_cmb_pointdata,
+        gpucast_preclassification,
+        uv_nurbs,
+        trim_index,
+        trim_type,
+        tmp,
+        gpucast_trimming_error_tolerance,
+        gpucast_trimming_max_bisections);
+    }
+
+    if (gpucast_trimming_method == 3) {
+      is_trimmed = trimming_contour_kd(gpucast_kd_partition,
+        gpucast_kd_contourlist,
+        gpucast_kd_curvelist,
+        gpucast_kd_curvedata,
+        gpucast_kd_pointdata,
+        gpucast_preclassification,
+        uv_nurbs,
+        trim_index,
+        trim_type,
+        tmp,
+        gpucast_trimming_error_tolerance,
+        gpucast_trimming_max_bisections);
+    }
+
+    if (gpucast_trimming_method == 4) {
+      is_trimmed = trimming_loop_list(uv_nurbs, trim_index, gpucast_preclassification);
+    }
+
+    if (is_trimmed)
+    {
+      discard;
+    }
+
+#if GPUCAST_WRITE_DEBUG_COUNTER
+    if (!is_trimmed) {
+      atomicCounterIncrement(fragment_counter);
+    }
+    else {
+      atomicCounterIncrement(trimmed_fragments_counter);
+    }
+#endif
+
+    vec4 normal_world = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
+    vec4 viewer = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
+
+    out_color = shade_phong_fresnel(vec4(geometry_world_position, 1.0),
+      normalize(normal_world.xyz),
+      normalize(viewer.xyz),
+      vec4(0.0, 0.0, 10000.0, 1.0),
+      gpucast_material_ambient.rgb,
+      gpucast_material_diffuse.rgb,
+      gpucast_material_specular.rgb,
+      gpucast_shininess,
+      gpucast_opacity,
+      bool(spheremapping),
+      spheremap,
+      bool(diffusemapping),
+      diffusemap);
+
+#if GPUCAST_TEXTURE_UV_COORDINATES
+    vec2 uv = (uv_nurbs - nurbs_domain.xy) / domain_size.xy;
+    out_color = vec4(uv, 0.0, 1.0);
+#endif
+    submit_fragment(gl_FragCoord.z,
+      gpucast_opacity,
+      gpucast_depth_buffer,
+      1.0, 1.0, 1.0,  // pbr
+      out_color.rgb,
+      normal_world.rgb,
+      false);
 #endif
   
   /////////////////////////////////////////////////////////////////////////////
@@ -274,6 +407,15 @@ void main()
     coverage = trimming_loop_list_coverage(uv_nurbs, duv_dx, duv_dy, gpucast_preclassification, gpucast_prefilter, trim_index, GPUCAST_TRIMMING_COVERAGE_ESTIMATION);
   }
 
+#if GPUCAST_WRITE_DEBUG_COUNTER
+  if (coverage > 0.0) {
+    atomicCounterIncrement(fragment_counter);
+  }
+  else {
+    atomicCounterIncrement(trimmed_fragments_counter);
+  }
+#endif
+
   if ( coverage <= 0.0 )
   {
     discard;
@@ -334,20 +476,20 @@ void main()
   // multisampling coverage estimation
   /////////////////////////////////////////////////////////////////////////////
 #if GPUCAST_ANTI_ALIASING_MODE > 1 && GPUCAST_ANTI_ALIASING_MODE < 6
-  
-#if GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION
-  vec2 uv           = geometry_texcoords.xy;
-  vec2 uv_nurbs     = uv * domain_size + nurbs_domain.xy;
 
-  vec2 duv_dx       = dFdx(geometry_texcoords.xy);
-  vec2 duv_dy       = dFdy(geometry_texcoords.xy);
-  
-  duv_dx           *= domain_size;
-  duv_dy           *= domain_size;
-#else 
-  vec2 uv_nurbs     = geometry_texcoords.xy;
-  vec2 duv_dx       = dFdx(uv_nurbs);
-  vec2 duv_dy       = dFdy(uv_nurbs);
+#if GPUCAST_MAP_BEZIERCOORDS_TO_TESSELATION
+  vec2 uv = geometry_texcoords.xy;
+  vec2 uv_nurbs = uv * domain_size + nurbs_domain.xy;
+
+  vec2 duv_dx = dFdx(geometry_texcoords.xy);
+  vec2 duv_dy = dFdy(geometry_texcoords.xy);
+
+  duv_dx *= domain_size;
+  duv_dy *= domain_size;
+#else
+  vec2 uv_nurbs = geometry_texcoords.xy;
+  vec2 duv_dx = dFdx(geometry_texcoords.xy);
+  vec2 duv_dy = dFdy(geometry_texcoords.xy);
 #endif
 
   
@@ -428,54 +570,63 @@ void main()
 
   coverage = 1.0 - float(samples_trimmed) / float(samples_total * samples_total);
 
+#if GPUCAST_WRITE_DEBUG_COUNTER
+  if (coverage > 0.0) {
+    atomicCounterIncrement(fragment_counter);
+  }
+  else {
+    atomicCounterIncrement(trimmed_fragments_counter);
+  }
+#endif
+
   if ( coverage <= 0.0 )
   {
     discard;
   }
 
-  vec4 normal_world     = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
-  vec4 viewer           = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
-  
+#if 0
+  vec4 normal_world = gpucast_normal_matrix * vec4(geometry_normal, 0.0);
+#else
+  vec4 normal_world = gpucast_model_matrix * vec4(geometry_normal, 0.0);
+#endif  
+  vec4 viewer = gpucast_view_inverse_matrix * vec4(0.0, 0.0, 0.0, 1.0);
+
 #if 1
-  out_color = shade_phong_fresnel(vec4(geometry_world_position, 1.0), 
-                                 normalize(normal_world.xyz), 
-                                 normalize(viewer.xyz),
-                                 vec4(0.0, 0.0, 10000.0, 1.0),
-                                 gpucast_material_ambient.rgb, 
-                                 gpucast_material_diffuse.rgb, 
-                                 gpucast_material_specular.rgb,
-                                 gpucast_shininess,
-                                 gpucast_opacity,
-                                 bool(spheremapping),
-                                 spheremap,
-                                 bool(diffusemapping),
-                                 diffusemap);
+  vec3 uv_color = vec3((uv_nurbs - nurbs_domain.xy) / domain_size, 0.0);
+  out_color = shade_phong_fresnel(vec4(geometry_world_position, 1.0),
+    normalize(normal_world.xyz),
+    normalize(viewer.xyz),
+    vec4(0.0, 0.0, 10000.0, 1.0),
+    gpucast_material_ambient.rgb,
+    gpucast_material_diffuse.rgb,
+    gpucast_material_specular.rgb,
+    gpucast_shininess,
+    gpucast_opacity,
+    bool(spheremapping),
+    spheremap,
+    bool(diffusemapping),
+    diffusemap);
 
 #if GPUCAST_TEXTURE_UV_COORDINATES
   vec2 uv = (uv_nurbs - nurbs_domain.xy) / domain_size.xy;
-  out_color = vec4(uv, 0.0, 1.0); 
+  out_color = vec4(uv, 0.0, 1.0);
 #endif
 
-  submit_fragment(gl_FragDepth,
-                coverage * gpucast_opacity,
-                gpucast_depth_buffer, 
-                1.0, 1.0, 1.0,  // pbr
-                out_color.rgb,  
-                normal_world.rgb, 
-                false);
+  //vec4 normal_view     = gpucast_view_matrix * gpucast_model_matrix * vec4(geometry_normal, 0.0);
+  //out_color = vec4(normal_view.xyz, 1.0); 
+
+  submit_fragment(gl_FragCoord.z,
+    coverage * gpucast_opacity,
+    gpucast_depth_buffer,
+    1.0, 1.0, 1.0,  // pbr
+    out_color.rgb,
+    normal_world.rgb,
+    false);
+
 #else
   out_color = vec4(vec2(1.0) - uv, 0.0, coverage);
 #endif
 
 #endif
-
-#if GPUCAST_WRITE_DEBUG_COUNTER
-  if ( !is_trimmed ) {
-    atomicCounterIncrement(fragment_counter);
-  } else {
-    atomicCounterIncrement(trimmed_fragments_counter);
-  }
-#endif
-
 
 }

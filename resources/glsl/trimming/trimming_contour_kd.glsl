@@ -234,34 +234,34 @@ trimming_contour_kd ( in samplerBuffer  domainpartition,
 ////////////////////////////////////////////////////////////////////////////////
 float
 trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
-                             in samplerBuffer  contourlist,
-                             in samplerBuffer  curvelist,
-                             in samplerBuffer  curvedata,
-                             in samplerBuffer  pointdata,
-                             in usamplerBuffer preclassification,
-                             in sampler2D      prefilter,
-                             in vec2           uv,
-                             in vec2           duvdx,
-                             in vec2           duvdy,
-                             in int            id,
-                             in int            trim_outer,
-                             inout int         iters,
-                             in float          tolerance,
-                             in int            max_iterations,
-                             in int            coverage_estimation_type)
+  in samplerBuffer  contourlist,
+  in samplerBuffer  curvelist,
+  in samplerBuffer  curvedata,
+  in samplerBuffer  pointdata,
+  in usamplerBuffer preclassification,
+  in sampler2D      prefilter,
+  in vec2           uv,
+  in vec2           duvdx,
+  in vec2           duvdy,
+  in int            id,
+  in int            trim_outer,
+  inout int         iters,
+  in float          tolerance,
+  in int            max_iterations,
+  in int            coverage_estimation_type)
 {
   int total_intersections = 0;
   vec4 baseinfo = texelFetch(domainpartition, id);
   gpucast_count_texel_fetch();
 
-  vec4 domaininfo2  = texelFetch(domainpartition, id + 1);
+  vec4 domaininfo2 = texelFetch(domainpartition, id + 1);
   gpucast_count_texel_fetch();
 
   /////////////////////////////////////////////////////////////////////////////
   // 1. classification : no partition - not trimmed
   /////////////////////////////////////////////////////////////////////////////
   if (int(floatBitsToUint(baseinfo.x)) == 0) {
-  #if 1
+#if 1
     vec2 p_umin = vec2(domaininfo2[0], uv[1]);
     vec2 p_umax = vec2(domaininfo2[1], uv[1]);
     vec2 p_vmin = vec2(uv[0], domaininfo2[2]);
@@ -270,17 +270,17 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
     vec2 closest_point = p_umin;
     vec2 closest_bounds = vec2(domaininfo2[0], domaininfo2[2]);
 
-    if ( length(uv - p_umax) < length(uv - closest_point) ) {
+    if (length(uv - p_umax) < length(uv - closest_point)) {
       closest_point = p_umax;
       closest_bounds = vec2(domaininfo2[1], domaininfo2[2]);
     }
 
-    if ( length(uv - p_vmin) < length(uv - closest_point) ) {
+    if (length(uv - p_vmin) < length(uv - closest_point)) {
       closest_point = p_vmin;
       closest_bounds = vec2(domaininfo2[0], domaininfo2[2]);
     }
 
-    if ( length(uv - p_vmax) < length(uv - closest_point) ) {
+    if (length(uv - p_vmax) < length(uv - closest_point)) {
       closest_point = p_vmax;
       closest_bounds = vec2(domaininfo2[0], domaininfo2[3]);
     }
@@ -288,10 +288,10 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
     bool covered = false;
 
     return classification_to_coverage(uv, duvdx, duvdy, covered, closest_point, closest_bounds, prefilter);
-    #else
+#else
     return 1.0;
-    #endif
-  } 
+#endif
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // 2. trim against outer loop bounds
@@ -300,7 +300,7 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
   if (uv[0] > domaininfo2[1] || uv[0] < domaininfo2[0] ||
       uv[1] > domaininfo2[3] || uv[1] < domaininfo2[2])
   {
-  #if 0
+#if 0
     vec2 p_umin = vec2(domaininfo2[0], uv[1]);
     vec2 p_umax = vec2(domaininfo2[1], uv[1]);
     vec2 p_vmin = vec2(uv[0], domaininfo2[2]);
@@ -309,25 +309,29 @@ trimming_contour_kd_coverage(in samplerBuffer  domainpartition,
     vec2 closest_point = p_umin;
     vec2 closest_bounds = vec2(domaininfo2[0], domaininfo2[2]);
 
-    if ( length(uv - p_umax) < length(uv - closest_point) ) {
+    if (length(uv - p_umax) < length(uv - closest_point)) {
       closest_point = p_umax;
       closest_bounds = vec2(domaininfo2[1], domaininfo2[2]);
     }
 
-    if ( length(uv - p_vmin) < length(uv - closest_point) ) {
+    if (length(uv - p_vmin) < length(uv - closest_point)) {
       closest_point = p_vmin;
       closest_bounds = vec2(domaininfo2[0], domaininfo2[2]);
     }
 
-    if ( length(uv - p_vmax) < length(uv - closest_point) ) {
+    if (length(uv - p_vmax) < length(uv - closest_point)) {
       closest_point = p_vmax;
       closest_bounds = vec2(domaininfo2[1], domaininfo2[3]);
     }
 
     bool covered = !bool(trim_outer);
-    float distance_to_bounds = length(uv-closest_point);
-
-    return classification_to_coverage(uv, duvdx, duvdy, covered, closest_point, closest_bounds, prefilter);
+    float distance_to_bounds = length(uv - closest_point);
+    if (distance_to_bounds > min(length(duvdx.xy), length(duvdy.xy))) {
+      return float(covered);
+    }
+    else {
+      return classification_to_coverage(uv, duvdx, duvdy, covered, closest_point, closest_bounds, prefilter);
+    }
 
     #else
     return float(!bool(trim_outer));

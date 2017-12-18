@@ -58,7 +58,7 @@ double timer_query::time_in_ms(bool wait, double timeout_ms)
   GLuint64 result = 0;
   glGetQueryObjectui64v(id(), GL_QUERY_RESULT, &result);
   _result_fetched = true;
-  return double(result) / double(10e6);
+  return double(result) / double(1000000);
 }
 
 } } // namespace gpucast / namespace gl

@@ -727,9 +727,9 @@ namespace gpucast { namespace math {
       std::set<value_type> xtrema;
       extrema(point_type::u, xtrema);
       extrema(point_type::v, xtrema);
-      std::cout << " extrema : " << std::endl;
+      std::cout << "Warning: Found multiple extrema during verification. Probably numerical misinterpretation.\n";
       for (auto t : xtrema) {
-        std::cout << std::setprecision << t << std::endl;
+        std::cout << std::setprecision(10) << t << std::endl;
       }
     }
 #endif

@@ -38,7 +38,7 @@ namespace gpucast {
 
     const float bezierobject::default_render_configuration::raycasting_error_tolerance = 0.001f;
     const float bezierobject::default_render_configuration::trimming_error_tolerance = 0.001f;
-    const float bezierobject::default_render_configuration::tesselation_max_pixel_error = 4.0f;
+    const float bezierobject::default_render_configuration::tesselation_max_pixel_error = 1.5f;
     const float bezierobject::default_render_configuration::tesselation_max_pretesselation = 64.0f;
     const float bezierobject::default_render_configuration::tesselation_max_geometric_error = 0.0001f;
 

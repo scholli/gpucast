@@ -149,7 +149,7 @@ void main(void)
 
 #if 1
   vec4 blended_color = vec4(0.0);
-  if (has_alpha) {
+  if (has_alpha ) {
     float emissivity = 1.0;
     bool saturated = abuffer_blend(color, blended_color, emissivity, depth, 1.0);
     color = vec4(blended_color);
@@ -157,5 +157,7 @@ void main(void)
 #endif
 
   out_color = color;
-  //out_color = vec4(depth); 
+
+  // if depth is written, transparency blending does not work
+  //gl_FragDepth = depth;
 }
