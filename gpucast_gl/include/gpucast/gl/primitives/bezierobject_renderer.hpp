@@ -43,7 +43,7 @@ namespace gpucast {
   namespace gl {
 
 ///////////////////////////////////////////////////////////////////////////////
-class GPUCAST_GL bezierobject_renderer : public singleton<bezierobject_renderer>
+class GPUCAST_GL bezierobject_renderer
 {
 public: // enums, typedefs
   
@@ -159,6 +159,9 @@ public: // methods
   void           enable_conservative_rasterization(bool);
   bool           enable_conservative_rasterization() const;
 
+  void           enable_pretessellation(bool);
+  bool           enable_pretessellation() const;
+
   void           enable_holefilling(bool);
   bool           enable_holefilling() const;
 
@@ -190,6 +193,7 @@ private: // attributes
 
 
   bool                                  _conservative_rasterization = false;
+  bool                                  _pretessellation = true;
   bool                                  _enable_holefilling = false;
   bool                                  _enable_count = false;
   bool                                  _enable_triangular_tesselation = false;

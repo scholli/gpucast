@@ -59,12 +59,11 @@ public :
 
   void                    open                          ( std::list<std::string> const& );
   void                    add                           ( std::list<std::string> const& );
-  void                    remove                        (std::list<std::string> const&);
+  void                    remove                        ( std::list<std::string> const& );
 
   std::map<unsigned, double> surfaces_by_degree() const;
   std::map<unsigned, double> curves_by_degree() const;
-  
-
+ 
 public Q_SLOTS : 
 
   void                    recompile                     ();
@@ -75,6 +74,10 @@ public Q_SLOTS :
   void                    ambient_occlusion             ( int );
   void                    apply_material(std::string const& name, gpucast::math::vec4f const& ambient, gpucast::math::vec4f const& diffuse, gpucast::math::vec4f const& specular, float shininess, float opacity);
 
+  void                    spheremap(std::string const& filepath);
+  void                    diffusemap(std::string const& filepath);
+  
+  void                    enable_pretessellation(int);
   void                    conservative_rasterization    (int);
   void                    holefilling                   (int);
   void                    backface_culling              (int);
@@ -132,6 +135,7 @@ private : // attributes
   std::size_t                                                                 _height;
 
   std::unordered_map<std::string,std::shared_ptr<gpucast::gl::bezierobject>>  _objects;
+  std::shared_ptr<gpucast::gl::bezierobject_renderer>                         _renderer;
   std::shared_ptr<gpucast::gl::trackball>                                     _trackball;
 
   gpucast::math::axis_aligned_boundingbox<gpucast::math::point3d>             _boundingbox;

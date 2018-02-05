@@ -54,6 +54,7 @@ namespace gpucast {
       _program_factory.add_substitution("GPUCAST_ABUFFER_ATOMIC_BUFFER_BINDING_INPUT", std::to_string(GPUCAST_ABUFFER_ATOMIC_BUFFER_BINDING));
       _program_factory.add_substitution("GPUCAST_ABUFFER_FRAGMENT_LIST_BUFFER_BINDING_INPUT", std::to_string(GPUCAST_ABUFFER_FRAGMENT_LIST_BUFFER_BINDING));
       _program_factory.add_substitution("GPUCAST_ABUFFER_FRAGMENT_DATA_BUFFER_BINDING_INPUT", std::to_string(GPUCAST_ABUFFER_FRAGMENT_DATA_BUFFER_BINDING));
+      _program_factory.add_substitution("GPUCAST_ENABLE_PRETESSELLATION_INPUT", std::to_string(_pretessellation));
 
       // build programs
       recompile();
@@ -622,6 +623,20 @@ namespace gpucast {
     bool bezierobject_renderer::enable_conservative_rasterization() const
     {
       return _conservative_rasterization;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    void bezierobject_renderer::enable_pretessellation(bool b)
+    {
+      _pretessellation = b;
+      _program_factory.add_substitution("GPUCAST_ENABLE_PRETESSELLATION_INPUT", std::to_string(_pretessellation));
+      recompile();
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    bool bezierobject_renderer::enable_pretessellation() const
+    {
+      return _pretessellation;
     }
 
     /////////////////////////////////////////////////////////////////////////////

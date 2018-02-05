@@ -126,6 +126,7 @@ private: // attributes
   QCheckBox*            _checkbox_fxaa;
   QCheckBox*            _checkbox_ssao;
   QCheckBox*            _checkbox_holefilling;
+  QCheckBox*            _checkbox_pretessellation;
   QCheckBox*            _checkbox_conservative_rasterization;
   QCheckBox*            _checkbox_vsync;
   QCheckBox*            _checkbox_spheremap;

@@ -7,8 +7,11 @@
 ///////////////////////////////////////////////////////////////////////////////                                                            
 flat in vec3  vertex_position[];                        
 flat in uint  vertex_index[];                           
-flat in vec2  vertex_tessCoord[];  
-flat in vec3  vertex_final_tesselation[];           
+flat in vec2  vertex_tessCoord[]; 
+
+#if GPUCAST_ENABLE_PRETESSELLATION
+  flat in vec3  vertex_final_tesselation[];           
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // output
@@ -26,6 +29,7 @@ flat out vec2 tcTessCoord[];
 // uniforms
 ///////////////////////////////////////////////////////////////////////////////                                                             
 uniform samplerBuffer gpucast_control_point_buffer; 
+uniform samplerBuffer gpucast_obb_buffer;
            
 #include "./resources/glsl/common/camera_uniforms.glsl"   
             
@@ -43,6 +47,7 @@ uniform samplerBuffer gpucast_control_point_buffer;
 #include "./resources/glsl/trimmed_surface/inner_tess_level.glsl"
 #include "./resources/glsl/trimmed_surface/is_inside.glsl"
 #include "./resources/glsl/trimmed_surface/frustum_cull.glsl"
+#include "./resources/glsl/trimmed_surface/estimate_edge_length.glsl"
 
 ///////////////////////////////////////////////////////////////////////////////
 void adjust_tesselation_by_edge_length_estimate(in float final_tesselation_estimate,
@@ -150,6 +155,84 @@ void adjust_tesselation_by_edge_lengths(in float final_tesselation_estimate,
  #endif          
 
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+vec3 compute_tessellation_levels(in int index)
+{
+  // project oriented boudning box to screen and estimate area          
+  int obb_index = retrieve_obb_index(index);
+
+  float area = calculate_obb_area(gpucast_model_view_projection_matrix, gpucast_model_view_inverse_matrix, gpucast_obb_buffer, obb_index, false);
+  float area_pixels = float(gpucast_resolution.x * gpucast_resolution.y) * area;
+
+#if GPUCAST_WRITE_DEBUG_COUNTER
+  if (vertex_index[0] < GPUCAST_MAX_FEEDBACK_BUFFER_INDICES) {
+    atomicMax(gpucast_feedback[index], uint(area_pixels));
+  }
+#endif
+
+  // derive desired tesselation based on projected area estimate
+  float total_tess_level = sqrt(area_pixels) / gpucast_tesselation_max_pixel_error;
+
+#if GPUCAST_SCALE_TEXXELLATION_FACTOR_TO_TRIM_RATIO
+  int trim_index = retrieve_trim_index(index);
+
+  vec4 trim_domain = texelFetch(gpucast_kd_partition, trim_index + 1);
+  vec4 nurbs_domain = texelFetch(gpucast_kd_partition, trim_index + 2);
+
+  float trim_size = (trim_domain[1] - trim_domain[0]) * (trim_domain[3] - trim_domain[2]);
+  float domain_size = (nurbs_domain[1] - nurbs_domain[0]) * (nurbs_domain[3] - nurbs_domain[2]);
+
+  total_tess_level *= clamp(trim_size / domain_size, 0.0, 1.0);
+#endif
+
+#if 1
+  // limit tessellation level by geometric size
+  vec4 obb_max = texelFetch(gpucast_obb_buffer, obb_index + 11 + 6);
+
+  // model space: mm -> cm
+  vec3 obb_size = abs(obb_max.xyz) / 10.0;
+
+  // assuming 180 degree turn -> twice maximum outer surface
+  float approximate_area = max(max(obb_size.x * obb_size.y, obb_size.x * obb_size.z), obb_size.z * obb_size.y);
+  float tessellation_geometric_limit = (approximate_area * approximate_area) / (gpucast_max_geometric_error * gpucast_max_geometric_error);
+
+  total_tess_level = clamp(total_tess_level, 1.0, tessellation_geometric_limit);
+
+#endif
+
+  float final_tess_level = clamp(total_tess_level, 1.0, float(GPUCAST_HARDWARE_TESSELATION_LIMIT));
+#if 0
+  // in low-quality shadow mode - don't bother with much tesselation
+  if (gpucast_shadow_mode == 2) {
+    final_tess_level = final_tess_level / 16.0;
+  }
+
+  // in high-quality shadow mode - render @ 1/4 of the desired tesselation quality
+  if (gpucast_shadow_mode == 3) {
+    final_tess_level = final_tess_level / 4.0;
+  }
+#endif
+  // compute edge length to estimate tesselation
+  int surface_index = 0;
+  int surface_order_u = 0;
+  int surface_order_v = 0;
+  retrieve_patch_data(index, surface_index, surface_order_u, surface_order_v);
+
+  vec4 edge_lengths = estimate_edge_lengths_in_pixel(surface_index,
+    gpucast_control_point_buffer,
+    surface_order_u,
+    surface_order_v,
+    gpucast_model_view_projection_matrix,
+    vec2(gpucast_resolution));
+
+  return vec3(final_tess_level,
+    uintBitsToFloat(uint2ToUInt(uvec2(edge_lengths.xy))),
+    uintBitsToFloat(uint2ToUInt(uvec2(edge_lengths.zw))));
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -158,14 +241,23 @@ void main()
   tcIndex[gl_InvocationID]     = vertex_index[gl_InvocationID];                                                                                           
   tcTessCoord[gl_InvocationID] = vertex_tessCoord[gl_InvocationID];                                                                                       
 
+#if GPUCAST_ENABLE_PRETESSELLATION
+
   // retrieve tesselation data
   float final_tess_level       = vertex_final_tesselation[gl_InvocationID].x;
 
-  barrier();
-
-  uvec2 u_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[gl_InvocationID].y)); 
+  uvec2 u_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[gl_InvocationID].y));
   uvec2 v_edge_lengths = intToUInt2(floatBitsToUint(vertex_final_tesselation[gl_InvocationID].z));
 
+#else
+  
+  vec3 v_final_tesselation = compute_tessellation_levels(int(vertex_index[gl_InvocationID]));
+
+  float final_tess_level = v_final_tesselation.x;
+  uvec2 u_edge_lengths   = intToUInt2(floatBitsToUint(v_final_tesselation.y));
+  uvec2 v_edge_lengths   = intToUInt2(floatBitsToUint(v_final_tesselation.z));
+#endif
+  
   vec2 inner_tessel_level = vec2(final_tess_level);
   vec4 outer_tessel_level = vec4(final_tess_level);
 
@@ -175,7 +267,7 @@ void main()
   // adjust by patch ratio 
 #if GPUCAST_USE_PATCH_RATIO_TO_SCALE_TESSELATION_FACTORS
 
-  float ratio = retrieve_patch_ratio_uv(int(vertex_index[gl_InvocationID]));
+  float ratio =  retrieve_patch_ratio_uv(int(vertex_index[gl_InvocationID]));
 
   inner_tessel_level[0] *= ratio;  // u
   inner_tessel_level[1] /= ratio;  // v
@@ -185,20 +277,21 @@ void main()
   outer_tessel_level[2] /= ratio;  // v                                                                                                           
   outer_tessel_level[3] *= ratio;  // u
 
-  clamp(outer_tessel_level, 1, 64);
-  clamp(inner_tessel_level, 1, 64);
+  clamp(outer_tessel_level, 1, float(GPUCAST_HARDWARE_TESSELATION_LIMIT));
+  clamp(inner_tessel_level, 1, float(GPUCAST_HARDWARE_TESSELATION_LIMIT));
 
 #endif
 
 // DEBUG ONLY -> SIMPLE TESSELLATION
 #if 0
-  inner_tessel_level[0] = 4.0;
-  inner_tessel_level[1] = 4.0;
-  outer_tessel_level[0] = 4.0;
-  outer_tessel_level[1] = 4.0;
-  outer_tessel_level[2] = 4.0;
-  outer_tessel_level[3] = 4.0;
+  inner_tessel_level[0] = clamp(final_tess_level, 1.0, 64.0);
+  inner_tessel_level[1] = clamp(final_tess_level, 1.0, 64.0);
+  outer_tessel_level[0] = clamp(final_tess_level, 1.0, 64.0);
+  outer_tessel_level[1] = clamp(final_tess_level, 1.0, 64.0);
+  outer_tessel_level[2] = clamp(final_tess_level, 1.0, 64.0);
+  outer_tessel_level[3] = clamp(final_tess_level, 1.0, 64.0);
 #endif
+  
 
 #if GPUCAST_SECOND_PASS_TRIANGLE_TESSELATION
   gl_TessLevelInner[0] = inner_tessel_level[0];

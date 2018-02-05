@@ -34,6 +34,7 @@
 
 namespace gpucast { namespace gl {
 
+  class bezierobject_renderer;
   class arraybuffer;
 
 class GPUCAST_GL bezierobject 
@@ -107,7 +108,7 @@ public:
   void                init(unsigned subdiv_u, unsigned subdiv_v, unsigned preclass_resolution);
 
   // draw methods
-  void                draw();
+  void                draw(bezierobject_renderer& renderer);
 
   // configuration
   void                raycasting_max_iterations ( unsigned n );
@@ -151,10 +152,10 @@ public:
 
 private :
 
-  void _draw_by_raycasting();
-  void _draw_by_tesselation();
+  void _draw_by_raycasting(bezierobject_renderer& renderer);
+  void _draw_by_tesselation(bezierobject_renderer& renderer);
 
-  void _apply_uniforms(program const& p, render_mode mode);
+  void _apply_uniforms(bezierobject_renderer& renderer, program const& p, render_mode mode);
 
   void _upload();
   void _upload_trimming_buffers();

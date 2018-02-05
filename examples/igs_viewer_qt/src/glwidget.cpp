@@ -54,17 +54,17 @@
 
 
 ///////////////////////////////////////////////////////////////////////
-glwidget::glwidget( int argc, char** argv, QGLFormat const& context_format, QWidget *parent)
- :  QGLWidget         ( context_format, parent),
-    _argc             ( argc ),
-    _argv             ( argv ),
-    _initialized      ( false ),
-    _frames           ( 0 ),
-    _background       ( 0.2f, 0.2f, 0.2f ),
-    _fxaa             ( false ),
-    _ambient_occlusion( false ),
-    _aoradius         ( 30.0f ),
-    _aosamples        ( 500 )
+glwidget::glwidget(int argc, char** argv, QGLFormat const& context_format, QWidget *parent)
+  : QGLWidget(context_format, parent),
+  _argc(argc),
+  _argv(argv),
+  _initialized(false),
+  _frames(0),
+  _background(0.2f, 0.2f, 0.2f),
+  _fxaa(false),
+  _ambient_occlusion(false),
+  _aoradius(30.0f),
+  _aosamples(500)
 {
   setFocusPolicy(Qt::StrongFocus);
 }
@@ -164,7 +164,7 @@ std::map<unsigned, double> glwidget::curves_by_degree() const
 void                
 glwidget::recompile ( )
 {
-  gpucast::gl::bezierobject_renderer::instance()->recompile();
+  _renderer->recompile();
 
   gpucast::gl::resource_factory program_factory;
 
@@ -202,7 +202,7 @@ glwidget::resizeGL(int width, int height)
   
   glViewport(0, 0, GLsizei(_width), GLsizei(_height));
 
-  auto renderer = gpucast::gl::bezierobject_renderer::instance();
+  auto renderer = _renderer;
   renderer->set_resolution(_width, _height);
 
   // create texture for FBO
@@ -311,7 +311,7 @@ glwidget::paintGL()
   //////////////////////////////////////////////
   // GL state setup
   //////////////////////////////////////////////
-  auto renderer = gpucast::gl::bezierobject_renderer::instance();
+  auto renderer = _renderer;
   glEnable(GL_DEPTH_TEST);
   glClearColor(_background[0], _background[1], _background[2], 1.0f);
 
@@ -336,7 +336,7 @@ glwidget::paintGL()
 
   _cputimer->start();
   for (auto const& o : _objects) {
-    o.second->draw();
+    o.second->draw(*_renderer);
   }
   glFinish();
   _cputimer->stop();
@@ -352,10 +352,10 @@ glwidget::paintGL()
   //////////////////////////////////////////////
   // readback debug info if enabled
   //////////////////////////////////////////////
-  if (gpucast::gl::bezierobject_renderer::instance()->enable_counting()) {
-    auto debug_info = gpucast::gl::bezierobject_renderer::instance()->get_debug_count();
+  if (_renderer->enable_counting()) {
+    auto debug_info = _renderer->get_debug_count();
 
-    auto estimate = gpucast::gl::bezierobject_renderer::instance()->get_fragment_estimate();
+    auto estimate = _renderer->get_fragment_estimate();
     auto estimate_total = std::accumulate(estimate.begin(), estimate.end(), 0);
     mainwindow* mainwin = dynamic_cast<mainwindow*>(parent());
     if (mainwin) {
@@ -554,7 +554,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   switch (key)
   {
     case 'r':
-      gpucast::gl::bezierobject_renderer::instance()->recompile();
+      _renderer->recompile();
       break;
   }
 
@@ -612,14 +612,14 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   glwidget::load_spheremap                ( )
   {
     QString in_image_path = QFileDialog::getOpenFileName(this, tr("Open Image"), ".", tr("Image Files (*.jpg *.jpeg *.hdr *.bmp *.png *.tiff *.tif)"));
-    gpucast::gl::bezierobject_renderer::instance()->spheremap(in_image_path.toStdString());
+    _renderer->spheremap(in_image_path.toStdString());
   }
 
 
   ///////////////////////////////////////////////////////////////////////
   void glwidget::spheremapping(int i)
   {
-    gpucast::gl::bezierobject_renderer::instance()->spheremapping(i);
+    _renderer->spheremapping(i);
   }
 
   ///////////////////////////////////////////////////////////////////////
@@ -658,17 +658,34 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
       BOOST_LOG_TRIVIAL(error) << "Could not find object " << name << std::endl;
     }
   }
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::spheremap(std::string const& filepath)
+  {
+    _renderer->spheremap(filepath);
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::diffusemap(std::string const& filepath)
+  {
+    _renderer->diffusemap(filepath);
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  void glwidget::enable_pretessellation(int i)
+  {
+    _renderer->enable_pretessellation(i);
+  }
 
   ///////////////////////////////////////////////////////////////////////
   void glwidget::conservative_rasterization(int h)
   {
-    gpucast::gl::bezierobject_renderer::instance()->enable_conservative_rasterization(h);
+    _renderer->enable_conservative_rasterization(h);
   }
 
   ///////////////////////////////////////////////////////////////////////
   void glwidget::holefilling(int h)
   {
-    gpucast::gl::bezierobject_renderer::instance()->enable_holefilling(h);
+    _renderer->enable_holefilling(h);
   }
 
 
@@ -702,7 +719,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   glwidget::antialiasing(gpucast::gl::bezierobject::anti_aliasing_mode i)
   {
     _antialiasing = i;
-    gpucast::gl::bezierobject_renderer::instance()->antialiasing(i);
+    _renderer->antialiasing(i);
 
     for (auto o : _objects) {
       o.second->trimming(_trimming);
@@ -734,7 +751,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   ///////////////////////////////////////////////////////////////////////
   void
   glwidget::enable_counter(int i) {
-    gpucast::gl::bezierobject_renderer::instance()->enable_counting(i);
+    _renderer->enable_counting(i);
   }
 
   ///////////////////////////////////////////////////////////////////////
@@ -787,7 +804,7 @@ glwidget::keyReleaseEvent ( QKeyEvent* event )
   ///////////////////////////////////////////////////////////////////////
   void glwidget::enable_triangular_tesselation(int enable)
   {
-    gpucast::gl::bezierobject_renderer::instance()->enable_triangular_tesselation(enable);
+    _renderer->enable_triangular_tesselation(enable);
   }
 
 ///////////////////////////////////////////////////////////////////////
@@ -797,11 +814,11 @@ glwidget::_init()
   gpucast::gl::init_glew ();
   _print_contextinfo();
 
-  auto renderer = gpucast::gl::bezierobject_renderer::instance();
+  _renderer = std::make_shared<gpucast::gl::bezierobject_renderer>();
 
-  renderer->add_search_path("../../../");
-  renderer->add_search_path("../../");
-  renderer->recompile();
+  _renderer->add_search_path("../../../");
+  _renderer->add_search_path("../../");
+  _renderer->recompile();
 
   _trackball.reset       ( new gpucast::gl::trackball );
 

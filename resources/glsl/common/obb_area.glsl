@@ -129,9 +129,8 @@ float calculate_obb_area(in mat4           modelview_projection,
   }
 
   // return area
-  // return abs(sum) / 2.0; // original
+  // return abs(sum) / 2.0; // in [-1.0 ... 1.0] but only 1/4 in ndc [0.0 ... 1.0]
   return clamp(abs(sum) / 8.0, 0.0, 1.0); // this differs from original, but testet with extra application and should be correct
-  //return abs(sum) / 8.0; // this differs from original, but testet with extra application and should be correct
 }
 
 

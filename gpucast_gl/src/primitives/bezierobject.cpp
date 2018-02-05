@@ -76,7 +76,7 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::draw()
+    void bezierobject::draw(bezierobject_renderer& renderer)
     {
       //gpucast::gl::timer cputimer;
       //cputimer.start();
@@ -84,12 +84,12 @@ namespace gpucast {
       switch (_rendermode)
       {
       case raycasting:
-        _draw_by_raycasting();
+        _draw_by_raycasting(renderer);
         break;
       case tesselation:
       case shadow:
       case shadow_lowres:
-        _draw_by_tesselation();
+        _draw_by_tesselation(renderer);
         break;
       }
 
@@ -275,10 +275,9 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::_draw_by_raycasting()
+    void bezierobject::_draw_by_raycasting(bezierobject_renderer& renderer)
     {
-      auto renderer = bezierobject_renderer::instance();
-      auto const& raycasting_program = renderer->get_raycasting_program();
+      auto const& raycasting_program = renderer.get_raycasting_program();
 
       if (_culling) {
         glEnable(GL_CULL_FACE);
@@ -292,16 +291,16 @@ namespace gpucast {
       _chull_vao.bind();
       _chull_indexarray.bind();
 
-      renderer->begin_program(raycasting_program);
+      renderer.begin_program(raycasting_program);
 
       // apply renderer-dependent uniforms 
-      renderer->apply_uniforms(raycasting_program);
+      renderer.apply_uniforms(raycasting_program);
 
-      _apply_uniforms(*raycasting_program, raycasting);
+      _apply_uniforms(renderer, *raycasting_program, raycasting);
 
       glDrawElementsBaseVertex(GL_TRIANGLES, GLsizei(_size), GL_UNSIGNED_INT, 0, 0);
 
-      renderer->end_program(raycasting_program);
+      renderer.end_program(raycasting_program);
 
       // unbind buffer
       _chull_indexarray.unbind();
@@ -309,14 +308,13 @@ namespace gpucast {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::_draw_by_tesselation()
+    void bezierobject::_draw_by_tesselation(bezierobject_renderer& renderer)
     {
-      auto renderer = bezierobject_renderer::instance();
-      auto const& pretesselation_program = renderer->get_pretesselation_program();
-      auto const& tesselation_program = renderer->get_tesselation_program();
+      auto const& pretesselation_program = renderer.get_pretesselation_program();
+      auto const& tesselation_program = renderer.get_tesselation_program();
       auto tfbuffer = singleton<transform_feedback_buffer>::instance();
 
-      if (!renderer->inside_frustum(*this)) {
+      if (!renderer.inside_frustum(*this)) {
         return;
       }
 
@@ -326,10 +324,6 @@ namespace gpucast {
       glGenQueries(1, &primitive_query);
       glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, primitive_query);
 #endif
-
-      // configure transform feedback pass
-      glEnable(GL_RASTERIZER_DISCARD);
-      glPatchParameteri(GL_PATCH_VERTICES, 4);
 
       switch (_fill_mode) {
       case points:
@@ -343,32 +337,40 @@ namespace gpucast {
         break;
       }
 
-      renderer->begin_program(pretesselation_program);
+      if (renderer.enable_pretessellation())
       {
-        // bind VAO and draw
-        _tesselation_vertex_array.bind();
-        _tesselation_index_buffer.bind();
+        // configure transform feedback pass
+        glEnable(GL_RASTERIZER_DISCARD);
+        glPatchParameteri(GL_PATCH_VERTICES, 4);
 
-        // apply uniforms 
-        _apply_uniforms(*pretesselation_program, tesselation);
-        renderer->apply_uniforms(pretesselation_program);
-
-        if (_tesselation_vertex_count == 0) {
-          return;
-        }
-
-        tfbuffer->feedback->bind();
-        tfbuffer->feedback->begin(GL_POINTS);
+        renderer.begin_program(pretesselation_program);
         {
-          glDrawElements(GL_PATCHES, _tesselation_vertex_count, GL_UNSIGNED_INT, 0);
-        }
-        tfbuffer->feedback->end();
-        tfbuffer->feedback->unbind();
+          // bind VAO and draw
+          _tesselation_vertex_array.bind();
+          _tesselation_index_buffer.bind();
 
-        _tesselation_index_buffer.unbind();
-        _tesselation_vertex_array.unbind();
+          // apply uniforms 
+          _apply_uniforms(renderer, *pretesselation_program, tesselation);
+          renderer.apply_uniforms(pretesselation_program);
+
+          if (_tesselation_vertex_count == 0) {
+            return;
+          }
+
+          tfbuffer->feedback->bind();
+          tfbuffer->feedback->begin(GL_POINTS);
+          {
+            glDrawElements(GL_PATCHES, _tesselation_vertex_count, GL_UNSIGNED_INT, 0);
+          }
+          tfbuffer->feedback->end();
+          tfbuffer->feedback->unbind();
+
+          _tesselation_index_buffer.unbind();
+          _tesselation_vertex_array.unbind();
+        }
+        renderer.end_program(pretesselation_program);
+        glDisable(GL_RASTERIZER_DISCARD);
       }
-      renderer->end_program(pretesselation_program);
 
 #if QUERY_XFB_PRIMITIVE_COUNT
       glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
@@ -384,26 +386,35 @@ namespace gpucast {
       glDeleteQueries(1, &primitive_query);
 #endif
 
-      glDisable(GL_RASTERIZER_DISCARD);
-      renderer->begin_program(tesselation_program);
+      renderer.begin_program(tesselation_program);
       {
         // apply uniforms to final tesselation program
-        _apply_uniforms(*tesselation_program, tesselation);
-        renderer->apply_uniforms(tesselation_program);
+        _apply_uniforms(renderer, *tesselation_program, tesselation);
+        renderer.apply_uniforms(tesselation_program);
 
         // bind transform feedback buffer and draw
-        tfbuffer->vertex_array_object->bind();
-        if (renderer->enable_triangular_tesselation()) {
-          glPatchParameteri(GL_PATCH_VERTICES, 3);
+        if (renderer.enable_pretessellation()) {
+          tfbuffer->vertex_array_object->bind();
+          if (renderer.enable_triangular_tesselation()) {
+            glPatchParameteri(GL_PATCH_VERTICES, 3);
+          }
+          glDrawTransformFeedback(GL_PATCHES, tfbuffer->feedback->id());
         }
-
-        glDrawTransformFeedback(GL_PATCHES, tfbuffer->feedback->id());
+        else {
+          // bind VAO and draw
+          glPatchParameteri(GL_PATCH_VERTICES, 4);
+          _tesselation_vertex_array.bind();
+          _tesselation_index_buffer.bind();
+          glDrawElements(GL_PATCHES, _tesselation_vertex_count, GL_UNSIGNED_INT, 0);
+          _tesselation_index_buffer.unbind();
+          _tesselation_vertex_array.unbind();
+        }
       }
-      renderer->end_program(tesselation_program);
+      renderer.end_program(tesselation_program);
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    void bezierobject::_apply_uniforms(program const& p, render_mode mode)
+    void bezierobject::_apply_uniforms(bezierobject_renderer& renderer, program const& p, render_mode mode)
     {
 #if 1
       _uniform_data.gpucast_enable_newton_iteration = _raycasting;
@@ -446,16 +457,16 @@ namespace gpucast {
       p.set_uniform1f("gpucast_opacity", _material.opacity);
 #endif
       // data uniforms
-      auto renderer = bezierobject_renderer::instance();
+
       switch (mode)
       {
       case raycasting:
-        p.set_texturebuffer("gpucast_control_point_buffer", _controlpoints, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer->next_texunit());
+        p.set_texturebuffer("gpucast_control_point_buffer", _controlpoints, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer.next_texunit());
         break;
       case tesselation:
-        p.set_texturebuffer("gpucast_control_point_buffer", _controlpoints, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer->next_texunit());
+        p.set_texturebuffer("gpucast_control_point_buffer", _controlpoints, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_obb_buffer", _obbs, renderer.next_texunit());
         p.set_shaderstoragebuffer("gpucast_attribute_ssbo", _tesselation_attribute_buffer, bezierobject_renderer::GPUCAST_ATTRIBUTE_SSBO_BINDING);
         break;
       }
@@ -463,27 +474,27 @@ namespace gpucast {
       switch (_trimming)
       {
       case beziersurfaceobject::curve_binary_partition:
-        p.set_texturebuffer("gpucast_bp_trimdata", _db_partition, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_bp_celldata", _db_celldata, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_bp_curvelist", _db_curvelist, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_bp_curvedata", _db_curvedata, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_preclassification", _db_preclassification, renderer->next_texunit());
+        p.set_texturebuffer("gpucast_bp_trimdata", _db_partition, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_bp_celldata", _db_celldata, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_bp_curvelist", _db_curvelist, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_bp_curvedata", _db_curvedata, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_preclassification", _db_preclassification, renderer.next_texunit());
         break;
       case beziersurfaceobject::contour_binary_partition:
-        p.set_texturebuffer("gpucast_cmb_partition", _cmb_partition, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_cmb_contourlist", _cmb_contourlist, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_cmb_curvelist", _cmb_curvelist, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_cmb_curvedata", _cmb_curvedata, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_cmb_pointdata", _cmb_pointdata, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_preclassification", _cmb_preclassification, renderer->next_texunit());
+        p.set_texturebuffer("gpucast_cmb_partition", _cmb_partition, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_cmb_contourlist", _cmb_contourlist, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_cmb_curvelist", _cmb_curvelist, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_cmb_curvedata", _cmb_curvedata, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_cmb_pointdata", _cmb_pointdata, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_preclassification", _cmb_preclassification, renderer.next_texunit());
         break;
       case beziersurfaceobject::contour_kd_partition:
-        p.set_texturebuffer("gpucast_kd_partition", _kd_partition, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_kd_contourlist", _kd_contourlist, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_kd_curvelist", _kd_curvelist, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_kd_curvedata", _kd_curvedata, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_kd_pointdata", _kd_pointdata, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_preclassification", _kd_preclassification, renderer->next_texunit());
+        p.set_texturebuffer("gpucast_kd_partition", _kd_partition, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_kd_contourlist", _kd_contourlist, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_kd_curvelist", _kd_curvelist, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_kd_curvedata", _kd_curvedata, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_kd_pointdata", _kd_pointdata, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_preclassification", _kd_preclassification, renderer.next_texunit());
         break;
       case beziersurfaceobject::contour_list:
 
@@ -492,11 +503,11 @@ namespace gpucast {
         p.set_shaderstoragebuffer("gpucast_curve_buffer", _loop_list_curves, 5);
         p.set_shaderstoragebuffer("gpucast_point_buffer", _loop_list_points, 6);
 
-        p.set_texturebuffer("gpucast_preclassification", _loop_list_preclassification, renderer->next_texunit());
+        p.set_texturebuffer("gpucast_preclassification", _loop_list_preclassification, renderer.next_texunit());
         break;
       case beziersurfaceobject::no_trimming:
-        p.set_texturebuffer("gpucast_kd_partition", _kd_partition, renderer->next_texunit());
-        p.set_texturebuffer("gpucast_preclassification", _kd_preclassification, renderer->next_texunit());
+        p.set_texturebuffer("gpucast_kd_partition", _kd_partition, renderer.next_texunit());
+        p.set_texturebuffer("gpucast_preclassification", _kd_preclassification, renderer.next_texunit());
         break;
       };
     }

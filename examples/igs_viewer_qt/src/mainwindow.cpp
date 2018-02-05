@@ -108,6 +108,7 @@ void mainwindow::set_defaults()
   _combobox_antialiasing->setCurrentText("Prefiltered Edge Estimation");
   _checkbox_fxaa->setChecked(true);
   _checkbox_holefilling->setChecked(true);
+  _checkbox_pretessellation->setChecked(true);
 
   _object_list->addItem("data/body.igs");
   _glwindow->add({ "data/body.igs" });
@@ -388,6 +389,8 @@ mainwindow::_create_actions()
   connect(_checkbox_spheremap,              SIGNAL( stateChanged(int) ), _glwindow,    SLOT( spheremapping(int) ));
   connect(_checkbox_fxaa,                   SIGNAL( stateChanged(int) ), _glwindow,    SLOT( fxaa(int) ));
   
+  
+  connect(_checkbox_pretessellation,        SIGNAL(stateChanged(int)), _glwindow, SLOT(enable_pretessellation(int)));
   connect(_checkbox_vsync,                  SIGNAL( stateChanged(int) ), _glwindow,    SLOT( vsync(int) ));
   connect(_checkbox_culling,                SIGNAL(stateChanged(int)),   _glwindow,    SLOT( backface_culling(int)));
   connect(_checkbox_counting,               SIGNAL(stateChanged(int)),   _glwindow,    SLOT( enable_counter(int)));
@@ -515,6 +518,7 @@ mainwindow::_create_menus()
   _button_set_spheremap  = new QPushButton("Choose Spheremap", _menu);
 
   // init check boxes
+  _checkbox_pretessellation = new QCheckBox("Enable Pretessellation", _menu);
   _checkbox_spheremap    = new QCheckBox("Enable Spheremapping", _menu);
   _checkbox_fxaa         = new QCheckBox("Enable screen-space FXAA", _menu);
   _checkbox_vsync        = new QCheckBox("Enable VSync", _menu);
@@ -586,6 +590,7 @@ mainwindow::_create_menus()
   QVBoxLayout* rendering_desc_layout = new QVBoxLayout;
   rendering_desc_layout->addWidget(_combobox_rendering);
   rendering_desc_layout->addWidget(_combobox_fillmode);
+  rendering_desc_layout->addWidget(_checkbox_pretessellation);
   rendering_desc_layout->addWidget(_checkbox_holefilling);
   rendering_desc_layout->addWidget(_checkbox_culling);
   rendering_desc_layout->addWidget(_checkbox_tritesselation);
