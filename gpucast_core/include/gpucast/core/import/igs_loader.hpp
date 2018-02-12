@@ -34,20 +34,8 @@ namespace gpucast {
   namespace iges {
 
     // IGES uses x.xxD-002 format instead of x.xxE-002
-    double stod(std::string s) {
-      boost::replace_all(s, "D", "E");
-      boost::replace_all(s, "F", "E");
-      return std::stod(s);
-    }
-
-    int stoi(std::string const& s) {
-      if (std::all_of(s.begin(), s.end(), isspace)) {
-        return 0;
-      } else {
-        return std::stoi(s);
-      }
-      
-    }
+    GPUCAST_CORE double stod(std::string s);
+    GPUCAST_CORE int stoi(std::string const& s); 
 
     const static unsigned LINE_LENGTH = 80;
     const static unsigned SECTION_INDEX_DIGITS = 7;

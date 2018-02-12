@@ -21,6 +21,23 @@ namespace gpucast {
   ////////////////////////////////////////////////////////////////////////////////
   namespace iges {
 
+    // IGES uses x.xxD-002 format instead of x.xxE-002
+    double stod(std::string s) {
+      boost::replace_all(s, "D", "E");
+      boost::replace_all(s, "F", "E");
+      return std::stod(s);
+    }
+
+    int stoi(std::string const& s) {
+      if (std::all_of(s.begin(), s.end(), isspace)) {
+        return 0;
+      }
+      else {
+        return std::stoi(s);
+      }
+    }
+
+
     void directory_entry::print(std::ostream& os) const {
       os << "section_index : " << section_index << std::endl;
       os << "entity_type : " << entity_type << std::endl;
