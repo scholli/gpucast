@@ -31,7 +31,6 @@ ADD_EXECUTABLE( ${_EXE_NAME}
 
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-IF (MSVC)
   TARGET_LINK_LIBRARIES(${_EXE_NAME} 
                         gpucast_gl 
                         gpucast_glut 
@@ -40,16 +39,7 @@ IF (MSVC)
                         debug ${Boost_FILESYSTEM_LIBRARY_DEBUG} optimized ${Boost_FILESYSTEM_LIBRARY_RELEASE}
                         debug ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG} optimized ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE}
                         )
-ELSEIF (UNIX)
-  TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-                        gpucast_gl 
-                        gpucast_glut 
-                        gpucast_core                           
-                        gpucast_volume   
-                        ${FREEGLUT_LIBRARIES}                        
-                        ${FREEIMAGE_LIBRARIES}
-                        )
-ENDIF (MSVC)
+
 
 ###############################################################################
 # copy runtime libraries as a post-build process

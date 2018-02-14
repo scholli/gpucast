@@ -59,7 +59,6 @@ set_target_properties(${_EXE_NAME} PROPERTIES AUTOMOC TRUE)
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-IF (MSVC)
 TARGET_LINK_LIBRARIES(${_EXE_NAME} 
                       gpucast_gl 
                       gpucast_core                           
@@ -69,20 +68,6 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
                       ${Qt5Gui_LIBRARIES}
                       ${QT_QTMAIN_LIBRARY} 
                       )
-ELSEIF (UNIX)
-TARGET_LINK_LIBRARIES(${_EXE_NAME}
-                      gpucast_gl
-		      gpucast_core
-                      ${Qt5OpenGL_LIBRARIES}
-                      ${Qt5Core_LIBRARIES}
-                      ${Qt5Widgets_LIBRARIES}
-                      ${Qt5Gui_LIBRARIES}
-	              ${QT_QTMAIN_LIBRARY}
-                      boost_system 
-                      boost_filesystem
-                      boost_regex
-)
-ENDIF (MSVC)
 
 
 ###############################################################################

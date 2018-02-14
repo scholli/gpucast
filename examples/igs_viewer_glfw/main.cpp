@@ -59,6 +59,8 @@ private:
   bool                                              _fxaa = false;
   std::shared_ptr<gpucast::gl::program>             _fxaa_program;
 
+  std::shared_ptr<gpucast::gl::bezierobject_renderer> _renderer;
+
   std::shared_ptr<gpucast::gl::sampler>             _sample_linear;
   std::shared_ptr<gpucast::gl::texture2d>           _depthattachment;
   std::shared_ptr<gpucast::gl::texture2d>           _colorattachment;
@@ -83,7 +85,7 @@ public:
     //////////////////////////////////////////////////
     // scene and renderer
     //////////////////////////////////////////////////
-    auto renderer = gpucast::gl::bezierobject_renderer::instance();
+    _renderer = std::make_shared<gpucast::gl::bezierobject_renderer>();
     std::vector<std::string> filenames;
 
     //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/body.igs");
@@ -104,15 +106,15 @@ public:
     default_material.opacity = 0.2;
     default_material.shininess = 1.0;
 
-    renderer->spheremap("D:/media/pics/hdr/DH216SN.hdr");
-    renderer->spheremapping(true);
+    _renderer->spheremap("D:/media/pics/hdr/DH216SN.hdr");
+    _renderer->spheremapping(true);
 
     //////////////////////////////////////////////////
     // GL ressources
     //////////////////////////////////////////////////
     
-    renderer->add_search_path("../../../");
-    renderer->add_search_path("../../");
+    _renderer->add_search_path("../../../");
+    _renderer->add_search_path("../../");
 
     gpucast::gl::resource_factory program_factory;
 
@@ -121,7 +123,7 @@ public:
       { gpucast::gl::fragment_stage, "resources/glsl/base/render_from_texture.frag" }
     });
 
-    renderer->recompile();
+    _renderer->recompile();
 
     _quad.reset(new gpucast::gl::plane(0, -1, 1));
 
@@ -131,8 +133,8 @@ public:
     _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
     _depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-    renderer->attach_custom_textures(_colorattachment, _depthattachment);
-    renderer->set_resolution(_width, _height);
+    _renderer->attach_custom_textures(_colorattachment, _depthattachment);
+    _renderer->set_resolution(_width, _height);
 
     _sample_linear.reset(new gpucast::gl::sampler);
     _sample_linear->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -143,7 +145,7 @@ public:
     //////////////////////////////////////////////////
     // GL state setup
     //////////////////////////////////////////////////
-    renderer->set_background(gpucast::math::vec3f(0.2f, 0.2f, 0.2f));
+    _renderer->set_background(gpucast::math::vec3f(0.2f, 0.2f, 0.2f));
     glEnable(GL_DEPTH_TEST);
 
     //////////////////////////////////////////////////
@@ -251,8 +253,6 @@ public:
     float near_clip = 0.01f * _bbox.size().abs();
     float far_clip  = 2.0f  * _bbox.size().abs();
 
-    auto renderer = gpucast::gl::bezierobject_renderer::instance();
-
     gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_bbox.size().abs()),
       0.0f, 0.0f, 0.0f,
       0.0f, 1.0f, 0.0f);
@@ -267,26 +267,26 @@ public:
     auto mvp = proj * view * model;
     auto mvpi = gpucast::math::inverse(mvp);
 
-    renderer->set_nearfar(near_clip, far_clip);
-    renderer->set_resolution(_width, _height);
-    renderer->view_setup(view, model, proj);
+    _renderer->set_nearfar(near_clip, far_clip);
+    _renderer->set_resolution(_width, _height);
+    _renderer->view_setup(view, model, proj);
 
     {
       //gpucast::gl::timer_guard t("renderer->begin_draw()");
-      renderer->begin_draw(); 
+      _renderer->begin_draw(); 
     }
 
     for (auto const& o : _objects)
     {
       //gpucast::gl::timer_guard t("Draw object");
-      if (renderer->inside_frustum(*o)) {
-        o->draw();
+      if (_renderer->inside_frustum(*o)) {
+        o->draw(*_renderer);
       }
     }
 
     {
       //gpucast::gl::timer_guard t("renderer->end_draw()");
-      renderer->end_draw();
+      _renderer->end_draw();
     }
 
     {
@@ -320,27 +320,23 @@ public:
     _width = w; _height = h;
     glViewport(0, 0, GLsizei(_width), GLsizei(_height));
 
-    auto renderer = gpucast::gl::bezierobject_renderer::instance();
-
     _colorattachment->teximage(0, GL_RGBA32F, GLsizei(_width), GLsizei(_height), 0, GL_RGBA, GL_FLOAT, 0);
     _depthattachment->teximage(0, GL_DEPTH32F_STENCIL8, GLsizei(_width), GLsizei(_height), 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-    renderer->attach_custom_textures(_colorattachment, _depthattachment);
-    renderer->set_resolution(_width, _height);
+    _renderer->attach_custom_textures(_colorattachment, _depthattachment);
+    _renderer->set_resolution(_width, _height);
   }
 
 public:
 
   virtual void keyboard(unsigned char key, int x, int y) override
   {
-    auto renderer = gpucast::gl::bezierobject_renderer::instance();
-
     // renderer operations
     switch (key)
     {
     case 'c':
     case 'C':
-      renderer->recompile();
+      _renderer->recompile();
       std::cout << "Shaders recompiled" << std::endl;
       break;
     }

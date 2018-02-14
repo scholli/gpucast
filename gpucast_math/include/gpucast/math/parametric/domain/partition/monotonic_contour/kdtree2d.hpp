@@ -17,9 +17,9 @@
 
 // includes, project
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/kdnode2d.hpp>
-//#include <gpucast/math/parametric/domain/partition/monotonic_contour/kdsplit_strategy.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/kdsplit_strategy.hpp>
 
-template <typename T> class kdsplit_strategy;
+//template <typename T> class kdsplit_strategy;
 
 namespace gpucast {
   namespace math {

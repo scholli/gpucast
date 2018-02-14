@@ -40,7 +40,6 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_glut gpucast_core)
 
-IF (MSVC)
   TARGET_LINK_LIBRARIES(${_EXE_NAME}  
 		        gpucast_gl 
             gpucast_glut
@@ -51,20 +50,7 @@ IF (MSVC)
             debug ${FREEIMAGE_LIBRARY_DEBUG}      optimized ${FREEIMAGE_LIBRARY}    
             debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY} 
   )
-ELSE (MSVC)
-TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-		      gpucast_gl 
-          gpucast_glut
-	        gpucast_core
-		      ${FREEGLUT_LIBRARY}
-		      ${FREEIMAGE_LIBRARY}
-		      ${FREEIMAGEPLUS_LIBRARY}
-		      ${GLEW_LIBRARY}
-		      ${QHULL_LIBRARY}
-          boost_filesystem boost_regex
-          GL GLU
-          )
-ENDIF (MSVC)
+
 
 ###############################################################################
 # copy runtime libraries as a post-build process

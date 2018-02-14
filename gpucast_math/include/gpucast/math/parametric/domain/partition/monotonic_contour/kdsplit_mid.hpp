@@ -16,6 +16,7 @@
 
 // includes, project
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/kdsplit_strategy.hpp>
+#include <gpucast/math/parametric/domain/partition/monotonic_contour/kdtree2d.hpp>
 
 namespace gpucast {
   namespace math {
@@ -34,7 +35,7 @@ struct kdsplit_mid : public kdsplit_strategy<value_t> {
   typedef kdtree2d<value_t>                     kdtree_t;
 
   /////////////////////////////////////////////////////////////////////////////
-  bool generate(typename kdtree2d<value_t> const& initial_tree) const override {
+  bool generate(kdtree2d<value_t> const& initial_tree) const override {
     try {
       try_split(initial_tree.root);
       return true;

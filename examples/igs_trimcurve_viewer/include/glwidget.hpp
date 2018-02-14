@@ -37,16 +37,6 @@
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/contour_map_kd.hpp>
 #include <gpucast/core/beziersurfaceobject.hpp>
 
-#if !WIN32
-  #if GCC_VERSION <= 48200
-  template<typename T, typename... Args>
-  std::unique_ptr<T> make_unique(Args&&... args)
-  {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-  }
-  #endif
-#endif
-
 class glwidget : public QGLWidget
 {
    Q_OBJECT        // must include this if you use Qt signals/slots

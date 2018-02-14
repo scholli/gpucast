@@ -53,7 +53,10 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-IF (MSVC)
+IF (UNIX)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME} pthread) 
+ENDIF(UNIX)
+
   TARGET_LINK_LIBRARIES(${_EXE_NAME} 
                         gpucast_gl 
                         gpucast_core                           
@@ -65,19 +68,7 @@ IF (MSVC)
                         debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY}
                         debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}
   )
-ELSEIF (UNIX)
-  TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-                        gpucast_gl 
-                        gpucast_core                           
-                        ${Qt5OpenGL_LIBRARIES}
-                        ${Qt5Core_LIBRARIES}
-                        ${Qt5Widgets_LIBRARIES}
-                        ${Qt5Gui_LIBRARIES}
-                        ${QT_QTMAIN_LIBRARY}
-                        ${FREEIMAGE_LIBRARY}
-                        ${FREEIMAGEPLUS_LIBRARY}
-  )
-ENDIF (MSVC)
+
 
 ###############################################################################
 # copy runtime libraries as a post-build process

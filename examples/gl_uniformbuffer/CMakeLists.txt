@@ -28,7 +28,7 @@ SET(LIBRARY_DIRS ${LIB_PATHS}
 
 LINK_DIRECTORIES (${LIBRARY_DIRS})
 
-add_definitions(-D FREEGLUT_LIB_PRAGMAS=0)
+add_definitions(-D FREEGLUT_LIB_PRAGMAS=0 -pthread)
 
 ADD_EXECUTABLE( ${_EXE_NAME}
     ${EXAMPLE_HELLO_WORLD_SRC}
@@ -41,7 +41,10 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_glut gpucast_core)
 
-IF (MSVC)
+IF (UNIX)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME} pthread) 
+ENDIF(UNIX)
+
 TARGET_LINK_LIBRARIES(${_EXE_NAME} 
                       gpucast_gl 
                       gpucast_glut
@@ -50,19 +53,6 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
                       debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY}
                       debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}
                       )
-ELSE (MSVC)
-TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-		                  gpucast_gl 
-                      gpucast_glut
-	                    gpucast_core
-		                  ${FREEGLUT_LIBRARY}
-		                  ${FREEIMAGE_LIBRARY}
-		                  ${FREEIMAGE_PLUS_LIBRARY}
-		                  ${GLEW_LIBRARY}
-                      boost_filesystem
-                      boost_regex
-                      GL GLU )
-ENDIF (MSVC)
 
 ###############################################################################
 # copy runtime libraries as a post-build process

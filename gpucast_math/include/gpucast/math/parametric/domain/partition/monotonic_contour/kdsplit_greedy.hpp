@@ -13,6 +13,7 @@
 #define GPUCAST_KDSPLIT_GREEDY_HPP
 
 // includes, system
+#include <exception>
 
 // includes, project
 #include <gpucast/math/parametric/domain/partition/monotonic_contour/kdsplit_strategy.hpp>
@@ -34,8 +35,12 @@ struct kdsplit_greedy : public kdsplit_strategy<value_t> {
   // typedefs
   /////////////////////////////////////////////////////////////////////////////
 
-  bool generate(typename kdtree2d<value_t> const& initial_tree) const override {
-    throw std::exception("Not implemented");
+  bool generate(kdtree2d<value_t> const& initial_tree) const override {
+    #if WIN32
+      throw std::exception("Not implemented");
+    #else
+      return false;
+    #endif
   }
 
   kdnode_ptr find_splittable_node(kdnode_ptr const& node) const {

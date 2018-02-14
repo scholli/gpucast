@@ -108,33 +108,28 @@ SET_TARGET_PROPERTIES( gpucast_gl PROPERTIES COMPILE_FLAGS ${GPUCAST_GL_BUILD_FL
 ###############################################################################
 ADD_DEPENDENCIES(gpucast_gl gpucast_math)
 
-IF (MSVC)
-  TARGET_LINK_LIBRARIES( gpucast_gl
-                         gpucast_core
-                         OpenGL32.lib 
-                         debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY}
-                         debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}
-                         general ${GLEW_LIBRARY}     
-                         debug ${Boost_SYSTEM_LIBRARY_DEBUG} optimized ${Boost_SYSTEM_LIBRARY_RELEASE}
-                         debug ${Boost_FILESYSTEM_LIBRARY_DEBUG} optimized ${Boost_FILESYSTEM_LIBRARY_RELEASE}
-                         debug ${Boost_REGEX_LIBRARY_DEBUG} optimized ${Boost_REGEX_LIBRARY_RELEASE}
-                       )
+TARGET_LINK_LIBRARIES( gpucast_gl
+                       gpucast_core
+                       debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY}
+                       debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}
+                       general ${GLEW_LIBRARY}     
+                       debug ${Boost_SYSTEM_LIBRARY_DEBUG} optimized ${Boost_SYSTEM_LIBRARY_RELEASE}
+                       debug ${Boost_FILESYSTEM_LIBRARY_DEBUG} optimized ${Boost_FILESYSTEM_LIBRARY_RELEASE}
+                       debug ${Boost_REGEX_LIBRARY_DEBUG} optimized ${Boost_REGEX_LIBRARY_RELEASE}
+                       debug ${Boost_LOG_LIBRARY_DEBUG} optimized ${Boost_LOG_LIBRARY_RELEASE}
+                       debug ${Boost_LOG_SETUP_LIBRARY_DEBUG} optimized ${Boost_LOG_SETUP_LIBRARY_RELEASE}
+                     )
 
-ELSE (MSVC)
-  TARGET_LINK_LIBRARIES( gpucast_gl
-                         ${GLEW_LIBRARY} 
-                         ${FREEIMAGE_LIBRARY}
-                         ${FREEIMAGEPLUS_LIBRARY}
-                         GL GLU
-                       )
-ENDIF (MSVC)
+IF (MSVC)
+  TARGET_LINK_LIBRARIES (gpucast_gl OpenGL32.lib)
+ENDIF (MSVC)                     
 
 ###############################################################################
 # install 
 ###############################################################################
 
 IF (MSVC)
-  install (TARGETS gpucast_gl
+  install (TARGETS gpucast_gl    
     CONFIGURATIONS Release
     RUNTIME DESTINATION bin/Release
     LIBRARY DESTINATION lib/Release

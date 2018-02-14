@@ -293,7 +293,7 @@ namespace gpucast { namespace math {
              point_t&            obb_low,
              point_t&            obb_high) const
     {
-      typename oriented_boundingbox<point_t>::matrix_type inv = obb_orientation.inverse();
+      auto inv = obb_orientation.inverse();
 
       // preset limits to min/max for local coordinates and global coordinates ( to determine center )
       obb_low  = point_t::maximum();

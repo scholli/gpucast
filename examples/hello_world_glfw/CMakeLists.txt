@@ -3,6 +3,12 @@
 ###############################################################################
 include (findGLFW)
 
+IF (UNIX)
+  SET(GLFW_LIBRARY_RELEASE ${GLFW_LIBRARY})
+  SET(GLFW_LIBRARY_DEBUG ${GLFW_LIBRARY})
+ENDIF (UNIX)
+
+
 FILE(GLOB EXAMPLE_HELLO_WORLD_GLFW_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
 GET_FILENAME_COMPONENT(_EXE_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
@@ -41,8 +47,6 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-IF (MSVC)
-
 TARGET_LINK_LIBRARIES(${_EXE_NAME} 
                       gpucast_gl 
                       gpucast_core
@@ -53,21 +57,6 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
 		                  ${FREEIMAGEPLUS_LIBRARY}
 )
 
-ELSEIF (UNIX)
-
-TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-		                  gpucast_gl 
-	                    gpucast_core
-		                  ${FREEGLUT_LIBRARY}
-		                  ${GLFW_LIBRARY}
-		                  ${FREEIMAGE_LIBRARY}
-		                  ${FREEIMAGEPLUS_LIBRARY}
-		                  boost_filesystem
-                      boost_regex
-		                  ${GLEW_LIBRARY}
-		                  X11 Xxf86vm Xrandr pthread m Xi GL GLU
-)
-ENDIF (MSVC)
 
 ###############################################################################
 # copy runtime libraries as a post-build process

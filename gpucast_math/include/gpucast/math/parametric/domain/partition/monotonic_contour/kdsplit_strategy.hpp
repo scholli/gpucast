@@ -15,11 +15,13 @@
 // includes, system
 
 // includes, project
-#include <gpucast/math/parametric/domain/partition/monotonic_contour/kdtree2d.hpp>
+//#include <gpucast/math/parametric/domain/partition/monotonic_contour/kdtree2d.hpp>
 
 namespace gpucast {
   namespace math {
     namespace domain {
+
+template <typename T> struct kdtree2d;
 
 template <typename value_t>
 struct kdsplit_strategy {

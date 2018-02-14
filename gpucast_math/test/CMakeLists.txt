@@ -1,4 +1,4 @@
-include(findUnitTest++)
+include(FindUnitTest++)
 
 file(GLOB GPUCAST_MATH_UNITTEST_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
@@ -15,5 +15,5 @@ IF (MSVC)
   TARGET_LINK_LIBRARIES( gpucast_math_unittests 
                          debug ${UNITTEST++_LIBRARY_DEBUG} optimized ${UNITTEST++_LIBRARY})
 ELSEIF (UNIX)
-  TARGET_LINK_LIBRARIES( gpucast_math_unittests ${UNITTEST_LIBRARY})
+  TARGET_LINK_LIBRARIES( gpucast_math_unittests ${UNITTEST++_LIBRARY_DEBUG})
 ENDIF (MSVC)

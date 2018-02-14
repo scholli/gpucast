@@ -40,6 +40,7 @@ SET(GLOBAL_EXT_DIR ${CMAKE_SOURCE_DIR}/externals)
 
 if (UNIX)
 	pkg_check_modules(GL REQUIRED gl) 
+        find_package(GLUT REQUIRED)
 endif (UNIX)
 
 include(macros)
@@ -48,8 +49,13 @@ include(macros)
 set(BOOST_INCLUDEDIR ${GLOBAL_EXT_DIR}/boost/include)
 set(BOOST_LIBRARYDIR ${GLOBAL_EXT_DIR}/boost/lib)
 set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_LIBS ON)
-find_package( Boost 1.54.0 REQUIRED thread regex system program_options timer chrono filesystem date_time log)
+
+IF (MSVC)
+  set (Boost_USE_STATIC_LIBS ON)
+ENDIF(MSVC)
+
+find_package(Boost 1.54.0 REQUIRED thread regex system program_options timer chrono filesystem date_time log log_setup)
+
 ADD_DEFINITIONS("-DBOOST_ALL_NO_LIB")
 
 ##glut##########################################################
@@ -59,24 +65,35 @@ find_package(GLUT REQUIRED)
 ##glew##########################################################
 set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${GLOBAL_EXT_DIR}/glew/include)
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${GLOBAL_EXT_DIR}/glew/lib)
-include(findGLEW)
+include(FindGLEW)
 
 ##freeimage#####################################################
-include(findFreeImage)
+include(FindFreeImage)
+
+IF (UNIX)
+  SET(FREEIMAGE_LIBRARY_DEBUG ${FREEIMAGE_LIBRARY})
+  SET(FREEIMAGE_PLUS_LIBRARY_DEBUG ${FREEIMAGE_PLUS_LIBRARY})
+ENDIF (UNIX)
+
 
 ##qhull#########################################################
 include(findQHull)
+
+IF (UNIX)
+  SET(QHULL_LIBRARY_DEBUG ${QHULL_LIBRARY})
+  SET(QHULL_LIBRARY_RELEASE ${QHULL_LIBRARY})
+ENDIF(UNIX)
 
 ##cuda##########################################################
 IF (${ENABLE_GPUCAST_VOLUME_MODULE})
   IF (MSVC)
 	  set(ENV{CUDA_PATH} ${GLOBAL_EXT_DIR}/CUDA)
 	  set(ENV{CUDA_BIN_PATH} ${GLOBAL_EXT_DIR}/CUDA/bin)
-	  include(findCUDA)
+	  include(FindCUDA)
   ELSE (MSVC)
 	  set(ENV{CUDA_PATH} /opt/cuda/latest/cuda/)
 	  set(ENV{CUDA_BIN_PATH} /opt/cuda/latest/cuda/bin)
-	  include(FindCUDA)
+	  find_package(CUDA QUIET REQUIRED)
   ENDIF (MSVC)
 ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})
 
@@ -89,12 +106,6 @@ ENDIF (${ENABLE_GPUCAST_VOLUME_MODULE})
 ################################################################
 # Write Configuration
 ################################################################
-IF (MSVC)
-  SET(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
-ELSEIF (UNIX)
-  SET(CMAKE_INSTALL_PREFIX /opt/local)
-ENDIF (MSVC)
-
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
   ${CMAKE_CURRENT_SOURCE_DIR}/gpucast_core/include/gpucast/core/config.hpp
@@ -118,8 +129,8 @@ endif()
 # preprocessor configuration
 ################################################################
 IF (UNIX)
-	set(CMAKE_CXX_FLAGS_RELEASE "-s -O4 -fPIC -std=c++1y")
-	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -fPIC -std=c++1y")
+	set(CMAKE_CXX_FLAGS_RELEASE "-s -O4 -fPIC -std=c++1y -DBOOST_LOG_DYN_LINK -lpthread")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -fPIC -std=c++1y -DBOOST_LOG_DYN_LINK -lpthread")
 ELSEIF(MSVC)
 	set(CMAKE_CXX_FLAGS_RELEASE "-D NDEBUG -D _SECURE_SCL=0 -D _SCL_SECURE_NO_WARNINGS -D _CRT_SECURE_NO_DEPRECATE /MD /MP")
 	set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG /MDd /Zi /MP")

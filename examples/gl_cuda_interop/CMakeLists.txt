@@ -1,3 +1,5 @@
+if (${ENABLE_GPUCAST_VOLUME_MODULE})
+
 ###############################################################################
 # set sources
 ###############################################################################
@@ -88,3 +90,5 @@ ENDIF (MSVC)
 ###############################################################################
 copy_external_runtime_libraries(glew freeimage freeglut)
 apply_debug_working_directory()
+
+endif(${ENABLE_GPUCAST_VOLUME_MODULE})

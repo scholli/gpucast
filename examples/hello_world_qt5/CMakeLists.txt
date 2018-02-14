@@ -62,13 +62,6 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
                       ${Qt5Gui_LIBRARIES}
                       ${QT_QTMAIN_LIBRARY}
 )
-IF (UNIX)
-TARGET_LINK_LIBRARIES(${_EXE_NAME} 
-                      boost_filesystem
-                      boost_program_options
-                      boost_regex
-)
-ENDIF (UNIX)
 
 ###############################################################################
 # copy runtime libraries as a post-build process

@@ -22,7 +22,7 @@ namespace gpucast {
     namespace domain {
 
 template <typename value_t>
-struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
+struct kdnode2d : public std::enable_shared_from_this<kdnode2d<value_t>>{
 
   /////////////////////////////////////////////////////////////////////////////
   // typedefs + ctor
@@ -67,7 +67,7 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
 
   /////////////////////////////////////////////////////////////////////////////
   void serialize_dfs(std::vector<kdnode_ptr>& nodes) {
-    nodes.push_back(shared_from_this());
+    nodes.push_back(this->shared_from_this());
     if (!is_leaf()) {
       child_less->serialize_dfs(nodes);
       child_greater->serialize_dfs(nodes);
@@ -77,7 +77,7 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
   /////////////////////////////////////////////////////////////////////////////
   void serialize_bfs(std::vector<kdnode_ptr>& nodes) {
     if (parent == nullptr) { // root
-      nodes.push_back(shared_from_this());
+      nodes.push_back(this->shared_from_this());
     } 
     
     if (!is_leaf()) {
@@ -119,8 +119,8 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
       }
     }
     
-    child_less = std::make_shared<kdnode2d>(bbox_less, 0, 0, 0, depth+1, less_segments, shared_from_this(), nullptr, nullptr);
-    child_greater = std::make_shared<kdnode2d>(bbox_greater, 0, 0, 0, depth+1, greater_segments, shared_from_this(), nullptr, nullptr);
+    child_less = std::make_shared<kdnode2d>(bbox_less, 0, 0, 0, depth+1, less_segments, this->shared_from_this(), nullptr, nullptr);
+    child_greater = std::make_shared<kdnode2d>(bbox_greater, 0, 0, 0, depth+1, greater_segments, this->shared_from_this(), nullptr, nullptr);
 
     return true;
   }
@@ -170,7 +170,7 @@ struct kdnode2d : std::enable_shared_from_this<kdnode2d<value_t>>{
   kdnode_ptr is_in_node(bbox_type const& texel) {
     if (bbox.is_inside(texel)) {
       if (is_leaf()) {
-        return shared_from_this();
+        return this->shared_from_this();
       }
       else {
         // examine less node

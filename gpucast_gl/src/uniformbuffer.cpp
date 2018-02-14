@@ -14,6 +14,7 @@
 // header system
 #include <vector>
 #include <iostream>
+#include <cstring>
 #include <exception>
 
 // header dependencies

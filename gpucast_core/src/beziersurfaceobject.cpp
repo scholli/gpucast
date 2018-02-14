@@ -92,7 +92,10 @@ void beziersurfaceobject::trim_approach(beziersurfaceobject::trim_approach_t app
       auto trim_index = _domain_index_map[domain][_trim_approach];
 
       // prepare data to update raycasting buffers
-      unsigned trim_type_and_approach = uint2x16ToUInt(unsigned short(surface.second.trim_type), unsigned short(_trim_approach));
+      unsigned short type_as_short(surface.second.trim_type);
+      unsigned short approach_as_short(_trim_approach);
+
+      unsigned int trim_type_and_approach = uint2x16ToUInt(type_as_short, approach_as_short);
       float index_as_float = trimdomain_serializer::unsigned_bits_as_float(trim_index);
 
       for (auto i = surface.second.raycasting_base_index; i != surface.second.raycasting_base_index + surface.second.raycasting_vertex_count; ++i)
@@ -532,8 +535,12 @@ beziersurfaceobject::_serialize_raycasting_data(surface_ptr const& surface)
   _surface_obb_base_ids.insert({ surface, obb_index });
 
   // fill header with index information
-  unsigned trim_index = _domain_index_map[surface->domain()][_trim_approach];
-  unsigned trim_type_and_approach = uint2x16ToUInt(unsigned short(surface->trimtype()), unsigned short(_trim_approach));
+  unsigned int trim_index = _domain_index_map[surface->domain()][_trim_approach];
+
+  unsigned short type_as_short (surface->trimtype());
+  unsigned short approach_as_short (_trim_approach);
+
+  unsigned int trim_type_and_approach = uint2x16ToUInt(type_as_short, approach_as_short);
 
   gpucast::math::vec4f additional_attrib2(bit_cast<unsigned, float>(explicit_type_conversion<std::size_t, unsigned>(trim_index)),
                                           bit_cast<unsigned, float>(explicit_type_conversion<std::size_t, unsigned>(controlpointdata_index)),
@@ -648,7 +655,7 @@ void beziersurfaceobject::_serialize_adaptive_tesselation_data(surface_ptr const
   _serialize_obb_data(surface);
 
   // than serialize rest
-  unsigned int patch_id = unsigned int(_tesselation_data.patch_data_buffer.size());
+  unsigned int patch_id (_tesselation_data.patch_data_buffer.size());
   _surface_index_map[surface].tesselation_base_index = patch_id;
 
   auto uint_to_float = [](unsigned const & i) { return *((float*)(&i)); };

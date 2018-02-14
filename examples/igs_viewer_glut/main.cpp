@@ -54,6 +54,7 @@ private :
   std::vector<std::shared_ptr<gpucast::gl::cube>>   _obbs;
   std::shared_ptr<gpucast::gl::program>             _program;
   bool                                              _show_obbs = false;
+  std::shared_ptr<gpucast::gl::bezierobject_renderer> _renderer;
 
   gpucast::gl::timer_query                          _query;
   gpucast::math::bbox3f                             _bbox;
@@ -81,13 +82,13 @@ public:
     gpucast::igs_loader loader;
     gpucast::surface_converter converter;
 
-    auto renderer = gpucast::gl::bezierobject_renderer::instance();
+    _renderer = std::make_shared<gpucast::gl::bezierobject_renderer>();
 
-    renderer->add_search_path("../../../../");
-    renderer->add_search_path("../../../");
-    renderer->add_search_path("../../");
-    renderer->add_search_path("../");
-    renderer->recompile();
+    _renderer->add_search_path("../../../../");
+    _renderer->add_search_path("../../../");
+    _renderer->add_search_path("../../");
+    _renderer->add_search_path("../");
+    _renderer->recompile();
 
     bool initialized_bbox = false;
     std::vector<std::string> filenames;
@@ -239,13 +240,11 @@ public:
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    auto renderer = gpucast::gl::bezierobject_renderer::instance();
-
     float nearclip = 0.01f * _bbox.size().abs();
     float farclip = 5.0f * _bbox.size().abs();
 
-    renderer->set_nearfar(nearclip, farclip);
-    renderer->set_resolution(_resolution_x, _resolution_y);
+    _renderer->set_nearfar(nearclip, farclip);
+    _renderer->set_resolution(_resolution_x, _resolution_y);
 
     gpucast::math::matrix4f view = gpucast::math::lookat(0.0f, 0.0f, float(_bbox.size().abs()),
       0.0f, 0.0f, 0.0f,
@@ -258,16 +257,16 @@ public:
 
     gpucast::math::matrix4f proj = gpucast::math::perspective(30.0f, float(_resolution_x) / float(_resolution_y), nearclip, farclip);
 
-    renderer->current_modelmatrix(model);
-    renderer->current_viewmatrix(view);
-    renderer->current_projectionmatrix(proj);
+    _renderer->current_modelmatrix(model);
+    _renderer->current_viewmatrix(view);
+    _renderer->current_projectionmatrix(proj);
 
     for (auto const& o : _objects) {
-      o->draw();
+      o->draw(*_renderer);
 
-      if (renderer->enable_counting()) {
-        auto triangles_fragments = renderer->get_debug_count();
-        auto estimate = renderer->get_fragment_estimate();
+      if (_renderer->enable_counting()) {
+        auto triangles_fragments = _renderer->get_debug_count();
+        auto estimate = _renderer->get_fragment_estimate();
 
         std::cout << "Triangles         : " << triangles_fragments.triangles << std::endl;
         std::cout << "Fragments         : " << triangles_fragments.fragments << std::endl;
@@ -328,14 +327,13 @@ public:
 
   virtual void keyboard(unsigned char key, int x, int y) override
   {
-    auto renderer = gpucast::gl::bezierobject_renderer::instance();
     using namespace gpucast::gl;
 
     // renderer operations
     switch (key)
     {
     case 'c':
-      renderer->recompile();
+      _renderer->recompile();
       std::cout << "Shaders recompiled" << std::endl;
       break;
     }
@@ -346,11 +344,11 @@ public:
       switch (key)
       {
       case 'k':
-        renderer->enable_counting(!renderer->enable_counting());
-        std::cout << "enable_counting set to " << renderer->enable_counting() << std::endl;
+        _renderer->enable_counting(!_renderer->enable_counting());
+        std::cout << "enable_counting set to " << _renderer->enable_counting() << std::endl;
         break;
       case 'c':
-        renderer->recompile();
+        _renderer->recompile();
         std::cout << "Recompiling shaders..." << std::endl;
         break;
       case 'w':

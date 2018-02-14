@@ -40,7 +40,7 @@ struct kdsplit_minsplit : public kdsplit_strategy<value_t> {
   };
 
   /////////////////////////////////////////////////////////////////////////////
-  bool generate(typename kdtree2d<value_t> const& initial_tree) const override {
+  bool generate(kdtree2d<value_t> const& initial_tree) const override {
     try {
       try_split(initial_tree.root);
       return true;

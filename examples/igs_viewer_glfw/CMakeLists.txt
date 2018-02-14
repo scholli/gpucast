@@ -1,5 +1,10 @@
 include(findGLFW)
 
+IF (UNIX)
+  SET(GLFW_LIBRARY_RELEASE ${GLFW_LIBRARY})
+  SET(GLFW_LIBRARY_DEBUG ${GLFW_LIBRARY})
+ENDIF (UNIX)
+
 ###############################################################################
 # set sources
 ###############################################################################
@@ -41,7 +46,7 @@ SET_TARGET_PROPERTIES( ${_EXE_NAME} PROPERTIES COMPILE_FLAGS ${BUILD_FLAGS})
 ###############################################################################
 ADD_DEPENDENCIES(${_EXE_NAME} gpucast_math gpucast_gl gpucast_core)
 
-IF (MSVC)
+
   TARGET_LINK_LIBRARIES(${_EXE_NAME}  
 		        gpucast_gl 
 		        gpucast_core   
@@ -52,20 +57,7 @@ IF (MSVC)
             debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}
             general ${GLUT_glut_LIBRARY}
   )
-ELSEIF (UNIX)
-  TARGET_LINK_LIBRARIES(${_EXE_NAME}  
-		        gpucast_gl 
-		        gpucast_core 
-            ${GLFW_LIBRARY}
-            ${GLEW_LIBRARY}
-            ${QHULL_LIBRARY}
-            ${FREEIMAGE_LIBRARY}
-            ${FREEIMAGEPLUS_LIBRARY}
-            ${FREEGLUT_LIBRARY}
-            boost_thread boost_filesystem boost_regex
-            GL GLU X11 Xi Xxf86vm Xrandr pthread
-  )
-ENDIF (MSVC)
+
 
 ###############################################################################
 # copy runtime libraries as a post-build process

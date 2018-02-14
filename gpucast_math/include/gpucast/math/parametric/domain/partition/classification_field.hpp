@@ -38,7 +38,7 @@ class classification_field
         _height(height), 
         _data(width*height)
     {
-      std::copy(data, data + width*height, _data.begin())
+      std::copy(data, data + width*height, _data.begin());
     }
 
   public : // c'tor

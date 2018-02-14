@@ -12,6 +12,10 @@
 #ifndef GPUCAST_MATH_GAUSS2D_HPP
 #define GPUCAST_MATH_GAUSS2D_HPP
 
+#ifndef M_PI 
+#define M_PI 3.141592653589793238462
+#endif
+
 namespace gpucast { namespace math {
   namespace util {
 

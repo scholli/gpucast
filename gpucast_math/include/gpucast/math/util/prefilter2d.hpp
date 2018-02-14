@@ -15,6 +15,7 @@
 //#include <algorithm>
 #include <numeric>
 #include <vector>
+#include <algorithm>
 
 #include <gpucast/math/util/gauss2d.hpp>
 #include <gpucast/math/util/discretizer2d.hpp>

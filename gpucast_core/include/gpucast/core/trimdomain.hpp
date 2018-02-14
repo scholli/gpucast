@@ -78,7 +78,6 @@ class GPUCAST_CORE trimdomain
     typedef std::shared_ptr<curve_type>                curve_ptr;
     typedef std::vector<curve_ptr>                     curve_container;
 
-    typedef gpucast::math::axis_aligned_boundingbox<point_type> bbox_type;
     typedef gpucast::math::domain::contour<value_type> contour_type;
 
     typedef std::vector<contour_type>                  trimloop_container;

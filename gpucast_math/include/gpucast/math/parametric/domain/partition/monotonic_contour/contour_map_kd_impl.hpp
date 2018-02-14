@@ -39,27 +39,33 @@ template <typename value_t>
 bool
 contour_map_kd<value_t>::initialize()
 {
-  minimize_overlaps();
+  this->minimize_overlaps();
 
-  std::set<contour_segment_ptr> segment_set(_contour_segments.begin(), _contour_segments.end());
+  std::set<contour_segment_ptr> segment_set(this->_contour_segments.begin(), this->_contour_segments.end());
   bool success = false;
+
   switch (_split_strategy)
   {
-    case midsplit:  
+    case midsplit: {
       success = _kdtree.initialize(kdsplit_mid<value_t>(), segment_set);
       break;
-    case greedy: 
+      }
+    case greedy: {
       success = _kdtree.initialize(kdsplit_greedy<value_t>(), segment_set);
       break;
-    case maxarea:
+      }
+    case maxarea: {
       success = _kdtree.initialize(kdsplit_maxarea<value_t>(), segment_set);
       break;
-    case sah:
+    }
+    case sah: {
       success = _kdtree.initialize(kdsplit_sah<value_t>(), segment_set);
       break;
-    case minsplits :
+    }
+    case minsplits : {
       success = _kdtree.initialize(kdsplit_minsplit<value_t>(), segment_set);
       break;
+    }
     default: 
       return false;
   };
@@ -133,10 +139,8 @@ template <typename value_t>
 std::ostream& operator<<(std::ostream& os,  contour_map_kd<value_t> const& rhs)
 {
   // reverse, if not increasing in v-direction
-  for (auto const& c : this->_contour_segments) {
-    if (!c->is_increasing(point_type::v)) {
-      c->invert();
-    }
+  for (auto const& c : rhs.monotonic_segments()) {
+    os << c << std::endl;
   }
 
   return os;
