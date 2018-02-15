@@ -1,8 +1,3 @@
-if(COMMAND cmake_policy)
-    cmake_policy(SET CMP0020 OLD)
-endif()
-
-
 list(APPEND CMAKE_PREFIX_PATH "${GLOBAL_EXT_DIR}/Qt5/lib/cmake")
 
 find_package(Qt5OpenGL REQUIRED)

@@ -50,12 +50,14 @@ TARGET_LINK_LIBRARIES(${_EXE_NAME}
                       gpucast_gl 
                       gpucast_glut
                       gpucast_core
-		                  general ${GLFW_LIBRARY}
+                      debug ${GLFW_LIBRARY_DEBUG} optimized ${GLFW_LIBRARY_RELEASE}
                       debug ${FREEIMAGE_LIBRARY_DEBUG} optimized ${FREEIMAGE_LIBRARY}
                       debug ${FREEIMAGE_PLUS_LIBRARY_DEBUG} optimized ${FREEIMAGE_PLUS_LIBRARY}
 	                    debug ${Boost_LOG_LIBRARY_DEBUG} optimized ${Boost_LOG_LIBRARY_RELEASE}
-                      debug ${Boost_LOG_SETUP_LIBRARY_DEBUG} optimized ${Boost_LOG_SETUP_LIBRARY_RELEASE}
                       )
+IF(UNIX)
+  TARGET_LINK_LIBRARIES(${_EXE_NAME} general ${GLFW_LIBRARY})
+ENDIF(UNIX)
 
 ###############################################################################
 # copy runtime libraries as a post-build process
