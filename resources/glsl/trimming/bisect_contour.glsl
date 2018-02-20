@@ -28,6 +28,12 @@ bisect_contour(in samplerBuffer data,
     tmp = texelFetch(data, id); // [vmin, vmax , umin, umax]
     gpucast_count_texel_fetch();
 
+#if 1
+    // This is an highly-optimized implementation to minimize branches
+    // The result is identical to the implementation below, described in: 
+    // Schollmeyer & Froehlich [2018]: "Efficient and Anti-aliased Trimming for Rendering Large NURBS Models"
+    // Performance result for whole-model-tests were minimally better with this implementation
+
     if ( uv[1] >= tmp[0] && uv[1] <= tmp[1]) // point is in v-interval
     {
       if ( uv[0] >= tmp[2] && uv[0] <= tmp[3])  // point is in curve bbox
@@ -67,6 +73,43 @@ bisect_contour(in samplerBuffer data,
         id_min = id + 1;
       }
     }
+#else
+    // Schollmeyer & Froehlich[2018]: "Efficient and Anti-aliased Trimming for Rendering Large NURBS Models"
+    // Implementation as described in paper (works equally, minimally slower)  
+    if (uv[1] >= tmp[0] && uv[1] <= tmp[1] && uv[0] >= tmp[2] && uv[0] <= tmp[3])
+    {
+      curveindex = id;
+      found = true;
+      break;
+    }
+
+    if (uincreasing) {
+      if (uv[0] > tmp[2] && uv[1] < tmp[1]) {
+        break;
+      }
+      if (uv[0] < tmp[3] && uv[1] > tmp[0]) {
+        ++intersections;
+        break;
+      }
+    }
+    else {
+      if (uv[0] < tmp[3] && uv[1] < tmp[1]) {
+        ++intersections;
+        break;
+      }
+      if (uv[0] > tmp[2] && uv[1] > tmp[0]) {
+        break;
+      }
+    }
+
+    if (uv[1] < tmp[0])
+    {
+      id_max = id - 1;
+    }
+    else {
+      id_min = id + 1;
+    }
+#endif
   }
 
   return found;
