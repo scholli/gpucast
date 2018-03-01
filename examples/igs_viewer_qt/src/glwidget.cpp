@@ -108,8 +108,7 @@ glwidget::add ( std::list<std::string> const& files )
 { 
   if ( files.empty() ) return;
 
-  std::for_each(files.begin(), files.end(), [&] ( std::string const& file ) 
-                                                  {
+  std::for_each(files.begin(), files.end(), [&] ( std::string const& file ) {
                                                     // create temporary new bounding box of added objects
                                                     gpucast::math::axis_aligned_boundingbox<gpucast::math::point3d> bbox;
                                                     _openfile ( file, bbox );
@@ -815,6 +814,7 @@ glwidget::_init()
   _print_contextinfo();
 
   _renderer = std::make_shared<gpucast::gl::bezierobject_renderer>();
+  _renderer->set_abuffer_size(50 * 1024 * 1024);
 
   _renderer->add_search_path("../../../");
   _renderer->add_search_path("../../");
