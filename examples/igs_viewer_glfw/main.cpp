@@ -17,6 +17,7 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <FreeImagePlus.h>
 
 // local includes
 #include <gpucast/gl/util/trackball.hpp>
@@ -88,26 +89,12 @@ public:
     _renderer = std::make_shared<gpucast::gl::bezierobject_renderer>();
     std::vector<std::string> filenames;
 
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/body.igs");
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/body_ground.igs");
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/rims.igs.igs");
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/top.igs");
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/small_parts.igs");
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/pipes.igs");
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/pumper.igs");
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/inner_rims.igs");
-    //filenames.push_back("D:/phd/cad_data/engine-for-my-1100-cc-dissembled/inner_stuff.igs");
-    filenames.push_back("C:/repositories/source/github-scholli-gpucast/examples/igs_viewer_glfw/data/vw02.txt");
-
     gpucast::gl::material default_material;
     default_material.ambient = gpucast::math::vec3f(0.0, 0.0, 0.0);
     default_material.diffuse = gpucast::math::vec3f(0.8, 0.8, 0.8);
     default_material.specular = gpucast::math::vec3f(0.4, 0.4, 0.4);
-    default_material.opacity = 0.2;
+    default_material.opacity = 1.0;
     default_material.shininess = 1.0;
-
-    _renderer->spheremap("D:/media/pics/hdr/DH216SN.hdr");
-    _renderer->spheremapping(true);
 
     //////////////////////////////////////////////////
     // GL ressources
@@ -135,6 +122,8 @@ public:
 
     _renderer->attach_custom_textures(_colorattachment, _depthattachment);
     _renderer->set_resolution(_width, _height);
+    _renderer->antialiasing(gpucast::gl::bezierobject::disabled);
+    _renderer->enable_holefilling(true);
 
     _sample_linear.reset(new gpucast::gl::sampler);
     _sample_linear->parameter(GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -158,6 +147,9 @@ public:
       {
         filenames.push_back(_argv[i]);
       }
+    }
+    else {
+      throw std::runtime_error("Usage: igs_viewer_glfw input.igs [input2.igs ... ]");
     }
     
     for (auto const& file : filenames)
@@ -239,6 +231,7 @@ public:
       drawable->set_material(m);
       drawable->rendermode(gpucast::gl::bezierobject::tesselation);
       drawable->trimming(gpucast::beziersurfaceobject::contour_kd_partition);
+      drawable->tesselation_max_pixel_error(1.0);
 
       _objects.push_back(drawable);
     }
@@ -462,11 +455,24 @@ int main(int argc, char** argv)
 
   the_app = std::make_shared<application>(argc, argv, winx, winy);
 
+  bool result_feedback = false;
+
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window))
   {
     glut_display();
+#if 1
+    if (!result_feedback) {
+      std::vector<std::array<uint8_t, 3>> data(winx*winy);
+      glReadPixels(0, 0, winx, winy, GL_RGB, GL_UNSIGNED_BYTE, &data[0]);
 
+      FIBITMAP* image = FreeImage_ConvertFromRawBits((unsigned char*)&data[0], winx, winy, 3 * winx, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
+      FreeImage_Save(FIF_BMP, image, "result.bmp", 0);
+      FreeImage_Unload(image);
+
+      result_feedback = true;
+    }
+#endif
     glfwSwapBuffers(window);
     glfwPollEvents();
   }

@@ -23,6 +23,8 @@ INCLUDE_DIRECTORIES( ${INCLUDE_PATHS}
                      ${CMAKE_SOURCE_DIR}/gpucast_core/include
                      ${GLFW_INCLUDE_DIR}
                      ${GLEW_INCLUDE_DIR}
+                     ${FREEIMAGE_INCLUDE_DIR}
+                     ${FREEIMAGEPLUS_INCLUDE_DIR}
 )
 
 SET(LIBRARY_DIRS ${LIB_PATHS} 
